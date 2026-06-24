@@ -1,34 +1,29 @@
 <template>
   <div class="layout">
     <AppHeader />
-    <div class="dashboard">
-      <AppSidebar />
-      <main>
-        <router-view />
-      </main>
-    </div>
+    <main class="main-content">
+      <router-view />
+    </main>
+    <AppFooter />
   </div>
 </template>
 
 <script setup lang="ts">
 import AppHeader from '@/shared/components/layout/AppHeader.vue'
-import AppSidebar from '@/shared/components/layout/AppSidebar.vue'
+import AppFooter from '@/shared/components/layout/AppFooter.vue'
 </script>
 
 <style lang="scss" scoped>
+@use "@/assets/styles/abstracts/variables" as *;
+
 .layout {
   display: flex;
   flex-direction: column;
   min-height: 100vh;
 }
 
-.dashboard {
-  display: flex;
+.main-content {
   flex: 1;
-}
-
-main {
-  flex: 1;
-  padding: 2rem;
+  padding-top: calc($header-height + 24px);
 }
 </style>

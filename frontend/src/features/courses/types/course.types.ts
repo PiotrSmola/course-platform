@@ -36,6 +36,11 @@ export interface LessonDto {
   duration: number
   order: number
   videoUrl: string
+  moduleId?: string
+  moduleTitle?: string
+  courseId?: string
+  courseTitle?: string
+  isCompleted?: boolean
 }
 
 export interface ModuleDto {

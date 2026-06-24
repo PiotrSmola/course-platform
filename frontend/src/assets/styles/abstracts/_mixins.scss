@@ -1,10 +1,121 @@
-/// Liquid Glass mixin
-/// @param {Length} $blur - blur radius
-/// @param {Number} $opacity - background opacity
-@mixin liquid-glass($blur: 10px, $opacity: 0.1) {
-  background: rgba(255, 255, 255, $opacity);
-  backdrop-filter: blur($blur);
-  -webkit-backdrop-filter: blur($blur);
-  border: 1px solid rgba(255, 255, 255, 0.2);
-  box-shadow: 0 4px 30px rgba(0, 0, 0, 0.1);
+// Liquid Glass mixin
+// Creates a 3-layer glass effect:
+// ::before -> backdrop blur + refraction
+// ::after  -> tint + rim light
+// content  -> normal flow
+@use "variables" as *;
+
+@mixin liquid-glass($blur: 12px, $tint: rgba(255, 255, 255, 0.03), $radius: 24px) {
+  position: relative;
+  z-index: 0;
+  border-radius: $radius;
+  box-shadow:
+    0 10px 30px rgba(3, 6, 24, 0.35),
+    0 2px 8px rgba(3, 6, 24, 0.22),
+    0 18px 30px -22px rgba(170, 200, 255, 0.35);
+
+  &::before {
+    content: "";
+    position: absolute;
+    inset: -12px;
+    z-index: -2;
+    border-radius: inherit;
+    clip-path: inset(12px round $radius);
+    -webkit-backdrop-filter: blur($blur) saturate(200%);
+    backdrop-filter: blur($blur) saturate(200%);
+  }
+
+  &::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    z-index: -1;
+    border-radius: inherit;
+    background:
+      radial-gradient(80px 50px at 16% 10%, rgba(255, 255, 255, 0.14), transparent 70%),
+      linear-gradient(165deg, rgba(255, 255, 255, 0.08), rgba(255, 255, 255, 0) 42%),
+      $tint;
+    box-shadow:
+      inset 2px 2px 1px -1px rgba(255, 255, 255, 0.65),
+      inset -2px -2px 1px -1px rgba(255, 255, 255, 0.25),
+      inset 0 0 0 1px rgba(255, 255, 255, 0.07),
+      inset 0 -12px 28px -16px rgba(255, 255, 255, 0.25);
+    pointer-events: none;
+    transition: background 0.35s, box-shadow 0.35s;
+  }
+}
+
+@mixin glass-btn($radius: 999px, $tint: rgba(255, 255, 255, 0.03)) {
+  position: relative;
+  z-index: 0;
+  border-radius: $radius;
+  border: none;
+  font: inherit;
+  font-weight: 600;
+  color: $color-ink;
+  cursor: pointer;
+  overflow: hidden;
+  background: none;
+  box-shadow: 0 6px 16px rgba(3, 6, 24, 0.28);
+  transition: transform 0.2s, box-shadow 0.3s, background 0.3s;
+
+  &::before {
+    content: "";
+    position: absolute;
+    inset: -12px;
+    z-index: -2;
+    border-radius: inherit;
+    clip-path: inset(12px round $radius);
+    -webkit-backdrop-filter: blur(0px) saturate(200%);
+    backdrop-filter: blur(0px) saturate(200%);
+  }
+
+  &::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    z-index: -1;
+    border-radius: inherit;
+    background:
+      radial-gradient(80px 50px at 16% 10%, rgba(255, 255, 255, 0.14), transparent 70%),
+      linear-gradient(165deg, rgba(255, 255, 255, 0.08), rgba(255, 255, 255, 0) 42%),
+      $tint;
+    box-shadow:
+      inset 2px 2px 1px -1px rgba(255, 255, 255, 0.65),
+      inset -2px -2px 1px -1px rgba(255, 255, 255, 0.25),
+      inset 0 0 0 1px rgba(255, 255, 255, 0.07),
+      inset 0 -12px 28px -16px rgba(255, 255, 255, 0.25);
+    pointer-events: none;
+    transition: background 0.35s, box-shadow 0.35s;
+  }
+
+  &:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 10px 26px rgba(99, 102, 241, 0.4);
+  }
+}
+
+@mixin container {
+  width: min($container-max, 100% - 48px);
+  margin-inline: auto;
+}
+
+@mixin grad-text {
+  background: $color-grad-text;
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+@mixin section-padding {
+  padding: 110px 0;
+}
+
+@mixin reveal {
+  transform: translateY(34px) scale(0.985);
+  transition: transform 0.7s cubic-bezier(0.2, 0.7, 0.2, 1) var(--d, 0s);
+
+  &.visible {
+    transform: none;
+  }
 }

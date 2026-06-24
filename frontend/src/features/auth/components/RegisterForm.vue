@@ -1,22 +1,26 @@
 <template>
   <form @submit.prevent="handleSubmit" class="register-form">
-    <div class="form-group">
-      <label>First Name</label>
-      <input v-model="firstName" type="text" required />
-    </div>
-    <div class="form-group">
-      <label>Last Name</label>
-      <input v-model="lastName" type="text" required />
+    <div class="form-row">
+      <div class="form-group">
+        <label>Imię</label>
+        <input v-model="firstName" type="text" required placeholder="Jan" />
+      </div>
+      <div class="form-group">
+        <label>Nazwisko</label>
+        <input v-model="lastName" type="text" required placeholder="Kowalski" />
+      </div>
     </div>
     <div class="form-group">
       <label>Email</label>
-      <input v-model="email" type="email" required />
+      <input v-model="email" type="email" required placeholder="jan@email.com" />
     </div>
     <div class="form-group">
-      <label>Password</label>
-      <input v-model="password" type="password" required />
+      <label>Hasło</label>
+      <input v-model="password" type="password" required placeholder="Min. 6 znaków" />
     </div>
-    <button type="submit" :disabled="isLoading">Register</button>
+    <button type="submit" class="btn btn-primary" :disabled="isLoading">
+      {{ isLoading ? 'Tworzenie konta...' : 'Utwórz konto' }}
+    </button>
   </form>
 </template>
 
@@ -44,23 +48,61 @@ async function handleSubmit() {
 </script>
 
 <style lang="scss" scoped>
+@use "@/assets/styles/abstracts/variables" as *;
+
 .register-form {
   display: flex;
   flex-direction: column;
-  gap: 1rem;
+  gap: 20px;
+}
 
-  .form-group {
-    display: flex;
-    flex-direction: column;
+.form-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px;
+
+  @media (max-width: 480px) {
+    grid-template-columns: 1fr;
+  }
+}
+
+.form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+
+  label {
+    font-size: 0.88rem;
+    font-weight: 600;
+    color: $color-muted;
   }
 
   input {
-    padding: 0.5rem;
-  }
+    height: 48px;
+    padding: 0 18px;
+    border-radius: 16px;
+    border: none;
+    background: rgba(255, 255, 255, 0.04);
+    box-shadow: inset 0 1px 1px rgba(255, 255, 255, 0.3), inset 0 0 0 1px rgba(255, 255, 255, 0.1);
+    color: $color-ink;
+    font: inherit;
+    font-size: 0.94rem;
+    outline: none;
+    transition: background 0.3s, box-shadow 0.3s;
 
-  button {
-    padding: 0.75rem;
-    cursor: pointer;
+    &::placeholder {
+      color: $color-faint;
+    }
+
+    &:focus {
+      background: rgba(255, 255, 255, 0.07);
+      box-shadow: inset 0 1px 1px rgba(255, 255, 255, 0.35), inset 0 0 0 1px rgba(167, 139, 250, 0.5), 0 0 0 4px rgba(139, 92, 246, 0.18);
+    }
   }
+}
+
+.btn {
+  height: 48px;
+  margin-top: 8px;
 }
 </style>

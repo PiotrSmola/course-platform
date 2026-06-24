@@ -3,20 +3,32 @@
 *,
 *::before,
 *::after {
-  box-sizing: border-box;
   margin: 0;
   padding: 0;
+  box-sizing: border-box;
 }
 
 html {
-  font-family: $font-family;
-  color: $color-text;
-  background: $color-bg;
+  scroll-behavior: smooth;
 }
 
 body {
-  min-height: 100vh;
-  line-height: 1.5;
+  font-family: $font-family;
+  background: $color-bg;
+  color: $color-ink;
+  line-height: 1.6;
+  overflow-x: hidden;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+::selection {
+  background: rgba(139, 92, 246, 0.45);
+}
+
+img,
+svg {
+  display: block;
 }
 
 a {
@@ -24,11 +36,16 @@ a {
   text-decoration: none;
 }
 
+ul {
+  list-style: none;
+}
+
 button {
   font-family: inherit;
 }
 
-img {
-  max-width: 100%;
-  display: block;
+:focus-visible {
+  outline: 2px solid $color-cyan;
+  outline-offset: 3px;
+  border-radius: 6px;
 }
