@@ -1,0 +1,36 @@
+using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Metadata.Builders;
+using CoursePlatform.Domain.Entities;
+
+namespace CoursePlatform.Infrastructure.Persistence.Configurations;
+
+public class CourseConfiguration : IEntityTypeConfiguration<Course>
+{
+    public void Configure(EntityTypeBuilder<Course> builder)
+    {
+        builder.HasKey(c => c.Id);
+
+        builder.Property(c => c.Title)
+            .IsRequired()
+            .HasMaxLength(200);
+
+        builder.Property(c => c.Description)
+            .IsRequired();
+
+        builder.Property(c => c.ShortDescription)
+            .HasMaxLength(500);
+
+        builder.Property(c => c.Price)
+            .HasPrecision(18, 2);
+
+        builder.Property(c => c.ThumbnailUrl)
+            .HasMaxLength(500);
+
+        builder.HasOne(c => c.Instructor)
+            .WithMany(u => u.Courses)
+            .HasForeignKey(c => c.InstructorId)
+            .OnDelete(DeleteBehavior.Restrict);
+
+        builder.HasIndex(c => c.Status);
+    }
+}

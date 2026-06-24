@@ -1,0 +1,10 @@
+/// Liquid Glass mixin
+/// @param {Length} $blur - blur radius
+/// @param {Number} $opacity - background opacity
+@mixin liquid-glass($blur: 10px, $opacity: 0.1) {
+  background: rgba(255, 255, 255, $opacity);
+  backdrop-filter: blur($blur);
+  -webkit-backdrop-filter: blur($blur);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  box-shadow: 0 4px 30px rgba(0, 0, 0, 0.1);
+}

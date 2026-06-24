@@ -39,6 +39,20 @@ ScaffoldingReadMe.txt
 # dotenv environment variables file
 .env
 
+# Secrets & local config
+appsettings.Development.json
+appsettings.Local.json
+*.Development.json
+
+# Docker volumes
+pgdata/
+
+# IDE
+.vscode/
+.vs/
+*.user
+*.suo
+
 # Others
 ~$*
 *~

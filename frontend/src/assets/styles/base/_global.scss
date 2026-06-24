@@ -1,0 +1,10 @@
+@use "../abstracts/mixins" as *;
+
+body {
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+.glass {
+  @include liquid-glass(12px, 0.15);
+}
