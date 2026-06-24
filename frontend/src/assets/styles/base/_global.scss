@@ -51,21 +51,21 @@ body {
 }
 
 .btn-primary {
-  --lg-tint: rgba(139, 92, 246, 0.1);
-  box-shadow: 0 10px 30px rgba(99, 102, 241, 0.3), 0 2px 8px rgba(3, 6, 24, 0.25);
+  --lg-tint: rgba(245, 158, 11, 0.1);
+  box-shadow: 0 10px 30px rgba(245, 158, 11, 0.25), 0 2px 8px rgba(3, 6, 24, 0.25);
 
   &::after {
     box-shadow:
       inset 2px 2px 1px -1px rgba(255, 255, 255, 0.75),
       inset -2px -2px 1px -1px rgba(255, 255, 255, 0.3),
-      inset 0 0 0 1px rgba(167, 139, 250, 0.45),
-      inset 0 -12px 22px -12px rgba(139, 92, 246, 0.6);
+      inset 0 0 0 1px rgba(251, 191, 36, 0.45),
+      inset 0 -12px 22px -12px rgba(245, 158, 11, 0.55);
   }
 
   &:hover {
-    --lg-tint: rgba(139, 92, 246, 0.22);
+    --lg-tint: rgba(245, 158, 11, 0.18);
     transform: translateY(-2px);
-    box-shadow: 0 16px 40px rgba(99, 102, 241, 0.5), 0 2px 8px rgba(3, 6, 24, 0.25);
+    box-shadow: 0 16px 40px rgba(245, 158, 11, 0.35), 0 2px 8px rgba(3, 6, 24, 0.25);
   }
 }
 

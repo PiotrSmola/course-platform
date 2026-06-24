@@ -98,6 +98,161 @@
       </div>
     </div>
   </section>
+
+  <section class="paths" id="sciezki">
+    <div class="container">
+      <div class="section-head">
+        <span class="eyebrow">Ścieżki kariery</span>
+        <h2>Wyierz kierunek, w którym chcesz się rozwijać</h2>
+        <p>Spójne programy złożone z kilku kursów — od fundamentu po zaawansowane tematy.</p>
+      </div>
+
+      <div class="paths-grid">
+        <article class="path-card glass-card">
+          <span class="path-icon" style="--accent: #f59e0b">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+              <polyline points="16 18 22 12 16 6"/>
+              <polyline points="8 6 2 12 8 18"/>
+            </svg>
+          </span>
+          <h3>Frontend Developer</h3>
+          <p>HTML, CSS, JavaScript, Vue 3 i React. Od statycznych stron po aplikacje SPA.</p>
+          <div class="path-meta">
+            <span>6 kursów</span>
+            <span>52 godz.</span>
+          </div>
+        </article>
+
+        <article class="path-card glass-card">
+          <span class="path-icon" style="--accent: #22d3ee">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+              <ellipse cx="12" cy="5" rx="9" ry="3"/>
+              <path d="M3 5v6c0 1.7 4 3 9 3s9-1.3 9-3V5"/>
+              <path d="M3 11v6c0 1.7 4 3 9 3s9-1.3 9-3v-6"/>
+            </svg>
+          </span>
+          <h3>Backend Developer</h3>
+          <p>C#, .NET, Node.js, bazy danych, REST API. Architektura systemów i dobre praktyki.</p>
+          <div class="path-meta">
+            <span>5 kursów</span>
+            <span>48 godz.</span>
+          </div>
+        </article>
+
+        <article class="path-card glass-card">
+          <span class="path-icon" style="--accent: #ec4899">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+              <circle cx="13" cy="6" r="2"/>
+              <circle cx="6" cy="18" r="2"/>
+              <circle cx="20" cy="18" r="2"/>
+              <path d="M13 8v4l4 4M6 16v-2l4-4"/>
+            </svg>
+          </span>
+          <h3>UI/UX Designer</h3>
+          <p>Figma, design systemy, prototypowanie. Badania użytkowników i testy użyteczności.</p>
+          <div class="path-meta">
+            <span>4 kursy</span>
+            <span>36 godz.</span>
+          </div>
+        </article>
+
+        <article class="path-card glass-card">
+          <span class="path-icon" style="--accent: #a78bfa">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+              <rect x="3" y="3" width="18" height="18" rx="2"/>
+              <path d="M3 9h18M9 21V9"/>
+            </svg>
+          </span>
+          <h3>Data &amp; AI</h3>
+          <p>Python, SQL, machine learning, analiza danych. Praca z realnymi zbiorami danych.</p>
+          <div class="path-meta">
+            <span>5 kursów</span>
+            <span>44 godz.</span>
+          </div>
+        </article>
+
+        <article class="path-card glass-card">
+          <span class="path-icon" style="--accent: #14b8a6">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M12 2L4 7v6c0 5 3.5 9 8 11 4.5-2 8-6 8-11V7l-8-5z"/>
+              <path d="M9 12l2 2 4-4"/>
+            </svg>
+          </span>
+          <h3>DevOps &amp; Cloud</h3>
+          <p>Docker, Kubernetes, CI/CD, AWS. Od lokalnego środowiska po produkcję.</p>
+          <div class="path-meta">
+            <span>4 kursy</span>
+            <span>38 godz.</span>
+          </div>
+        </article>
+
+        <article class="path-card glass-card">
+          <span class="path-icon" style="--accent: #f472b6">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+              <rect x="6" y="2" width="12" height="20" rx="3"/>
+              <line x1="12" y1="18" x2="12" y2="18"/>
+            </svg>
+          </span>
+          <h3>Mobile Developer</h3>
+          <p>React Native i Flutter. Budowanie aplikacji na iOS i Androida z jednego kodu.</p>
+          <div class="path-meta">
+            <span>4 kursy</span>
+            <span>34 godz.</span>
+          </div>
+        </article>
+      </div>
+    </div>
+  </section>
+
+  <section class="features" id="dlaczego">
+    <div class="container">
+      <div class="section-head">
+        <span class="eyebrow">Dlaczego CoursePlatform</span>
+        <h2>Ucz się inaczej niż gdziekolwiek indziej</h2>
+      </div>
+
+      <div class="features-grid">
+        <article class="feature-card glass-card">
+          <div class="feature-num">01</div>
+          <h3>Realne projekty, nie slajdy</h3>
+          <p>Każdy kurs kończy się projektem, który możesz dodać do portfolio lub pokazać rekruterowi.</p>
+        </article>
+
+        <article class="feature-card glass-card">
+          <div class="feature-num">02</div>
+          <h3>Mentorzy z branży</h3>
+          <p>Instruktorzy pracują na co dzień w firmach produktowych — uczą tego, co naprawdę używają w pracy.</p>
+        </article>
+
+        <article class="feature-card glass-card">
+          <div class="feature-num">03</div>
+          <h3>Code review i feedback</h3>
+          <p>Twoje rozwiązania są recenzowane przez mentorów. Dostajesz konkretne wskazówki, nie ogólniki.</p>
+        </article>
+
+        <article class="feature-card glass-card">
+          <div class="feature-num">04</div>
+          <h3>Certyfikat ukończenia</h3>
+          <p>Po zakończeniu kursu otrzymujesz certyfikat z podpisem mentora i weryfikowalnym linkiem.</p>
+        </article>
+      </div>
+    </div>
+  </section>
+
+  <section class="cta-section" id="start-learning">
+    <div class="container">
+      <div class="cta-card glass-card">
+        <div class="cta-content">
+          <h2>Gotowy, żeby zacząć?</h2>
+          <p>Dołącz do 18 000 studentów, którzy uczą się z nami. Pierwszy kurs dostępny za darmo.</p>
+        </div>
+        <div class="cta-actions">
+          <router-link class="btn btn-primary" :to="{ name: 'Courses' }">Wybierz kurs</router-link>
+          <router-link class="btn btn-ghost" :to="{ name: 'Register' }" v-if="!authStore.isAuthenticated">Utwórz konto</router-link>
+        </div>
+      </div>
+    </div>
+  </section>
 </template>
 
 <script setup lang="ts">
@@ -387,5 +542,236 @@ const authStore = useAuthStore()
 @keyframes float {
   0%, 100% { transform: translateY(0); }
   50% { transform: translateY(-10px); }
+}
+
+.section-head {
+  text-align: center;
+  max-width: 640px;
+  margin: 0 auto 48px;
+
+  h2 {
+    font-family: $font-display;
+    font-size: clamp(1.8rem, 3.2vw, 2.4rem);
+    font-weight: 600;
+    line-height: 1.15;
+    letter-spacing: -0.025em;
+    margin: 16px 0 12px;
+  }
+
+  p {
+    color: $color-muted;
+    font-size: 1rem;
+    line-height: 1.6;
+  }
+}
+
+.paths {
+  padding: 80px 0 60px;
+}
+
+.paths-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 18px;
+
+  @media (max-width: 880px) {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  @media (max-width: 540px) {
+    grid-template-columns: 1fr;
+  }
+}
+
+.path-card {
+  --lg-r: 22px;
+  --lg-blur: 0px;
+  padding: 26px 24px;
+  cursor: pointer;
+  transition: transform 0.35s, box-shadow 0.35s;
+
+  &:hover {
+    --lg-tint: rgba(255, 255, 255, 0.05);
+    transform: translateY(-4px);
+    box-shadow: 0 24px 50px rgba(3, 6, 24, 0.45), 0 4px 12px rgba(3, 6, 24, 0.25);
+  }
+
+  h3 {
+    font-family: $font-display;
+    font-size: 1.08rem;
+    font-weight: 600;
+    margin: 18px 0 8px;
+    letter-spacing: -0.01em;
+  }
+
+  p {
+    font-size: 0.88rem;
+    color: $color-muted;
+    line-height: 1.55;
+    margin-bottom: 18px;
+  }
+}
+
+.path-icon {
+  display: grid;
+  place-items: center;
+  width: 46px;
+  height: 46px;
+  border-radius: 14px;
+  background: color-mix(in srgb, var(--accent, #f59e0b) 18%, transparent);
+  box-shadow: inset 0 1px 1px rgba(255, 255, 255, 0.3), inset 0 0 0 1px color-mix(in srgb, var(--accent, #f59e0b) 30%, transparent);
+  color: var(--accent, #f59e0b);
+
+  svg {
+    width: 22px;
+    height: 22px;
+  }
+}
+
+.path-meta {
+  display: flex;
+  gap: 16px;
+  font-size: 0.78rem;
+  color: $color-faint;
+  font-weight: 500;
+  letter-spacing: 0.02em;
+
+  span {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+
+    &::before {
+      content: "";
+      width: 4px;
+      height: 4px;
+      border-radius: 50%;
+      background: $color-faint;
+      opacity: 0.5;
+    }
+
+    &:first-child::before {
+      display: none;
+    }
+  }
+}
+
+.features {
+  padding: 60px 0 80px;
+}
+
+.features-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 16px;
+
+  @media (max-width: 980px) {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  @media (max-width: 540px) {
+    grid-template-columns: 1fr;
+  }
+}
+
+.feature-card {
+  --lg-r: 22px;
+  --lg-blur: 0px;
+  padding: 28px 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  transition: transform 0.35s, box-shadow 0.35s;
+
+  &:hover {
+    --lg-tint: rgba(255, 255, 255, 0.05);
+    transform: translateY(-4px);
+    box-shadow: 0 22px 46px rgba(3, 6, 24, 0.42), 0 4px 12px rgba(3, 6, 24, 0.25);
+  }
+}
+
+.feature-num {
+  font-family: $font-display;
+  font-size: 0.78rem;
+  font-weight: 600;
+  letter-spacing: 0.18em;
+  color: $color-faint;
+}
+
+.feature-card h3 {
+  font-family: $font-display;
+  font-size: 1.08rem;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  line-height: 1.25;
+}
+
+.feature-card p {
+  font-size: 0.88rem;
+  color: $color-muted;
+  line-height: 1.6;
+}
+
+.cta-section {
+  padding: 30px 0 90px;
+}
+
+.cta-card {
+  --lg-r: 32px;
+  --lg-blur: 0px;
+  padding: 50px 56px;
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  flex-wrap: wrap;
+  gap: 32px;
+  position: relative;
+  overflow: hidden;
+
+  @media (max-width: 760px) {
+    flex-direction: column;
+    align-items: flex-start;
+    padding: 36px 32px;
+  }
+}
+
+.cta-content {
+  position: relative;
+  z-index: 1;
+  flex: 1 1 300px;
+  max-width: 560px;
+
+  h2 {
+    font-family: $font-display;
+    font-size: clamp(1.6rem, 2.6vw, 2rem);
+    font-weight: 600;
+    letter-spacing: -0.025em;
+    margin-bottom: 10px;
+  }
+
+  p {
+    color: $color-muted;
+    font-size: 0.95rem;
+    line-height: 1.55;
+  }
+}
+
+.cta-actions {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  gap: 12px;
+  flex-shrink: 0;
+  margin-left: auto;
+
+  @media (max-width: 760px) {
+    margin-left: 0;
+    width: 100%;
+
+    .btn {
+      flex: 1;
+      justify-content: center;
+    }
+  }
 }
 </style>
