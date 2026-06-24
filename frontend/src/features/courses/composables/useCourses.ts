@@ -4,14 +4,12 @@ import { getCourses, getCourseDetails, createCourse, updateCourse } from '@/feat
 import { toast } from 'vue3-toastify'
 
 export function useCourses() {
-  const coursesQuery = useQuery({
+  const { isLoading, isError, error, data } = useQuery({
     queryKey: ['courses'],
     queryFn: () => getCourses()
   })
 
-  return {
-    courses: coursesQuery
-  }
+  return { isLoading, isError, error, data }
 }
 
 export function useCourseDetails(courseId: string) {
