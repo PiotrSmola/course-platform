@@ -6,7 +6,22 @@ Reguły pracy nad projektem **Course Platform** (Vue 3 + ASP.NET Core 9). Ten pl
 
 ## Kontekst projektu
 
-Platforma kursów online. Fullstack: backend ASP.NET Core 9 (Clean Architecture), frontend Vue 3 + TypeScript. Projekt portfolio — jakość kodu i architektura mają znaczenie. Pełny plan w `IMPLEMENTATION_PLAN.md` — przeczytaj go przed rozpoczęciem pracy.
+Platforma kursów online. Fullstack: backend ASP.NET Core 9 (Clean Architecture), frontend Vue 3 + TypeScript. Projekt portfolio — jakość kodu i architektura mają znaczenie. Pełny plan w `IMPLEMENTATION_PLAN.md` — przeczytaj go przed rozpoczęciem pracy, ze szczególnym uwzględnieniem **sekcji 0 (Status środowiska)**.
+
+## Środowisko jest już postawione
+
+Szkielet istnieje — solucja, cztery projekty Clean Architecture, projekty testowe, projekt Vue z zainstalowanymi paczkami, pełna konfiguracja Docker. **Nie scaffolduj od zera** (`dotnet new`, `npm create vite` itp.). Twoje zadanie to dopełnianie struktury kodem. Kod aplikacji jeszcze nie istnieje — zaczynasz od Domain (encje).
+
+## Wszystkie komendy przez Docker
+
+`dotnet`, `dotnet ef`, `npm` odpalasz **wewnątrz kontenerów**, nigdy na hoście:
+
+```bash
+docker compose exec api bash       # backend (kontener cp_api)
+docker compose exec frontend bash  # frontend (kontener cp_frontend)
+```
+
+Konkrety: kontenery `cp_api` / `cp_frontend` / `cp_db`, porty 8080 / 5173 / 5432, connection string z hostem `db` (nie `localhost`). Pełne komendy EF Core i szczegóły w sekcji 0 planu.
 
 ---
 
@@ -77,6 +92,9 @@ Nie implementuj uploadu wideo (MinIO) przed ukończeniem domeny z Etapu 1.
 
 ## Czego nie robić
 
+- Nie scaffolduj szkieletu od nowa — środowisko stoi (patrz sekcja 0 planu).
+- Nie odpalaj komend `dotnet`/`npm` na hoście — zawsze przez `docker compose exec`.
+- Nie używaj `localhost` jako hosta bazy w kodzie backendu — z kontenera to `db`.
 - Nie łam kierunku zależności Clean Architecture.
 - Nie wrzucaj logiki biznesowej do kontrolerów.
 - Nie trzymaj plików wideo w bazie — zawsze storage zewnętrzny (MinIO).

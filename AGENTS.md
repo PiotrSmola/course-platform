@@ -8,6 +8,12 @@ Reguły dla agentów AI pracujących nad projektem **Course Platform**. Plik zgo
 
 Platforma kursów online w stacku Vue 3 + ASP.NET Core 9. Fullstack portfolio project. Backend w Clean Architecture, frontend Vue 3 + TypeScript + SCSS. Pełna specyfikacja w `IMPLEMENTATION_PLAN.md`.
 
+## Status środowiska
+
+**Środowisko jest postawione, szkielet istnieje — nie scaffolduj od zera.** Solucja, cztery projekty Clean Architecture, projekty testowe, projekt Vue z paczkami i pełna konfiguracja Docker już są. Kod aplikacji jeszcze nie istnieje — start od Domain. Szczegóły w sekcji 0 planu.
+
+**Wszystkie komendy (`dotnet`, `dotnet ef`, `npm`) odpalane wewnątrz kontenerów przez `docker compose exec`, nigdy na hoście.**
+
 ---
 
 ## Struktura repozytorium
@@ -29,47 +35,48 @@ Platforma kursów online w stacku Vue 3 + ASP.NET Core 9. Fullstack portfolio pr
 
 ## Setup środowiska
 
-### Backend
+Środowisko już postawione. Start dnia:
 ```bash
-dotnet restore
-dotnet build
+docker compose up -d        # uruchomienie stacku (cp_api, cp_frontend, cp_db)
+docker compose ps           # sprawdzenie statusu
+docker compose logs -f api  # logi backendu
+docker compose down         # zatrzymanie (dane bazy zostają w wolumenie pgdata)
+```
+
+Wejście do kontenerów po komendy:
+```bash
+docker compose exec api bash       # backend (.NET 9 SDK + dotnet-ef)
+docker compose exec frontend bash  # frontend (Node 20)
+```
+
+Backend działa na `localhost:8080`, frontend na `localhost:5173`, postgres na `localhost:5432`. Z wnętrza kontenera api baza jest pod hostem `db`.
+
+Migracje EF Core (z wnętrza `cp_api`, z `/src`):
+```bash
+dotnet ef migrations add <Name> --project src/CoursePlatform.Infrastructure --startup-project src/CoursePlatform.API
 dotnet ef database update --project src/CoursePlatform.Infrastructure --startup-project src/CoursePlatform.API
-dotnet run --project src/CoursePlatform.API
-```
-
-### Frontend
-```bash
-cd frontend
-npm install
-npm run dev
-```
-
-### Docker (cały stack)
-```bash
-docker compose up -d
 ```
 
 ---
 
 ## Komendy weryfikacyjne
 
-Przed zgłoszeniem zmian jako gotowe, agent uruchamia:
+Przed zgłoszeniem zmian jako gotowe, agent uruchamia (przez kontenery):
 
 ### Backend
 ```bash
-dotnet build
-dotnet test
+docker compose exec api dotnet build
+docker compose exec api dotnet test
 ```
 
 ### Frontend
 ```bash
-cd frontend
-npm run type-check
-npm run lint
-npm run build
+docker compose exec frontend npm run type-check
+docker compose exec frontend npm run lint
+docker compose exec frontend npm run build
 ```
 
-Zmiany nie są kompletne, dopóki build i testy nie przechodzą.
+Zmiany nie są kompletne, dopóki build i testy nie przechodzą. Skrypty `type-check` i `lint` muszą istnieć w `package.json` — jeśli ich nie ma, dodaj je przy konfiguracji frontendu.
 
 ---
 
