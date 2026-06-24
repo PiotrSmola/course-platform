@@ -1,0 +1,44 @@
+name: course-platform
+
+services:
+  db:
+    image: postgres:16
+    container_name: cp_db
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: courseplatform
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile.api.dev
+    container_name: cp_api
+    working_dir: /src/src/CoursePlatform.API
+    command: dotnet watch run --urls http://0.0.0.0:8080
+    ports:
+      - "8080:8080"
+    volumes:
+      - .:/src
+    depends_on:
+      - db
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile.dev
+    container_name: cp_frontend
+    working_dir: /app
+    command: npm run dev -- --host 0.0.0.0
+    ports:
+      - "5173:5173"
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules
+
+volumes:
+  pgdata:
