@@ -5,12 +5,18 @@
         <div class="footer-about">
           <router-link class="logo" :to="{ name: 'Home' }">
             <svg class="logo-mark" viewBox="0 0 64 64" aria-hidden="true">
-              <rect x="14" y="6" width="36" height="52" rx="10" fill="url(#logo-g)"/>
-              <rect x="26" y="11" width="12" height="3" rx="1.5" fill="rgba(255,255,255,.85)"/>
+              <path d="M12 12h40v4H12zm0 8h28v4H12zm0 8h36v4H12zm0 12h24v4H12zm0 8h32v4H12z" fill="url(#logo-g)"/>
+              <circle cx="50" cy="20" r="8" fill="url(#logo-g)" opacity="0.4"/>
+              <defs>
+                <linearGradient id="logo-g" x1="0" y1="0" x2="1" y2="1">
+                  <stop offset="0" stop-color="#f59e0b"/>
+                  <stop offset="1" stop-color="#ec4899"/>
+                </linearGradient>
+              </defs>
             </svg>
             <span>CoursePlatform</span>
           </router-link>
-          <p>Platforma kursów online nowej generacji. Ucz się od najlepszych instruktorów, rozwijaj umiejętności i śledź postępy.</p>
+          <p>Nowoczesna platforma e-learningowa. Ucz się w dowolnym miejscu i czasie, zdobywaj certyfikaty i rozwijaj karierę.</p>
           <div class="socials">
             <a href="#" class="glass" aria-label="Facebook">Fb</a>
             <a href="#" class="glass" aria-label="Instagram">Ig</a>
@@ -19,7 +25,7 @@
           </div>
         </div>
 
-        <nav class="footer-col" aria-label="Sklep">
+        <nav class="footer-col" aria-label="Platforma">
           <h4>Platforma</h4>
           <ul>
             <li><router-link :to="{ name: 'Courses' }">Katalog kursów</router-link></li>
@@ -49,7 +55,7 @@
       </div>
 
       <div class="footer-bottom">
-        <p>© {{ year }} CoursePlatform. Projekt demonstracyjny.</p>
+        <p>© {{ year }} CoursePlatform. Wszystkie prawa zastrzeżone.</p>
         <p>Polska 🇵🇱 · PLN</p>
       </div>
     </div>
@@ -75,7 +81,7 @@ const handleSubscribe = () => {
 
 .site-footer {
   position: relative;
-  background: rgba(13, 17, 40, 0.18);
+  background: rgba(10, 14, 23, 0.18);
   -webkit-backdrop-filter: blur(8px) saturate(180%);
   backdrop-filter: blur(8px) saturate(180%);
   box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.16);
@@ -206,7 +212,7 @@ const handleSubscribe = () => {
 
     &:focus {
       background: rgba(255, 255, 255, 0.07);
-      box-shadow: inset 0 1px 1px rgba(255, 255, 255, 0.35), inset 0 0 0 1px rgba(167, 139, 250, 0.5), 0 0 0 4px rgba(139, 92, 246, 0.18);
+      box-shadow: inset 0 1px 1px rgba(255, 255, 255, 0.35), inset 0 0 0 1px rgba(245, 158, 11, 0.5), 0 0 0 4px rgba(245, 158, 11, 0.18);
     }
   }
 

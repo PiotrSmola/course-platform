@@ -5,12 +5,12 @@
         <svg class="logo-mark" viewBox="0 0 64 64" aria-hidden="true">
           <defs>
             <linearGradient id="logo-g" x1="0" y1="0" x2="1" y2="1">
-              <stop offset="0" stop-color="#8b5cf6"/>
-              <stop offset="1" stop-color="#22d3ee"/>
+              <stop offset="0" stop-color="#f59e0b"/>
+              <stop offset="1" stop-color="#ec4899"/>
             </linearGradient>
           </defs>
-          <rect x="14" y="6" width="36" height="52" rx="10" fill="url(#logo-g)"/>
-          <rect x="26" y="11" width="12" height="3" rx="1.5" fill="rgba(255,255,255,.85)"/>
+          <path d="M12 12h40v4H12zm0 8h28v4H12zm0 8h36v4H12zm0 12h24v4H12zm0 8h32v4H12z" fill="url(#logo-g)"/>
+          <circle cx="50" cy="20" r="8" fill="url(#logo-g)" opacity="0.4"/>
         </svg>
         <span>CoursePlatform</span>
       </router-link>
@@ -101,7 +101,7 @@ onUnmounted(() => {
   .logo-mark {
     width: 30px;
     height: 30px;
-    filter: drop-shadow(0 4px 12px rgba(139, 92, 246, 0.55));
+    filter: drop-shadow(0 4px 12px rgba(245, 158, 11, 0.55));
   }
 }
 

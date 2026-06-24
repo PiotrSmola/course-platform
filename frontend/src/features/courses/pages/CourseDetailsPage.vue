@@ -228,7 +228,7 @@ const enroll = () => {
   font-size: 0.92rem;
 
   .lesson-icon {
-    color: $color-violet;
+    color: $color-gold;
     font-size: 0.8rem;
   }
 
