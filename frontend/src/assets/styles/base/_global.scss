@@ -11,23 +11,43 @@ body {
 }
 
 .glass {
-  @include liquid-glass(12px, rgba(255, 255, 255, 0.03), 24px);
+  @include liquid-glass;
 }
 
 .glass-card {
-  @include liquid-glass(0px, rgba(255, 255, 255, 0.03), 28px);
+  @include liquid-glass;
+  --lg-r: 28px;
   transition: transform 0.35s, box-shadow 0.35s;
 
   &:hover {
+    --lg-tint: rgba(255, 255, 255, 0.06);
     transform: translateY(-6px);
     box-shadow: 0 24px 56px rgba(3, 6, 24, 0.5), 0 4px 12px rgba(3, 6, 24, 0.3);
   }
 }
 
 .btn {
-  @include glass-btn(999px, rgba(255, 255, 255, 0.03));
+  @include liquid-glass;
+  --lg-r: 999px;
+  --lg-blur: 0px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
   padding: 14px 28px;
+  border: none;
+  font: inherit;
   font-size: 0.98rem;
+  font-weight: 600;
+  color: $color-ink;
+  cursor: pointer;
+  overflow: hidden;
+  background: none;
+  transition: transform 0.2s, box-shadow 0.3s, background 0.3s;
+
+  &:hover {
+    transform: translateY(-2px);
+  }
 }
 
 .btn-primary {
@@ -41,20 +61,39 @@ body {
       inset 0 0 0 1px rgba(167, 139, 250, 0.45),
       inset 0 -12px 22px -12px rgba(139, 92, 246, 0.6);
   }
+
+  &:hover {
+    --lg-tint: rgba(139, 92, 246, 0.22);
+    transform: translateY(-2px);
+    box-shadow: 0 16px 40px rgba(99, 102, 241, 0.5), 0 2px 8px rgba(3, 6, 24, 0.25);
+  }
 }
 
-.grad-text {
-  @include grad-text;
+.btn-ghost {
+  --lg-r: 999px;
+  --lg-blur: 0px;
+
+  &:hover {
+    --lg-tint: rgba(255, 255, 255, 0.08);
+    transform: translateY(-2px);
+  }
 }
 
 .eyebrow {
-  @include glass-btn(999px, rgba(255, 255, 255, 0.03));
+  @include liquid-glass;
+  --lg-r: 999px;
+  --lg-blur: 0px;
   display: inline-block;
   padding: 7px 16px;
   font-size: 0.82rem;
   font-weight: 600;
   letter-spacing: 0.04em;
+  color: $color-ink;
   box-shadow: 0 6px 18px rgba(3, 6, 24, 0.3);
+}
+
+.grad-text {
+  @include grad-text;
 }
 
 .section-head {
