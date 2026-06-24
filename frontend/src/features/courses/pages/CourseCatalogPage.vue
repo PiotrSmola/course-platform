@@ -1,77 +1,109 @@
 <template>
-  <div>
-    <!-- Hero Section -->
-    <section class="hero" id="start">
-      <div class="container hero-grid">
+  <section class="hero" id="start">
+    <div class="container">
+      <div class="hero-grid">
         <div class="hero-copy">
-          <span class="eyebrow">✦ Rozwijaj swoje umiejętności</span>
-          <h1>Ucz się od<br>najlepszych <span class="grad-text">ekspertów</span></h1>
-          <p class="lead">
-            Kursy online z zakresu programowania, designu i biznesu. 
-            Ucz się w swoim tempie, zdobywaj certyfikaty i rozwijaj karierę.
+          <span class="eyebrow">
+            <span class="eyebrow-dot"></span>
+            Nowa edycja jesienna 2026
+          </span>
+
+          <h1 class="hero-title">
+            Naucz się <span class="grad-text">rzeczy,</span><br>
+            które mają sens.
+          </h1>
+
+          <p class="hero-lead">
+            Kursy online prowadzone przez praktyków z branży IT, designu i biznesu.
+            Ucz się we własnym tempie, rozwiązuj realne zadania i buduj projekty do portfolio.
           </p>
+
           <div class="hero-cta">
-            <router-link class="btn btn-primary" :to="{ name: 'Courses' }">Przeglądaj kursy</router-link>
-            <router-link class="btn btn-ghost" :to="{ name: 'Register' }" v-if="!authStore.isAuthenticated">Dołącz za darmo</router-link>
+            <router-link class="btn btn-primary" :to="{ name: 'Courses' }">
+              <span>Przeglądaj kursy</span>
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+                <path d="M5 12h14M13 5l7 7-7 7"/>
+              </svg>
+            </router-link>
+            <router-link class="btn btn-ghost" :to="{ name: 'Register' }" v-if="!authStore.isAuthenticated">
+              Wypróbuj za darmo
+            </router-link>
           </div>
-          <ul class="hero-stats">
-            <li class="glass"><strong>50+</strong> kursów</li>
-            <li class="glass"><strong>10k+</strong> studentów</li>
-            <li class="glass"><strong>4.9/5</strong> ocena</li>
+
+          <ul class="hero-metrics">
+            <li>
+              <strong>240+</strong>
+              <span>kursów</span>
+            </li>
+            <li class="divider"></li>
+            <li>
+              <strong>18k</strong>
+              <span>studentów</span>
+            </li>
+            <li class="divider"></li>
+            <li>
+              <strong>4.8</strong>
+              <span>średnia ocen</span>
+            </li>
           </ul>
         </div>
 
-        <div class="hero-visual" aria-hidden="true">
-          <div class="glow"></div>
-          <div class="glass-card hero-card">
-            <div class="card-content">
-              <div class="card-icon">🎓</div>
-              <div class="card-title">Vue 3 Mastery</div>
-              <div class="card-progress">
-                <div class="progress-bar">
-                  <div class="progress-fill" style="width: 65%"></div>
-                </div>
-                <span>65% ukończone</span>
+        <aside class="hero-visual">
+          <div class="float-card card-1 glass-card">
+            <div class="card-header">
+              <span class="card-badge live">Live</span>
+              <span class="card-time">19:00</span>
+            </div>
+            <p class="card-title">React Server Components w praktyce</p>
+            <p class="card-meta">Anna K. · 45 min · za 2 godz.</p>
+          </div>
+
+          <div class="float-card card-2 glass-card">
+            <div class="card-progress">
+              <div class="card-progress-ring">
+                <svg viewBox="0 0 56 56">
+                  <circle cx="28" cy="28" r="24" fill="none" stroke="rgba(255,255,255,0.1)" stroke-width="4"/>
+                  <circle cx="28" cy="28" r="24" fill="none" stroke="url(#ring-g)" stroke-width="4" stroke-linecap="round" stroke-dasharray="150.8" stroke-dashoffset="52"/>
+                  <defs>
+                    <linearGradient id="ring-g" x1="0" y1="0" x2="1" y2="1">
+                      <stop offset="0" stop-color="#f59e0b"/>
+                      <stop offset="1" stop-color="#ec4899"/>
+                    </linearGradient>
+                  </defs>
+                </svg>
+                <span>65%</span>
+              </div>
+              <div>
+                <p class="card-eyebrow">W toku</p>
+                <p class="card-title-sm">Vue 3 Mastery</p>
+                <p class="card-meta-sm">10/16 modułów</p>
               </div>
             </div>
           </div>
-          <div class="glass-card hero-card-2">
-            <div class="card-content">
-              <div class="card-icon">⚡</div>
-              <div class="card-title">Nowy kurs</div>
-              <div class="card-badge">Dostępny</div>
+
+          <div class="float-card card-3 glass-card">
+            <div class="card-cert">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6">
+                <circle cx="12" cy="8" r="6"/>
+                <path d="M9 13l-2 8 5-3 5 3-2-8"/>
+              </svg>
+              <div>
+                <p class="card-eyebrow">Certyfikat</p>
+                <p class="card-title-sm">UI Design Fundamentals</p>
+                <p class="card-meta-sm">ukończono 28.10</p>
+              </div>
             </div>
           </div>
-        </div>
+        </aside>
       </div>
-    </section>
-
-    <!-- Courses Section -->
-    <section class="products" id="courses">
-      <div class="container">
-        <div class="section-head">
-          <span class="eyebrow">Katalog</span>
-          <h2>Dostępne kursy</h2>
-          <p>Wybierz kurs i rozpocznij naukę już dziś.</p>
-        </div>
-
-        <div v-if="isLoading" class="loading">Ładowanie kursów...</div>
-        <div v-else-if="isError" class="error">Błąd: {{ error?.message }}</div>
-        <div v-else-if="data" class="products-grid">
-          <CourseCard v-for="course in data.items" :key="course.id" :course="course" />
-        </div>
-      </div>
-    </section>
-  </div>
+    </div>
+  </section>
 </template>
 
 <script setup lang="ts">
 import { useAuthStore } from '@/features/auth/stores/auth.store'
-import { useCourses } from '@/features/courses/composables/useCourses'
-import CourseCard from '@/features/courses/components/CourseCard.vue'
 
 const authStore = useAuthStore()
-const { isLoading, isError, error, data } = useCourses()
 </script>
 
 <style lang="scss" scoped>
@@ -79,176 +111,281 @@ const { isLoading, isError, error, data } = useCourses()
 @use "@/assets/styles/abstracts/mixins" as *;
 
 .hero {
-  min-height: 100vh;
-  display: flex;
-  align-items: center;
-  padding: calc($header-height + 70px) 0 80px;
-
-  @media (max-width: 880px) {
-    padding-top: calc($header-height + 50px);
-    min-height: 0;
-  }
+  padding: calc($header-height + 50px) 0 60px;
+  position: relative;
 }
 
 .hero-grid {
   display: grid;
-  grid-template-columns: 1.05fr 0.95fr;
+  grid-template-columns: 1.15fr 0.85fr;
   align-items: center;
   gap: 60px;
 
-  @media (max-width: 880px) {
+  @media (max-width: 980px) {
     grid-template-columns: 1fr;
-    gap: 40px;
+    gap: 48px;
   }
 }
 
-.hero h1 {
-  font-size: clamp(2.5rem, 5.4vw, 4.3rem);
-  line-height: 1.06;
-  letter-spacing: -0.02em;
-  margin: 26px 0 20px;
-  text-shadow: 0 2px 24px rgba(3, 6, 24, 0.45);
+.hero-copy {
+  max-width: 580px;
 }
 
-.lead {
+.eyebrow {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 14px 6px 12px;
+  font-size: 0.78rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  color: $color-ink;
+  box-shadow: 0 6px 18px rgba(3, 6, 24, 0.3);
+}
+
+.eyebrow-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: $color-grad;
+  box-shadow: 0 0 12px rgba(245, 158, 11, 0.7);
+  animation: pulse 2s ease-in-out infinite;
+}
+
+@keyframes pulse {
+  0%, 100% { transform: scale(1); opacity: 1; }
+  50% { transform: scale(1.3); opacity: 0.7; }
+}
+
+.hero-title {
+  font-family: $font-display;
+  font-size: clamp(2.5rem, 5.4vw, 4.3rem);
+  font-weight: 700;
+  line-height: 1.05;
+  letter-spacing: -0.035em;
+  margin: 22px 0 22px;
+}
+
+.hero-lead {
   font-size: 1.08rem;
+  line-height: 1.65;
   color: $color-muted;
-  max-width: 480px;
+  max-width: 500px;
+  margin-bottom: 32px;
 }
 
 .hero-cta {
   display: flex;
   flex-wrap: wrap;
   gap: 14px;
-  margin: 32px 0 40px;
+  margin-bottom: 44px;
 }
 
-.hero-stats {
+.hero-cta .btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  padding: 14px 26px;
+
+  svg {
+    width: 18px;
+    height: 18px;
+  }
+}
+
+.hero-metrics {
   display: flex;
-  flex-wrap: wrap;
-  gap: 12px;
+  align-items: center;
+  gap: 24px;
+  padding: 0;
+  margin: 0;
 
   li {
-    --lg-r: 16px;
-    --lg-blur: 0px;
-    padding: 10px 18px;
-    font-size: 0.88rem;
-    color: $color-muted;
-    box-shadow: 0 6px 18px rgba(3, 6, 24, 0.3);
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+  }
 
-    strong {
-      color: $color-ink;
-      margin-right: 6px;
-      font-size: 1rem;
-    }
+  .divider {
+    width: 1px;
+    height: 36px;
+    background: $color-hairline;
+  }
+
+  strong {
+    font-family: $font-display;
+    font-size: 1.5rem;
+    font-weight: 700;
+    letter-spacing: -0.02em;
+    color: $color-ink;
+  }
+
+  span {
+    font-size: 0.82rem;
+    color: $color-faint;
+    letter-spacing: 0.02em;
   }
 }
 
 .hero-visual {
   position: relative;
-  display: flex;
-  justify-content: center;
-  min-height: 400px;
+  height: 460px;
+
+  @media (max-width: 980px) {
+    height: 380px;
+  }
 }
 
-.glow {
+.float-card {
+  --lg-r: 22px;
+  --lg-blur: 0px;
   position: absolute;
-  inset: 8% 16%;
-  background: radial-gradient(closest-side, rgba(139, 92, 246, 0.55), rgba(34, 211, 238, 0.2), transparent);
-  filter: blur(48px);
-  z-index: -1;
-}
-
-.hero-card,
-.hero-card-2 {
-  position: absolute;
-  width: 280px;
-  padding: 24px;
+  padding: 18px 20px;
   animation: float 7s ease-in-out infinite;
 }
 
-.hero-card {
-  top: 10%;
-  left: 10%;
+.card-1 {
+  top: 0;
+  left: 0;
+  width: 78%;
+  z-index: 3;
+  animation-delay: 0s;
 }
 
-.hero-card-2 {
+.card-2 {
   top: 40%;
-  right: 5%;
-  animation-delay: -3.5s;
-  animation-duration: 9s;
+  right: 0;
+  width: 64%;
+  z-index: 2;
+  animation-delay: -2.5s;
 }
 
-.card-content {
+.card-3 {
+  bottom: 0;
+  left: 8%;
+  width: 56%;
+  z-index: 1;
+  animation-delay: -4.5s;
+}
+
+.card-header {
   display: flex;
-  flex-direction: column;
-  gap: 12px;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 12px;
 }
 
-.card-icon {
-  font-size: 2rem;
+.card-badge {
+  padding: 4px 10px;
+  border-radius: 999px;
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+
+  &.live {
+    background: rgba(239, 68, 68, 0.18);
+    color: #fca5a5;
+    box-shadow: inset 0 0 0 1px rgba(239, 68, 68, 0.4);
+
+    &::before {
+      content: "";
+      display: inline-block;
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: #ef4444;
+      margin-right: 6px;
+      vertical-align: middle;
+      animation: pulse 1.5s ease-in-out infinite;
+    }
+  }
+}
+
+.card-time {
+  font-family: $font-display;
+  font-size: 0.85rem;
+  color: $color-muted;
+  font-variant-numeric: tabular-nums;
 }
 
 .card-title {
-  font-size: 1.15rem;
+  font-family: $font-display;
+  font-size: 1.05rem;
   font-weight: 600;
+  margin-bottom: 6px;
+  line-height: 1.25;
+}
+
+.card-meta {
+  font-size: 0.78rem;
+  color: $color-faint;
 }
 
 .card-progress {
   display: flex;
-  flex-direction: column;
-  gap: 6px;
+  align-items: center;
+  gap: 14px;
+}
+
+.card-progress-ring {
+  position: relative;
+  width: 56px;
+  height: 56px;
+  flex-shrink: 0;
+
+  svg {
+    transform: rotate(-90deg);
+  }
 
   span {
-    font-size: 0.82rem;
-    color: $color-muted;
+    position: absolute;
+    inset: 0;
+    display: grid;
+    place-items: center;
+    font-family: $font-display;
+    font-weight: 700;
+    font-size: 0.85rem;
   }
 }
 
-.progress-bar {
-  height: 6px;
-  border-radius: 999px;
-  background: rgba(255, 255, 255, 0.1);
-  overflow: hidden;
-}
-
-.progress-fill {
-  height: 100%;
-  border-radius: inherit;
-  background: linear-gradient(90deg, #a78bfa, #22d3ee);
-}
-
-.card-badge {
-  display: inline-block;
-  padding: 4px 12px;
-  border-radius: 999px;
-  font-size: 0.78rem;
+.card-eyebrow {
+  font-size: 0.7rem;
   font-weight: 600;
-  background: rgba(16, 185, 129, 0.25);
-  color: #6ee7b7;
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.35);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: $color-faint;
+  margin-bottom: 4px;
+}
+
+.card-title-sm {
+  font-family: $font-display;
+  font-size: 0.95rem;
+  font-weight: 600;
+  line-height: 1.2;
+}
+
+.card-meta-sm {
+  font-size: 0.76rem;
+  color: $color-faint;
+  margin-top: 2px;
+}
+
+.card-cert {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+
+  svg {
+    width: 28px;
+    height: 28px;
+    flex-shrink: 0;
+    color: $color-gold;
+  }
 }
 
 @keyframes float {
   0%, 100% { transform: translateY(0); }
-  50% { transform: translateY(-16px); }
-}
-
-.products {
-  padding: 110px 0;
-}
-
-.products-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(290px, 1fr));
-  gap: 26px;
-}
-
-.loading,
-.error {
-  text-align: center;
-  padding: 60px;
-  font-size: 1.1rem;
-  color: $color-muted;
+  50% { transform: translateY(-10px); }
 }
 </style>
