@@ -9,7 +9,7 @@ const routes: RouteRecordRaw[] = [
     component: () => import('@/app/layouts/DefaultLayout.vue'),
     children: [
       { path: '', component: () => import('@/features/courses/pages/CourseCatalogPage.vue'), name: 'Home' },
-      { path: 'courses', component: () => import('@/features/courses/pages/CourseCatalogPage.vue'), name: 'Courses' },
+      { path: 'courses', component: () => import('@/features/courses/pages/CourseBrowsePage.vue'), name: 'Courses' },
       { path: 'courses/:id', component: () => import('@/features/courses/pages/CourseDetailsPage.vue'), name: 'CourseDetails', props: true }
     ]
   },
