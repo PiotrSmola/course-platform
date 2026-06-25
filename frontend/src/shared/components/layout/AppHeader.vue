@@ -27,7 +27,7 @@
             <router-link :to="{ name: 'Home' }" @pointerenter="moveBlob($event)">Strona główna</router-link>
           </li>
           <li class="dropdown-root" @pointerenter="openCatalog" @pointerleave="closeCatalog">
-            <span class="nav-link" :class="{ active: catalogOpen }">Katalog</span>
+            <span class="nav-link" :class="{ active: catalogOpen }" @pointerenter="moveBlob($event)">Katalog</span>
             <div v-show="catalogOpen" class="mega-dropdown" @pointerenter="onCatalogEnter" @pointerleave="closeCatalog">
               <div class="mega-dropdown-inner">
                 <div class="mega-sections">
@@ -47,6 +47,7 @@
                   </div>
                 </div>
                 <div class="mega-items">
+                  <span ref="megaBlobEl" class="mega-blob" aria-hidden="true"></span>
                   <div class="mega-items-grid">
                     <router-link
                       v-for="item in activeItems"
@@ -54,6 +55,8 @@
                       class="mega-item"
                       :to="itemLink(item)"
                       @click="catalogOpen = false"
+                      @pointerenter="moveMegaBlob($event)"
+                      @pointerleave="hideMegaBlob"
                     >
                       {{ item.name }}
                     </router-link>
@@ -94,7 +97,8 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, onUnmounted, nextTick, computed } from 'vue'
+import { ref, onMounted, onUnmounted, nextTick, computed, watch } from 'vue'
+import { useRoute } from 'vue-router'
 import { useAuth } from '@/features/auth/composables/useAuth'
 import { useAuthStore } from '@/features/auth/stores/auth.store'
 import { useQuery } from '@tanstack/vue-query'
@@ -103,11 +107,13 @@ import type { CategoryDto, TechnologyDto } from '@/features/courses/api/courses.
 
 const authStore = useAuthStore()
 const { logout } = useAuth()
+const route = useRoute()
 
 const isScrolled = ref(false)
 const listEl = ref<HTMLElement | null>(null)
 const blobEl = ref<HTMLElement | null>(null)
 const navEl = ref<HTMLElement | null>(null)
+const megaBlobEl = ref<HTMLElement | null>(null)
 
 const catalogOpen = ref(false)
 const activeSection = ref<'categories' | 'technologies'>('categories')
@@ -163,29 +169,65 @@ const onScroll = () => {
   isScrolled.value = window.scrollY > 24
 }
 
-function moveBlob(e: PointerEvent) {
-  if (!blobEl.value) return
-  const target = e.currentTarget as HTMLElement
-  const li = target.closest('li')
+function moveBlobToElement(el: HTMLElement) {
+  if (!blobEl.value || !listEl.value) return
+  const li = el.closest('li')
   if (!li) return
-  const ul = li.parentElement
-  if (!ul) return
-  const ulRect = ul.getBoundingClientRect()
+  const ulRect = listEl.value.getBoundingClientRect()
   const liRect = li.getBoundingClientRect()
   blobEl.value.style.left = `${liRect.left - ulRect.left}px`
   blobEl.value.style.width = `${liRect.width}px`
   blobEl.value.style.opacity = '1'
 }
 
+function moveBlob(e: PointerEvent) {
+  const target = e.currentTarget as HTMLElement
+  moveBlobToElement(target)
+}
+
+function syncBlobToActive() {
+  if (!listEl.value) return
+  const activeLink = listEl.value.querySelector('.router-link-active') as HTMLElement | null
+  if (activeLink) {
+    moveBlobToElement(activeLink)
+  } else {
+    if (blobEl.value) blobEl.value.style.opacity = '0'
+  }
+}
+
 function hideBlob() {
-  if (!blobEl.value) return
-  blobEl.value.style.opacity = '0'
+  syncBlobToActive()
+}
+
+function moveMegaBlob(e: PointerEvent) {
+  if (!megaBlobEl.value || !listEl.value) return
+  const target = e.currentTarget as HTMLElement
+  const container = target.closest('.mega-items') as HTMLElement | null
+  if (!container) return
+  const containerRect = container.getBoundingClientRect()
+  const targetRect = target.getBoundingClientRect()
+  megaBlobEl.value.style.left = `${targetRect.left - containerRect.left}px`
+  megaBlobEl.value.style.top = `${targetRect.top - containerRect.top}px`
+  megaBlobEl.value.style.width = `${targetRect.width}px`
+  megaBlobEl.value.style.height = `${targetRect.height}px`
+  megaBlobEl.value.style.opacity = '1'
+}
+
+function hideMegaBlob() {
+  if (!megaBlobEl.value) return
+  megaBlobEl.value.style.opacity = '0'
 }
 
 onMounted(async () => {
   window.addEventListener('scroll', onScroll, { passive: true })
   onScroll()
   await nextTick()
+  syncBlobToActive()
+})
+
+watch(() => route.path, async () => {
+  await nextTick()
+  syncBlobToActive()
 })
 
 onUnmounted(() => {
@@ -415,6 +457,7 @@ onUnmounted(() => {
   flex: 1;
   padding: 16px 20px;
   min-height: 200px;
+  position: relative;
 }
 
 .mega-items-grid {
@@ -424,19 +467,40 @@ onUnmounted(() => {
 }
 
 .mega-item {
+  position: relative;
+  z-index: 1;
   display: block;
   padding: 8px 12px;
   border-radius: 10px;
   font-size: 0.85rem;
   font-weight: 500;
   color: $color-muted;
-  transition: color 0.2s, background 0.2s;
+  transition: color 0.2s;
   text-decoration: none;
   white-space: nowrap;
 
   &:hover {
     color: $color-ink;
-    background: rgba(255, 255, 255, 0.06);
   }
+}
+
+.mega-blob {
+  position: absolute;
+  top: 0;
+  left: 0;
+  border-radius: 12px;
+  background: linear-gradient(135deg, rgba(245, 158, 11, 0.16), rgba(245, 158, 11, 0.08));
+  box-shadow:
+    inset 1.5px 1.5px 2px -1px rgba(255, 255, 255, 0.35),
+    inset -1.5px -1.5px 2px -1px rgba(255, 255, 255, 0.08),
+    inset 0 -8px 16px -10px rgba(245, 158, 11, 0.25);
+  opacity: 0;
+  pointer-events: none;
+  transition:
+    left 0.45s cubic-bezier(0.3, 1.55, 0.35, 1),
+    width 0.45s cubic-bezier(0.3, 1.55, 0.35, 1),
+    top 0.45s cubic-bezier(0.3, 1.55, 0.35, 1),
+    height 0.45s cubic-bezier(0.3, 1.55, 0.35, 1),
+    opacity 0.2s;
 }
 </style>
