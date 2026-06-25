@@ -329,6 +329,12 @@ const visiblePages = computed(() => {
 @use "@/assets/styles/abstracts/mixins" as *;
 @use "sass:color";
 
+@property --lg-tint {
+  syntax: "<color>";
+  inherits: true;
+  initial-value: rgba(255, 255, 255, 0.04);
+}
+
 .browse-page {
   padding-top: $header-height;
   min-height: 100vh;
@@ -416,15 +422,16 @@ const visiblePages = computed(() => {
 
 .sort-trigger {
   @include liquid-glass;
-  --lg-r: 12px;
+  --lg-r: 14px;
   --lg-blur: 0px;
+  --lg-tint: rgba(255, 255, 255, 0.04);
   appearance: none;
   background: none;
   border: none;
   font: inherit;
   font-size: 0.9rem;
   color: $color-ink;
-  padding: 12px 16px;
+  padding: 13px 16px;
   cursor: pointer;
   outline: none;
   min-width: 240px;
@@ -432,6 +439,27 @@ const visiblePages = computed(() => {
   align-items: center;
   gap: 10px;
   text-align: left;
+  box-shadow:
+    0 10px 30px rgba(3, 6, 24, 0.35),
+    0 2px 8px rgba(3, 6, 24, 0.22),
+    0 18px 30px -22px rgba(170, 200, 255, 0.35),
+    inset 0 1px 1px rgba(255, 255, 255, 0.3),
+    inset 0 0 0 1px rgba(255, 255, 255, 0.1);
+  transition: --lg-tint 0.35s, box-shadow 0.35s, transform 0.2s;
+
+  &:hover {
+    --lg-tint: rgba(245, 158, 11, 0.08);
+    box-shadow:
+      0 10px 30px rgba(3, 6, 24, 0.4),
+      0 2px 8px rgba(3, 6, 24, 0.25),
+      0 18px 30px -22px rgba(245, 158, 11, 0.4),
+      inset 0 1px 1px rgba(255, 255, 255, 0.35),
+      inset 0 0 0 1px rgba(245, 158, 11, 0.3);
+  }
+
+  &.open {
+    --lg-tint: rgba(245, 158, 11, 0.1);
+  }
 
   .sort-label {
     color: $color-faint;
@@ -464,9 +492,9 @@ const visiblePages = computed(() => {
 
 .sort-menu {
   @include liquid-glass;
-  --lg-r: 14px;
+  --lg-r: 16px;
   --lg-blur: 0px;
-  --lg-tint: rgba(17, 24, 39, 0.92);
+  --lg-tint: rgba(17, 24, 39, 0.55);
   position: absolute;
   top: calc(100% + 8px);
   right: 0;
@@ -476,9 +504,22 @@ const visiblePages = computed(() => {
   list-style: none;
   z-index: 30;
   box-shadow:
-    0 20px 50px rgba(3, 6, 24, 0.55),
-    0 4px 12px rgba(3, 6, 24, 0.35),
-    inset 0 0 0 1px rgba(255, 255, 255, 0.08);
+    0 24px 60px rgba(3, 6, 24, 0.55),
+    0 4px 14px rgba(3, 6, 24, 0.35),
+    inset 0 1px 1px rgba(255, 255, 255, 0.18),
+    inset 0 0 0 1px rgba(255, 255, 255, 0.1);
+  transition: --lg-tint 0.35s, box-shadow 0.35s;
+}
+
+.sort-menu::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  pointer-events: none;
+  background:
+    radial-gradient(180px 100px at 18% 0%, rgba(255, 255, 255, 0.07), transparent 65%),
+    radial-gradient(120px 80px at 100% 100%, rgba(245, 158, 11, 0.05), transparent 70%);
 }
 
 .sort-blob {
