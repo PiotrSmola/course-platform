@@ -526,12 +526,12 @@ const visiblePages = computed(() => {
   position: absolute;
   top: 0;
   left: 0;
-  border-radius: 10px;
-  background: rgba(245, 158, 11, 0.18);
+  border-radius: 12px;
+  background: linear-gradient(135deg, rgba(245, 158, 11, 0.16), rgba(245, 158, 11, 0.08));
   box-shadow:
-    inset 1.5px 1.5px 1px -1px rgba(255, 255, 255, 0.55),
-    inset -1.5px -1.5px 1px -1px rgba(255, 255, 255, 0.18),
-    inset 0 0 0 1px rgba(245, 158, 11, 0.28);
+    inset 1.5px 1.5px 2px -1px rgba(255, 255, 255, 0.35),
+    inset -1.5px -1.5px 2px -1px rgba(255, 255, 255, 0.08),
+    inset 0 -8px 16px -10px rgba(245, 158, 11, 0.25);
   opacity: 0;
   pointer-events: none;
   transition:
@@ -549,8 +549,7 @@ const visiblePages = computed(() => {
   align-items: center;
   justify-content: space-between;
   gap: 12px;
-  padding: 11px 14px;
-  border-radius: 10px;
+  padding: 12px 14px;
   font-size: 0.9rem;
   color: $color-ink;
   cursor: pointer;
