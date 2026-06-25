@@ -73,10 +73,10 @@
             </div>
           </li>
           <li>
-            <a href="#" @pointerenter="moveBlob($event)">Ścieżki</a>
+            <router-link :to="{ name: 'PathsList' }" :class="{ 'force-active': isPathsRoute }" @pointerenter="moveBlob($event)">Ścieżki</router-link>
           </li>
           <li>
-            <a href="#" @pointerenter="moveBlob($event)">Dla firm</a>
+            <router-link :to="{ name: 'Business' }" :class="{ 'force-active': isBusinessRoute }" @pointerenter="moveBlob($event)">Dla firm</router-link>
           </li>
           <li v-if="authStore.isInstructor">
             <router-link :to="{ name: 'InstructorDashboard' }" @pointerenter="moveBlob($event)">Panel</router-link>
@@ -182,6 +182,9 @@ const isCatalogRoute = computed(() => {
   const path = route.path
   return path === '/courses' || path.startsWith('/categories/') || path.startsWith('/technologies/') || /^\/courses\/[^/]+$/.test(path)
 })
+
+const isPathsRoute = computed(() => route.path === '/paths' || route.path.startsWith('/paths/'))
+const isBusinessRoute = computed(() => route.path === '/business')
 
 const { data: categories } = useQuery<CategoryDto[]>({
   queryKey: ['categories'],

@@ -19,6 +19,10 @@ public class ApplicationDbContext : IdentityDbContext<ApplicationUser, IdentityR
     public DbSet<Enrollment> Enrollments => Set<Enrollment>();
     public DbSet<LessonProgress> LessonProgresses => Set<LessonProgress>();
     public DbSet<Review> Reviews => Set<Review>();
+    public DbSet<LearningPath> LearningPaths => Set<LearningPath>();
+    public DbSet<LearningPathCourse> LearningPathCourses => Set<LearningPathCourse>();
+    public DbSet<BusinessPlan> BusinessPlans => Set<BusinessPlan>();
+    public DbSet<BusinessPlanFeature> BusinessPlanFeatures => Set<BusinessPlanFeature>();
 
     protected override void OnModelCreating(ModelBuilder builder)
     {

@@ -14,6 +14,8 @@ public static class ApplicationDbContextSeed
         await SeedCategoriesAsync(context);
         await SeedTechnologiesAsync(context);
         await SeedCoursesAsync(context, userManager);
+        await SeedLearningPathsAsync(context);
+        await SeedBusinessPlansAsync(context);
     }
 
     private static async Task SeedRolesAsync(RoleManager<IdentityRole<Guid>> roleManager)
@@ -185,6 +187,163 @@ public static class ApplicationDbContextSeed
         };
 
         context.Courses.AddRange(course1, course2);
+        await context.SaveChangesAsync();
+    }
+
+    private static async Task SeedLearningPathsAsync(ApplicationDbContext context)
+    {
+        if (await context.LearningPaths.AnyAsync()) return;
+
+        var courses = await context.Courses.ToListAsync();
+        var vueCourse = courses.FirstOrDefault(c => c.Title == "Introduction to Vue 3");
+        var dotnetCourse = courses.FirstOrDefault(c => c.Title == "Advanced .NET 9 Web API");
+        if (vueCourse == null || dotnetCourse == null) return;
+
+        var backendPath = new LearningPath
+        {
+            Id = Guid.NewGuid(),
+            Title = "Backend Developer",
+            Slug = "backend-developer",
+            ShortDescription = "Zostań backend developerem — od podstaw API do zaawansowanych wzorców w .NET.",
+            Description = "Kompleksowa ścieżka dla osób, które chcą budować solidne systemy serwerowe. Nauczysz się projektować REST API, pracować z bazami danych, stosować wzorce CQRS i Clean Architecture w ekosystemie .NET 9.",
+            DifficultyLevel = PathDifficultyLevel.Intermediate,
+            EstimatedHours = 60,
+            ThumbnailUrl = "https://placeholder.local/paths/backend-developer.jpg",
+            DisplayOrder = 1,
+            IsPublished = true,
+            CreatedAt = DateTime.UtcNow,
+            PathCourses = new List<LearningPathCourse>
+            {
+                new() { Id = Guid.NewGuid(), CourseId = dotnetCourse.Id, Order = 1, IsOptional = false }
+            }
+        };
+
+        var frontendPath = new LearningPath
+        {
+            Id = Guid.NewGuid(),
+            Title = "Frontend Developer",
+            Slug = "frontend-developer",
+            ShortDescription = "Naucz się budować nowoczesne interfejsy webowe w Vue 3.",
+            Description = "Ścieżka dla osób stawiających pierwsze kroki w frontendzie. Composition API, TypeScript, zarządzanie stanem i testowanie — wszystko w jednym kursie.",
+            DifficultyLevel = PathDifficultyLevel.Beginner,
+            EstimatedHours = 40,
+            ThumbnailUrl = "https://placeholder.local/paths/frontend-developer.jpg",
+            DisplayOrder = 2,
+            IsPublished = true,
+            CreatedAt = DateTime.UtcNow,
+            PathCourses = new List<LearningPathCourse>
+            {
+                new() { Id = Guid.NewGuid(), CourseId = vueCourse.Id, Order = 1, IsOptional = false }
+            }
+        };
+
+        var fullstackPath = new LearningPath
+        {
+            Id = Guid.NewGuid(),
+            Title = "Full-Stack Web Developer",
+            Slug = "full-stack-web-developer",
+            ShortDescription = "Połącz frontend i backend — kompletna ścieżka od interfejsu po API.",
+            Description = "Dla tych, którzy chcą rozumieć całość stosu technologicznego. Zaczynasz od interfejsu użytkownika w Vue 3, a następnie budujesz solidne API w .NET 9. Na końcu wiesz, jak spiąć obie warstwy w działający produkt.",
+            DifficultyLevel = PathDifficultyLevel.Advanced,
+            EstimatedHours = 100,
+            ThumbnailUrl = "https://placeholder.local/paths/fullstack-developer.jpg",
+            DisplayOrder = 3,
+            IsPublished = true,
+            CreatedAt = DateTime.UtcNow,
+            PathCourses = new List<LearningPathCourse>
+            {
+                new() { Id = Guid.NewGuid(), CourseId = vueCourse.Id, Order = 1, IsOptional = false },
+                new() { Id = Guid.NewGuid(), CourseId = dotnetCourse.Id, Order = 2, IsOptional = false }
+            }
+        };
+
+        context.LearningPaths.AddRange(backendPath, frontendPath, fullstackPath);
+        await context.SaveChangesAsync();
+    }
+
+    private static async Task SeedBusinessPlansAsync(ApplicationDbContext context)
+    {
+        if (await context.BusinessPlans.AnyAsync()) return;
+
+        var starter = new BusinessPlan
+        {
+            Id = Guid.NewGuid(),
+            Name = "Starter",
+            Slug = "starter",
+            ShortDescription = "Idealny na start — dostęp do biblioteki kursów dla jednego pracownika.",
+            Price = 0m,
+            Currency = "PLN",
+            BillingPeriod = BillingPeriod.Monthly,
+            PriceLabel = "Bezpłatny",
+            CallToActionText = "Rozpocznij",
+            CallToActionUrl = "/register",
+            IsFeatured = false,
+            DisplayOrder = 1,
+            IsPublished = true,
+            CreatedAt = DateTime.UtcNow
+        };
+
+        var team = new BusinessPlan
+        {
+            Id = Guid.NewGuid(),
+            Name = "Team",
+            Slug = "team",
+            ShortDescription = "Dla małych zespołów — zarządzanie użytkownikami i raportowanie postępów.",
+            Price = 99m,
+            Currency = "PLN",
+            BillingPeriod = BillingPeriod.Monthly,
+            PriceLabel = null,
+            CallToActionText = "Skontaktuj się z nami",
+            CallToActionUrl = "/business/contact?plan=team",
+            IsFeatured = true,
+            DisplayOrder = 2,
+            IsPublished = true,
+            CreatedAt = DateTime.UtcNow
+        };
+
+        var enterprise = new BusinessPlan
+        {
+            Id = Guid.NewGuid(),
+            Name = "Enterprise",
+            Slug = "enterprise",
+            ShortDescription = "Dla dużych organizacji — indywidualne warunki, dedykowany opiekun, integracje SSO.",
+            Price = null,
+            Currency = null,
+            BillingPeriod = null,
+            PriceLabel = "Cena indywidualna",
+            CallToActionText = "Porozmawiajmy",
+            CallToActionUrl = "/business/contact?plan=enterprise",
+            IsFeatured = false,
+            DisplayOrder = 3,
+            IsPublished = true,
+            CreatedAt = DateTime.UtcNow
+        };
+
+        starter.Features = new List<BusinessPlanFeature>
+        {
+            new() { Id = Guid.NewGuid(), Text = "Dostęp do wybranych kursów", DisplayOrder = 1 },
+            new() { Id = Guid.NewGuid(), Text = "1 miejsce dla pracownika", DisplayOrder = 2 },
+            new() { Id = Guid.NewGuid(), Text = "Certyfikaty ukończenia", DisplayOrder = 3 }
+        };
+
+        team.Features = new List<BusinessPlanFeature>
+        {
+            new() { Id = Guid.NewGuid(), Text = "Pełen dostęp do biblioteki kursów", DisplayOrder = 1 },
+            new() { Id = Guid.NewGuid(), Text = "Do 25 miejsc w zespole", DisplayOrder = 2 },
+            new() { Id = Guid.NewGuid(), Text = "Panel postępów i raportowanie", DisplayOrder = 3 },
+            new() { Id = Guid.NewGuid(), Text = "Priorytetowe wsparcie", DisplayOrder = 4 }
+        };
+
+        enterprise.Features = new List<BusinessPlanFeature>
+        {
+            new() { Id = Guid.NewGuid(), Text = "Nieograniczone miejsca", DisplayOrder = 1 },
+            new() { Id = Guid.NewGuid(), Text = "SSO i integracje (SAML, SCIM)", DisplayOrder = 2 },
+            new() { Id = Guid.NewGuid(), Text = "Dedykowany opiekun klienta", DisplayOrder = 3 },
+            new() { Id = Guid.NewGuid(), Text = "Własne ścieżki szkoleniowe", DisplayOrder = 4 },
+            new() { Id = Guid.NewGuid(), Text = "SLA i umowy powierzenia danych", DisplayOrder = 5 }
+        };
+
+        context.BusinessPlans.AddRange(starter, team, enterprise);
         await context.SaveChangesAsync();
     }
 }

@@ -14,7 +14,10 @@ const routes: RouteRecordRaw[] = [
       { path: 'categories', component: () => import('@/features/courses/pages/CategoriesListPage.vue'), name: 'CategoriesList' },
       { path: 'categories/:slug', component: () => import('@/features/courses/pages/CategoryPage.vue'), name: 'CategoryDetails', props: true },
       { path: 'technologies', component: () => import('@/features/courses/pages/TechnologiesListPage.vue'), name: 'TechnologiesList' },
-      { path: 'technologies/:slug', component: () => import('@/features/courses/pages/TechnologyPage.vue'), name: 'TechnologyDetails', props: true }
+      { path: 'technologies/:slug', component: () => import('@/features/courses/pages/TechnologyPage.vue'), name: 'TechnologyDetails', props: true },
+      { path: 'paths', component: () => import('@/features/learning-paths/pages/PathsListPage.vue'), name: 'PathsList' },
+      { path: 'paths/:slug', component: () => import('@/features/learning-paths/pages/PathDetailsPage.vue'), name: 'PathDetails', props: true },
+      { path: 'business', component: () => import('@/features/business/pages/BusinessPage.vue'), name: 'Business' }
     ]
   },
   {
