@@ -26,8 +26,41 @@
           <li>
             <router-link :to="{ name: 'Home' }" @pointerenter="moveBlob($event)">Strona główna</router-link>
           </li>
-          <li>
-            <router-link :to="{ name: 'Courses' }" @pointerenter="moveBlob($event)">Katalog</router-link>
+          <li class="dropdown-root" @pointerenter="openCatalog" @pointerleave="closeCatalog">
+            <span class="nav-link" :class="{ active: catalogOpen }">Katalog</span>
+            <div v-show="catalogOpen" class="mega-dropdown" @pointerenter="onCatalogEnter" @pointerleave="closeCatalog">
+              <div class="mega-dropdown-inner">
+                <div class="mega-sections">
+                  <div
+                    class="mega-section"
+                    :class="{ active: activeSection === 'categories' }"
+                    @pointerenter="activeSection = 'categories'"
+                  >
+                    <span>Kategorie</span>
+                  </div>
+                  <div
+                    class="mega-section"
+                    :class="{ active: activeSection === 'technologies' }"
+                    @pointerenter="activeSection = 'technologies'"
+                  >
+                    <span>Technologie</span>
+                  </div>
+                </div>
+                <div class="mega-items">
+                  <div class="mega-items-grid">
+                    <router-link
+                      v-for="item in activeItems"
+                      :key="item.id"
+                      class="mega-item"
+                      :to="itemLink(item)"
+                      @click="catalogOpen = false"
+                    >
+                      {{ item.name }}
+                    </router-link>
+                  </div>
+                </div>
+              </div>
+            </div>
           </li>
           <li>
             <a href="#" @pointerenter="moveBlob($event)">Ścieżki</a>
@@ -61,9 +94,12 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, onUnmounted, nextTick } from 'vue'
+import { ref, onMounted, onUnmounted, nextTick, computed } from 'vue'
 import { useAuth } from '@/features/auth/composables/useAuth'
 import { useAuthStore } from '@/features/auth/stores/auth.store'
+import { useQuery } from '@tanstack/vue-query'
+import { getCategories, getTechnologies } from '@/features/courses/api/courses.api'
+import type { CategoryDto, TechnologyDto } from '@/features/courses/api/courses.api'
 
 const authStore = useAuthStore()
 const { logout } = useAuth()
@@ -72,6 +108,56 @@ const isScrolled = ref(false)
 const listEl = ref<HTMLElement | null>(null)
 const blobEl = ref<HTMLElement | null>(null)
 const navEl = ref<HTMLElement | null>(null)
+
+const catalogOpen = ref(false)
+const activeSection = ref<'categories' | 'technologies'>('categories')
+let catalogCloseTimer: ReturnType<typeof setTimeout> | null = null
+
+const { data: categories } = useQuery<CategoryDto[]>({
+  queryKey: ['categories'],
+  queryFn: getCategories,
+  initialData: []
+})
+
+const { data: technologies } = useQuery<TechnologyDto[]>({
+  queryKey: ['technologies'],
+  queryFn: getTechnologies,
+  initialData: []
+})
+
+const activeItems = computed(() => {
+  if (activeSection.value === 'technologies') return technologies.value
+  return categories.value
+})
+
+function openCatalog() {
+  if (catalogCloseTimer) {
+    clearTimeout(catalogCloseTimer)
+    catalogCloseTimer = null
+  }
+  catalogOpen.value = true
+}
+
+function closeCatalog() {
+  catalogCloseTimer = setTimeout(() => {
+    catalogOpen.value = false
+  }, 150)
+}
+
+function onCatalogEnter() {
+  if (catalogCloseTimer) {
+    clearTimeout(catalogCloseTimer)
+    catalogCloseTimer = null
+  }
+}
+
+function itemLink(item: CategoryDto | TechnologyDto) {
+  const isTech = activeSection.value === 'technologies'
+  return {
+    name: 'Courses',
+    query: isTech ? { technologyIds: item.id } : { categoryIds: item.id }
+  }
+}
 
 const onScroll = () => {
   isScrolled.value = window.scrollY > 24
@@ -246,6 +332,111 @@ onUnmounted(() => {
 
   .logo span {
     display: none;
+  }
+}
+
+.dropdown-root {
+  position: relative;
+}
+
+.nav-link {
+  position: relative;
+  z-index: 2;
+  display: block;
+  padding: 9px 14px;
+  border-radius: 999px;
+  font-size: 0.88rem;
+  font-weight: 500;
+  color: $color-muted;
+  transition: color 0.25s;
+  white-space: nowrap;
+  cursor: pointer;
+
+  &:hover,
+  &.active {
+    color: $color-ink;
+  }
+}
+
+.mega-dropdown {
+  @include liquid-glass;
+  --lg-r: 20px;
+  --lg-blur: 0px;
+  --lg-tint: rgba(17, 24, 39, 0.55);
+  position: absolute;
+  top: calc(100% + 8px);
+  left: 50%;
+  transform: translateX(-50%);
+  min-width: 560px;
+  padding: 8px;
+  z-index: 50;
+  box-shadow:
+    0 24px 60px rgba(3, 6, 24, 0.55),
+    0 4px 14px rgba(3, 6, 24, 0.35),
+    inset 0 1px 1px rgba(255, 255, 255, 0.18),
+    inset 0 0 0 1px rgba(255, 255, 255, 0.1);
+}
+
+.mega-dropdown-inner {
+  display: flex;
+  border-radius: 14px;
+  overflow: hidden;
+}
+
+.mega-sections {
+  width: 160px;
+  flex-shrink: 0;
+  border-right: 1px solid rgba(255, 255, 255, 0.08);
+  padding: 8px 0;
+}
+
+.mega-section {
+  padding: 10px 16px;
+  font-size: 0.9rem;
+  font-weight: 500;
+  color: $color-muted;
+  cursor: pointer;
+  transition: color 0.2s, background 0.2s;
+  border-radius: 10px;
+  margin: 0 6px;
+
+  &:hover,
+  &.active {
+    color: $color-ink;
+    background: rgba(255, 255, 255, 0.06);
+  }
+
+  &.active {
+    font-weight: 600;
+  }
+}
+
+.mega-items {
+  flex: 1;
+  padding: 16px 20px;
+  min-height: 200px;
+}
+
+.mega-items-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px 16px;
+}
+
+.mega-item {
+  display: block;
+  padding: 8px 12px;
+  border-radius: 10px;
+  font-size: 0.85rem;
+  font-weight: 500;
+  color: $color-muted;
+  transition: color 0.2s, background 0.2s;
+  text-decoration: none;
+  white-space: nowrap;
+
+  &:hover {
+    color: $color-ink;
+    background: rgba(255, 255, 255, 0.06);
   }
 }
 </style>
