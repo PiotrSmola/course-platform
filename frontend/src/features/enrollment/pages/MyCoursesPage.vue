@@ -25,9 +25,10 @@
               <span>{{ e.completedLessons }} / {{ e.totalLessons }} lekcji</span>
               <span class="progress-pct">{{ Math.round(e.progressPercentage) }}%</span>
             </div>
-            <router-link class="btn btn-primary continue-btn" :to="{ name: 'Learning', params: { courseId: e.courseId, lessonId: 'first' } }">
+            <router-link v-if="e.firstLessonId" class="btn btn-primary continue-btn" :to="{ name: 'Learning', params: { courseId: e.courseId, lessonId: e.firstLessonId } }">
               Kontynuuj
             </router-link>
+            <button v-else class="btn btn-primary continue-btn" disabled>Brak lekcji</button>
           </div>
         </div>
       </div>
