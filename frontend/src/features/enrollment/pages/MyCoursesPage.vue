@@ -6,10 +6,15 @@
         <h2>Twoja nauka</h2>
       </div>
 
-      <div v-if="enrollments.isLoading" class="loading">Ładowanie...</div>
-      <div v-else-if="enrollments.error" class="error">Błąd</div>
-      <div v-else-if="enrollments.data && Array.isArray(enrollments.data)" class="courses-grid">
-        <div v-for="e in enrollments.data" :key="e.id" class="course-card glass-card">
+      <div v-if="!authStore.token" class="empty">Zaloguj się, aby zobaczyć swoje kursy.</div>
+      <div v-else-if="isLoading" class="loading">Ładowanie...</div>
+      <div v-else-if="error" class="error">Nie udało się załadować kursów</div>
+      <div v-else-if="enrollments.length === 0" class="empty">
+        Nie masz jeszcze żadnych kursów. Sprawdź
+        <router-link :to="{ name: 'Courses' }">katalog</router-link>.
+      </div>
+      <div v-else class="courses-grid">
+        <div v-for="e in enrollments" :key="e.id" class="course-card glass-card">
           <div class="course-thumb" :style="{ backgroundImage: `url(${e.courseThumbnailUrl})` }"></div>
           <div class="course-info">
             <h3>{{ e.courseTitle }}</h3>
@@ -31,9 +36,36 @@
 </template>
 
 <script setup lang="ts">
-import { useEnrollments } from '@/features/enrollment/composables/useEnrollment'
+import { ref, onMounted, watch } from 'vue'
+import { useAuthStore } from '@/features/auth/stores/auth.store'
+import { getMyEnrollments } from '@/features/enrollment/api/enrollment.api'
+import type { EnrollmentDto } from '@/features/enrollment/types/enrollment.types'
 
-const enrollments = useEnrollments()
+const authStore = useAuthStore()
+const enrollments = ref<EnrollmentDto[]>([])
+const isLoading = ref(false)
+const error = ref<unknown>(null)
+
+async function load() {
+  isLoading.value = true
+  error.value = null
+  try {
+    enrollments.value = await getMyEnrollments()
+  } catch (e) {
+    error.value = e
+  } finally {
+    isLoading.value = false
+  }
+}
+
+onMounted(() => {
+  if (authStore.token) load()
+})
+
+watch(() => authStore.token, (token) => {
+  if (token) load()
+  else enrollments.value = []
+})
 </script>
 
 <style lang="scss" scoped>
@@ -104,9 +136,20 @@ const enrollments = useEnrollments()
 }
 
 .loading,
-.error {
+.error,
+.empty {
   text-align: center;
   padding: 60px;
   color: $color-muted;
+}
+
+.empty a {
+  color: $color-gold;
+  text-decoration: none;
+  font-weight: 600;
+}
+
+.empty a:hover {
+  text-decoration: underline;
 }
 </style>
