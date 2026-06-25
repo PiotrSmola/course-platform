@@ -5,6 +5,9 @@ export interface CoursesFilter {
   searchTerm?: string
   level?: CourseLevel
   status?: CourseStatus
+  sortBy?: string
+  minPrice?: number
+  maxPrice?: number
   pageNumber?: number
   pageSize?: number
 }
@@ -14,6 +17,9 @@ export async function getCourses(filter: CoursesFilter = {}): Promise<CoursesVm>
   if (filter.searchTerm) params.append('searchTerm', filter.searchTerm)
   if (filter.level !== undefined) params.append('level', filter.level.toString())
   if (filter.status !== undefined) params.append('status', filter.status.toString())
+  if (filter.sortBy) params.append('sortBy', filter.sortBy)
+  if (filter.minPrice !== undefined) params.append('minPrice', filter.minPrice.toString())
+  if (filter.maxPrice !== undefined) params.append('maxPrice', filter.maxPrice.toString())
   if (filter.pageNumber !== undefined) params.append('pageNumber', filter.pageNumber.toString())
   if (filter.pageSize !== undefined) params.append('pageSize', filter.pageSize.toString())
   

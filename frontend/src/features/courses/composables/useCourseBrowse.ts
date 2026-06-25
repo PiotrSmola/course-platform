@@ -88,6 +88,9 @@ export function useCourseBrowse() {
     searchTerm: state.searchTerm || undefined,
     level: state.level ?? undefined,
     status: state.status ?? undefined,
+    sortBy: state.sortBy,
+    minPrice: state.minPrice ?? undefined,
+    maxPrice: state.maxPrice ?? undefined,
     pageNumber: state.pageNumber,
     pageSize: state.pageSize
   }))
@@ -97,39 +100,8 @@ export function useCourseBrowse() {
     queryFn: () => getCourses(filter.value)
   })
 
-  const sortedItems = computed<CourseListDto[]>(() => {
-    if (!data.value) return []
-    const items = [...data.value.items]
-
-    switch (state.sortBy) {
-      case 'price-asc':
-        items.sort((a, b) => a.price - b.price)
-        break
-      case 'price-desc':
-        items.sort((a, b) => b.price - a.price)
-        break
-      case 'rating':
-        items.sort((a, b) => b.averageRating - a.averageRating)
-        break
-      case 'popular':
-        items.sort((a, b) => b.reviewCount - a.reviewCount)
-        break
-      default:
-        break
-    }
-
-    return items
-  })
-
   const filteredItems = computed<CourseListDto[]>(() => {
-    let items = sortedItems.value
-    if (state.minPrice !== null) {
-      items = items.filter((c) => c.price >= state.minPrice!)
-    }
-    if (state.maxPrice !== null) {
-      items = items.filter((c) => c.price <= state.maxPrice!)
-    }
-    return items
+    return data.value?.items ?? []
   })
 
   const totalCount = computed(() => data.value?.totalCount ?? 0)

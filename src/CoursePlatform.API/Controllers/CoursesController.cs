@@ -26,10 +26,13 @@ public class CoursesController : ControllerBase
         [FromQuery] string? searchTerm,
         [FromQuery] CourseLevel? level,
         [FromQuery] CourseStatus? status,
+        [FromQuery] string? sortBy,
+        [FromQuery] decimal? minPrice,
+        [FromQuery] decimal? maxPrice,
         [FromQuery] int pageNumber = 1,
         [FromQuery] int pageSize = 10)
     {
-        var result = await _mediator.Send(new GetCoursesQuery(searchTerm, level, status, pageNumber, pageSize));
+        var result = await _mediator.Send(new GetCoursesQuery(searchTerm, level, status, sortBy, minPrice, maxPrice, pageNumber, pageSize));
         return Ok(result);
     }
 

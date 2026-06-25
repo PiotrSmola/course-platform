@@ -9,6 +9,9 @@ public record GetCoursesQuery(
     string? SearchTerm,
     CourseLevel? Level,
     CourseStatus? Status,
+    string? SortBy,
+    decimal? MinPrice,
+    decimal? MaxPrice,
     int PageNumber = 1,
     int PageSize = 10) : IRequest<CoursesVm>;
 
@@ -50,10 +53,28 @@ public class GetCoursesQueryHandler : IRequestHandler<GetCoursesQuery, CoursesVm
             query = query.Where(c => c.Status == CourseStatus.Published);
         }
 
+        if (request.MinPrice.HasValue)
+        {
+            query = query.Where(c => c.Price >= request.MinPrice.Value);
+        }
+
+        if (request.MaxPrice.HasValue)
+        {
+            query = query.Where(c => c.Price <= request.MaxPrice.Value);
+        }
+
         var totalCount = await query.CountAsync(cancellationToken);
 
+        query = request.SortBy switch
+        {
+            "price-asc" => query.OrderBy(c => c.Price),
+            "price-desc" => query.OrderByDescending(c => c.Price),
+            "rating" => query.OrderByDescending(c => c.Reviews.Any() ? c.Reviews.Average(r => r.Rating) : 0),
+            "popular" => query.OrderByDescending(c => c.Reviews.Count),
+            _ => query.OrderByDescending(c => c.CreatedAt)
+        };
+
         var courses = await query
-            .OrderByDescending(c => c.CreatedAt)
             .Skip((request.PageNumber - 1) * request.PageSize)
             .Take(request.PageSize)
             .ToListAsync(cancellationToken);
