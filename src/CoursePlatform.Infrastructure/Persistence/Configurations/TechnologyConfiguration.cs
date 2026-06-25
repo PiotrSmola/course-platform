@@ -18,6 +18,9 @@ public class TechnologyConfiguration : IEntityTypeConfiguration<Technology>
             .IsRequired()
             .HasMaxLength(100);
 
+        builder.Property(t => t.Description)
+            .HasMaxLength(1000);
+
         builder.HasIndex(t => t.Slug).IsUnique();
     }
 }

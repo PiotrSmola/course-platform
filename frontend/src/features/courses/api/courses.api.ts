@@ -83,12 +83,14 @@ export interface CategoryDto {
   id: string
   name: string
   slug: string
+  description: string | null
 }
 
 export interface TechnologyDto {
   id: string
   name: string
   slug: string
+  description: string | null
 }
 
 export async function getCategories(): Promise<CategoryDto[]> {

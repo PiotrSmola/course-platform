@@ -61,41 +61,77 @@ public static class ApplicationDbContextSeed
 
     private static async Task SeedCategoriesAsync(ApplicationDbContext context)
     {
-        if (await context.Categories.AnyAsync()) return;
-
-        var categories = new[]
+        var categoryData = new (string Name, string Slug, string Description)[]
         {
-            new Category { Id = Guid.NewGuid(), Name = "Backend", Slug = "backend", CreatedAt = DateTime.UtcNow },
-            new Category { Id = Guid.NewGuid(), Name = "Frontend", Slug = "frontend", CreatedAt = DateTime.UtcNow },
-            new Category { Id = Guid.NewGuid(), Name = "AI", Slug = "ai", CreatedAt = DateTime.UtcNow },
-            new Category { Id = Guid.NewGuid(), Name = "Databases", Slug = "databases", CreatedAt = DateTime.UtcNow },
-            new Category { Id = Guid.NewGuid(), Name = "DevOps", Slug = "devops", CreatedAt = DateTime.UtcNow },
-            new Category { Id = Guid.NewGuid(), Name = "Mobile", Slug = "mobile", CreatedAt = DateTime.UtcNow }
+            ("Backend", "backend", "Kursy tworzenia API, mikroserwisów, architektur systemowych i wzorców projektowych po stronie serwera."),
+            ("Frontend", "frontend", "Tworzenie nowoczesnych interfejsów webowych, frameworki SPA, dostępność i animacje."),
+            ("AI", "ai", "Sztuczna inteligencja, uczenie maszynowe, LLM, przetwarzanie języka naturalnego i wizja komputerowa."),
+            ("Databases", "databases", "Bazy relacyjne i NoSQL, modelowanie danych, optymalizacja zapytań i skalowanie."),
+            ("DevOps", "devops", "CI/CD, konteneryzacja, orkiestracja, infrastruktura jako kod i monitoring produkcyjny."),
+            ("Mobile", "mobile", "Tworzenie aplikacji na iOS i Androida, React Native, Flutter oraz natywne SDK.")
         };
 
-        context.Categories.AddRange(categories);
+        var existing = await context.Categories.ToListAsync();
+        foreach (var (name, slug, description) in categoryData)
+        {
+            var cat = existing.FirstOrDefault(c => c.Slug == slug);
+            if (cat == null)
+            {
+                context.Categories.Add(new Category
+                {
+                    Id = Guid.NewGuid(),
+                    Name = name,
+                    Slug = slug,
+                    Description = description,
+                    CreatedAt = DateTime.UtcNow
+                });
+            }
+            else if (string.IsNullOrEmpty(cat.Description))
+            {
+                cat.Description = description;
+            }
+        }
+
         await context.SaveChangesAsync();
     }
 
     private static async Task SeedTechnologiesAsync(ApplicationDbContext context)
     {
-        if (await context.Technologies.AnyAsync()) return;
-
-        var technologies = new[]
+        var techData = new (string Name, string Slug, string Description)[]
         {
-            new Technology { Id = Guid.NewGuid(), Name = ".NET", Slug = "dotnet", CreatedAt = DateTime.UtcNow },
-            new Technology { Id = Guid.NewGuid(), Name = "Laravel", Slug = "laravel", CreatedAt = DateTime.UtcNow },
-            new Technology { Id = Guid.NewGuid(), Name = "Python", Slug = "python", CreatedAt = DateTime.UtcNow },
-            new Technology { Id = Guid.NewGuid(), Name = "React", Slug = "react", CreatedAt = DateTime.UtcNow },
-            new Technology { Id = Guid.NewGuid(), Name = "Vue", Slug = "vue", CreatedAt = DateTime.UtcNow },
-            new Technology { Id = Guid.NewGuid(), Name = "Angular", Slug = "angular", CreatedAt = DateTime.UtcNow },
-            new Technology { Id = Guid.NewGuid(), Name = "SQL", Slug = "sql", CreatedAt = DateTime.UtcNow },
-            new Technology { Id = Guid.NewGuid(), Name = "MongoDB", Slug = "mongodb", CreatedAt = DateTime.UtcNow },
-            new Technology { Id = Guid.NewGuid(), Name = "Docker", Slug = "docker", CreatedAt = DateTime.UtcNow },
-            new Technology { Id = Guid.NewGuid(), Name = "AWS", Slug = "aws", CreatedAt = DateTime.UtcNow }
+            (".NET", "dotnet", "Platforma .NET od podstaw do zaawansowanych wzorców: ASP.NET Core, EF Core, Blazor."),
+            ("Laravel", "laravel", "Framework PHP do szybkiego budowania aplikacji webowych i API."),
+            ("Python", "python", "Język Python w analizie danych, automatyzacji, AI i tworzeniu API."),
+            ("React", "react", "Biblioteka React, JSX, hooki, server components i ekosystem."),
+            ("Vue", "vue", "Framework Vue 3 z Composition API, Pinia, Vue Router i testowaniem."),
+            ("Angular", "angular", "Platforma Angular, RxJS, NgRx i architektura enterprise."),
+            ("SQL", "sql", "Język SQL, relacyjne bazy danych i zaawansowane zapytania."),
+            ("MongoDB", "mongodb", "Dokumentowa baza NoSQL, agregacje i modelowanie danych."),
+            ("Docker", "docker", "Konteneryzacja aplikacji, Dockerfile, Compose i wielostopniowe buildy."),
+            ("AWS", "aws", "Amazon Web Services: EC2, S3, Lambda, RDS i architektura chmurowa.")
         };
 
-        context.Technologies.AddRange(technologies);
+        var existing = await context.Technologies.ToListAsync();
+        foreach (var (name, slug, description) in techData)
+        {
+            var tech = existing.FirstOrDefault(t => t.Slug == slug);
+            if (tech == null)
+            {
+                context.Technologies.Add(new Technology
+                {
+                    Id = Guid.NewGuid(),
+                    Name = name,
+                    Slug = slug,
+                    Description = description,
+                    CreatedAt = DateTime.UtcNow
+                });
+            }
+            else if (string.IsNullOrEmpty(tech.Description))
+            {
+                tech.Description = description;
+            }
+        }
+
         await context.SaveChangesAsync();
     }
 

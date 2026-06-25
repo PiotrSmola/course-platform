@@ -27,24 +27,31 @@
             <router-link :to="{ name: 'Home' }" @pointerenter="moveBlob($event)">Strona główna</router-link>
           </li>
           <li class="dropdown-root" @pointerenter="openCatalog" @pointerleave="closeCatalog">
-            <span class="nav-link" :class="{ active: catalogOpen }" @pointerenter="moveBlob($event)">Katalog</span>
+            <router-link class="nav-link" :class="{ 'force-active': isCatalogRoute }" :to="{ name: 'Courses' }" @pointerenter="moveBlob($event)">Katalog</router-link>
             <div v-show="catalogOpen" class="mega-dropdown" @pointerenter="onCatalogEnter" @pointerleave="closeCatalog">
               <div class="mega-dropdown-inner">
                 <div class="mega-sections">
-                  <div
+                  <span ref="megaSectionBlobEl" class="mega-section-blob" aria-hidden="true"></span>
+                  <router-link
                     class="mega-section"
                     :class="{ active: activeSection === 'categories' }"
-                    @pointerenter="activeSection = 'categories'"
+                    :to="{ name: 'CategoriesList' }"
+                    @pointerenter="activeSection = 'categories'; moveMegaSectionBlob($event)"
+                    @pointerleave="hideMegaSectionBlob"
+                    @click="catalogOpen = false"
                   >
                     <span>Kategorie</span>
-                  </div>
-                  <div
+                  </router-link>
+                  <router-link
                     class="mega-section"
                     :class="{ active: activeSection === 'technologies' }"
-                    @pointerenter="activeSection = 'technologies'"
+                    :to="{ name: 'TechnologiesList' }"
+                    @pointerenter="activeSection = 'technologies'; moveMegaSectionBlob($event)"
+                    @pointerleave="hideMegaSectionBlob"
+                    @click="catalogOpen = false"
                   >
                     <span>Technologie</span>
-                  </div>
+                  </router-link>
                 </div>
                 <div class="mega-items">
                   <span ref="megaBlobEl" class="mega-blob" aria-hidden="true"></span>
@@ -80,6 +87,50 @@
         </ul>
       </nav>
 
+      <div class="search-root">
+        <button class="search-trigger" :class="{ open: searchOpen }" @click="toggleSearch" aria-label="Szukaj">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+        </button>
+        <div v-show="searchOpen" class="search-dropdown" ref="searchDropdownRef">
+          <div class="search-dropdown-inner">
+            <div class="search-input-wrap">
+              <input
+                ref="searchInputRef"
+                v-model="searchQuery"
+                type="text"
+                placeholder="Szukaj kursów, kategorii, technologii..."
+                class="search-input"
+              />
+              <svg class="search-input-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+            </div>
+            <div class="search-results">
+              <div v-if="!debouncedQuery" class="search-placeholder">
+                Wpisz nazwę kursu, kategorii lub technologii...
+              </div>
+              <div v-else-if="isSearchLoading" class="search-loading">
+                <div class="spinner-sm" />
+                <span>Szukam...</span>
+              </div>
+              <div v-else-if="searchResults?.items.length === 0" class="search-empty">
+                Nie znaleziono kursów dla „{{ debouncedQuery }}”
+              </div>
+              <div v-else class="search-results-list">
+                <router-link
+                  v-for="course in searchResults?.items"
+                  :key="course.id"
+                  class="search-result-item"
+                  :to="{ name: 'CourseDetails', params: { id: course.id } }"
+                  @click="searchOpen = false"
+                >
+                  <span class="search-result-title">{{ course.title }}</span>
+                  <span class="search-result-meta">{{ course.instructorName }} · {{ course.averageRating.toFixed(1) }} ★</span>
+                </router-link>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
       <div class="nav-actions">
         <template v-if="!authStore.isAuthenticated">
           <router-link class="btn btn-ghost" :to="{ name: 'Login' }">Zaloguj</router-link>
@@ -102,7 +153,7 @@ import { useRoute } from 'vue-router'
 import { useAuth } from '@/features/auth/composables/useAuth'
 import { useAuthStore } from '@/features/auth/stores/auth.store'
 import { useQuery } from '@tanstack/vue-query'
-import { getCategories, getTechnologies } from '@/features/courses/api/courses.api'
+import { getCategories, getTechnologies, getCourses } from '@/features/courses/api/courses.api'
 import type { CategoryDto, TechnologyDto } from '@/features/courses/api/courses.api'
 
 const authStore = useAuthStore()
@@ -114,10 +165,23 @@ const listEl = ref<HTMLElement | null>(null)
 const blobEl = ref<HTMLElement | null>(null)
 const navEl = ref<HTMLElement | null>(null)
 const megaBlobEl = ref<HTMLElement | null>(null)
+const megaSectionBlobEl = ref<HTMLElement | null>(null)
 
 const catalogOpen = ref(false)
 const activeSection = ref<'categories' | 'technologies'>('categories')
 let catalogCloseTimer: ReturnType<typeof setTimeout> | null = null
+
+const searchOpen = ref(false)
+const searchQuery = ref('')
+const debouncedQuery = ref('')
+const searchInputRef = ref<HTMLInputElement | null>(null)
+const searchDropdownRef = ref<HTMLElement | null>(null)
+let searchTimer: ReturnType<typeof setTimeout> | null = null
+
+const isCatalogRoute = computed(() => {
+  const path = route.path
+  return path === '/courses' || path.startsWith('/categories/') || path.startsWith('/technologies/') || /^\/courses\/[^/]+$/.test(path)
+})
 
 const { data: categories } = useQuery<CategoryDto[]>({
   queryKey: ['categories'],
@@ -134,6 +198,26 @@ const { data: technologies } = useQuery<TechnologyDto[]>({
 const activeItems = computed(() => {
   if (activeSection.value === 'technologies') return technologies.value
   return categories.value
+})
+
+const { isLoading: isSearchLoading, data: searchResults } = useQuery({
+  queryKey: computed(() => ['course-search', debouncedQuery.value]),
+  queryFn: () => getCourses({ searchTerm: debouncedQuery.value, pageSize: 6 }),
+  enabled: computed(() => debouncedQuery.value.length > 0)
+})
+
+watch(searchQuery, (val) => {
+  if (searchTimer) clearTimeout(searchTimer)
+  searchTimer = setTimeout(() => {
+    debouncedQuery.value = val.trim()
+  }, 500)
+})
+
+watch(searchOpen, async (open) => {
+  if (open) {
+    await nextTick()
+    searchInputRef.value?.focus()
+  }
 })
 
 function openCatalog() {
@@ -160,8 +244,33 @@ function onCatalogEnter() {
 function itemLink(item: CategoryDto | TechnologyDto) {
   const isTech = activeSection.value === 'technologies'
   return {
-    name: 'Courses',
-    query: isTech ? { technologyIds: item.id } : { categoryIds: item.id }
+    name: isTech ? 'TechnologyDetails' : 'CategoryDetails',
+    params: { slug: item.slug }
+  }
+}
+
+function toggleSearch() {
+  searchOpen.value = !searchOpen.value
+}
+
+function closeSearch() {
+  searchOpen.value = false
+  searchQuery.value = ''
+  debouncedQuery.value = ''
+}
+
+function handleClickOutside(event: MouseEvent) {
+  if (searchOpen.value && searchDropdownRef.value && !searchDropdownRef.value.contains(event.target as Node)) {
+    const trigger = document.querySelector('.search-trigger')
+    if (trigger && !trigger.contains(event.target as Node)) {
+      closeSearch()
+    }
+  }
+  if (catalogOpen.value) {
+    const dropdownRoot = document.querySelector('.dropdown-root')
+    if (dropdownRoot && !dropdownRoot.contains(event.target as Node)) {
+      catalogOpen.value = false
+    }
   }
 }
 
@@ -187,9 +296,9 @@ function moveBlob(e: PointerEvent) {
 
 function syncBlobToActive() {
   if (!listEl.value) return
-  const activeLink = listEl.value.querySelector('.router-link-active') as HTMLElement | null
+  const activeLink = listEl.value.querySelector('.router-link-active') || listEl.value.querySelector('.force-active')
   if (activeLink) {
-    moveBlobToElement(activeLink)
+    moveBlobToElement(activeLink as HTMLElement)
   } else {
     if (blobEl.value) blobEl.value.style.opacity = '0'
   }
@@ -218,8 +327,28 @@ function hideMegaBlob() {
   megaBlobEl.value.style.opacity = '0'
 }
 
+function moveMegaSectionBlob(e: PointerEvent) {
+  if (!megaSectionBlobEl.value) return
+  const target = e.currentTarget as HTMLElement
+  const container = target.closest('.mega-sections') as HTMLElement | null
+  if (!container) return
+  const containerRect = container.getBoundingClientRect()
+  const targetRect = target.getBoundingClientRect()
+  megaSectionBlobEl.value.style.left = `${targetRect.left - containerRect.left}px`
+  megaSectionBlobEl.value.style.top = `${targetRect.top - containerRect.top}px`
+  megaSectionBlobEl.value.style.width = `${targetRect.width}px`
+  megaSectionBlobEl.value.style.height = `${targetRect.height}px`
+  megaSectionBlobEl.value.style.opacity = '1'
+}
+
+function hideMegaSectionBlob() {
+  if (!megaSectionBlobEl.value) return
+  megaSectionBlobEl.value.style.opacity = '0'
+}
+
 onMounted(async () => {
   window.addEventListener('scroll', onScroll, { passive: true })
+  document.addEventListener('mousedown', handleClickOutside)
   onScroll()
   await nextTick()
   syncBlobToActive()
@@ -228,10 +357,13 @@ onMounted(async () => {
 watch(() => route.path, async () => {
   await nextTick()
   syncBlobToActive()
+  catalogOpen.value = false
+  searchOpen.value = false
 })
 
 onUnmounted(() => {
   window.removeEventListener('scroll', onScroll)
+  document.removeEventListener('mousedown', handleClickOutside)
 })
 </script>
 
@@ -395,7 +527,8 @@ onUnmounted(() => {
   cursor: pointer;
 
   &:hover,
-  &.active {
+  &.active,
+  &.force-active {
     color: $color-ink;
   }
 }
@@ -430,27 +563,51 @@ onUnmounted(() => {
   flex-shrink: 0;
   border-right: 1px solid rgba(255, 255, 255, 0.08);
   padding: 8px 0;
+  position: relative;
 }
 
 .mega-section {
+  position: relative;
+  z-index: 1;
+  display: block;
   padding: 10px 16px;
   font-size: 0.9rem;
   font-weight: 500;
   color: $color-muted;
   cursor: pointer;
-  transition: color 0.2s, background 0.2s;
+  transition: color 0.2s;
   border-radius: 10px;
   margin: 0 6px;
+  text-decoration: none;
 
   &:hover,
   &.active {
     color: $color-ink;
-    background: rgba(255, 255, 255, 0.06);
   }
 
   &.active {
     font-weight: 600;
   }
+}
+
+.mega-section-blob {
+  position: absolute;
+  top: 0;
+  left: 0;
+  border-radius: 12px;
+  background: linear-gradient(135deg, rgba(245, 158, 11, 0.16), rgba(245, 158, 11, 0.08));
+  box-shadow:
+    inset 1.5px 1.5px 2px -1px rgba(255, 255, 255, 0.35),
+    inset -1.5px -1.5px 2px -1px rgba(255, 255, 255, 0.08),
+    inset 0 -8px 16px -10px rgba(245, 158, 11, 0.25);
+  opacity: 0;
+  pointer-events: none;
+  transition:
+    left 0.45s cubic-bezier(0.3, 1.55, 0.35, 1),
+    width 0.45s cubic-bezier(0.3, 1.55, 0.35, 1),
+    top 0.45s cubic-bezier(0.3, 1.55, 0.35, 1),
+    height 0.45s cubic-bezier(0.3, 1.55, 0.35, 1),
+    opacity 0.2s;
 }
 
 .mega-items {
@@ -502,5 +659,178 @@ onUnmounted(() => {
     top 0.45s cubic-bezier(0.3, 1.55, 0.35, 1),
     height 0.45s cubic-bezier(0.3, 1.55, 0.35, 1),
     opacity 0.2s;
+}
+
+.search-root {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.search-trigger {
+  @include liquid-glass;
+  --lg-r: 999px;
+  --lg-blur: 0px;
+  --lg-tint: rgba(255, 255, 255, 0.04);
+  width: 38px;
+  height: 38px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  color: $color-muted;
+  cursor: pointer;
+  transition: --lg-tint 0.35s, color 0.25s, box-shadow 0.35s;
+
+  &:hover {
+    --lg-tint: rgba(245, 158, 11, 0.08);
+    color: $color-ink;
+    box-shadow:
+      0 10px 30px rgba(3, 6, 24, 0.4),
+      0 2px 8px rgba(3, 6, 24, 0.25),
+      0 18px 30px -22px rgba(245, 158, 11, 0.4),
+      inset 0 1px 1px rgba(255, 255, 255, 0.35),
+      inset 0 0 0 1px rgba(245, 158, 11, 0.3);
+  }
+
+  &.open {
+    --lg-tint: rgba(245, 158, 11, 0.12);
+    color: $color-ink;
+  }
+}
+
+.search-dropdown {
+  @include liquid-glass;
+  --lg-r: 20px;
+  --lg-blur: 0px;
+  --lg-tint: rgba(17, 24, 39, 0.55);
+  position: absolute;
+  top: calc(100% + 8px);
+  right: 0;
+  width: 400px;
+  padding: 8px;
+  z-index: 50;
+  box-shadow:
+    0 24px 60px rgba(3, 6, 24, 0.55),
+    0 4px 14px rgba(3, 6, 24, 0.35),
+    inset 0 1px 1px rgba(255, 255, 255, 0.18),
+    inset 0 0 0 1px rgba(255, 255, 255, 0.1);
+
+  @media (max-width: 520px) {
+    width: 320px;
+    right: -80px;
+  }
+}
+
+.search-dropdown-inner {
+  border-radius: 14px;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.search-input-wrap {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.search-input {
+  width: 100%;
+  height: 44px;
+  padding: 0 44px 0 16px;
+  border-radius: 12px;
+  border: none;
+  background: rgba(255, 255, 255, 0.04);
+  box-shadow: inset 0 1px 1px rgba(255, 255, 255, 0.3), inset 0 0 0 1px rgba(255, 255, 255, 0.1);
+  color: $color-ink;
+  font: inherit;
+  font-size: 0.94rem;
+  outline: none;
+  transition: background 0.3s, box-shadow 0.3s;
+
+  &::placeholder {
+    color: $color-faint;
+  }
+
+  &:focus {
+    background: rgba(255, 255, 255, 0.07);
+    box-shadow: inset 0 1px 1px rgba(255, 255, 255, 0.35), inset 0 0 0 1px rgba(167, 139, 250, 0.5), 0 0 0 4px rgba(139, 92, 246, 0.18);
+  }
+}
+
+.search-input-icon {
+  position: absolute;
+  right: 14px;
+  color: $color-faint;
+  pointer-events: none;
+}
+
+.search-results {
+  max-height: 320px;
+  overflow-y: auto;
+}
+
+.search-placeholder,
+.search-empty {
+  padding: 16px;
+  text-align: center;
+  font-size: 0.85rem;
+  color: $color-muted;
+}
+
+.search-loading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  padding: 16px;
+  font-size: 0.85rem;
+  color: $color-muted;
+}
+
+.spinner-sm {
+  width: 18px;
+  height: 18px;
+  border: 2px solid rgba(255, 255, 255, 0.1);
+  border-top-color: $color-gold;
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+.search-results-list {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.search-result-item {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 10px 12px;
+  border-radius: 10px;
+  text-decoration: none;
+  transition: background 0.2s;
+
+  &:hover {
+    background: rgba(255, 255, 255, 0.06);
+  }
+}
+
+.search-result-title {
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: $color-ink;
+}
+
+.search-result-meta {
+  font-size: 0.78rem;
+  color: $color-muted;
 }
 </style>

@@ -41,9 +41,21 @@ function parseStatus(val: string | null | undefined): CourseStatus | null {
   return null
 }
 
-export function useCourseBrowse() {
+export function useCourseBrowse(options: { baseFilter?: Partial<BrowseState> } = {}) {
   const route = useRoute()
   const router = useRouter()
+  const baseFilter = options.baseFilter ?? {}
+
+  const lockedKeys = new Set(Object.keys(baseFilter) as (keyof BrowseState)[])
+  const isLocked = (key: keyof BrowseState) => lockedKeys.has(key)
+  const restoreBase = (key: keyof BrowseState) => {
+    const val = baseFilter[key]
+    if (Array.isArray(val)) {
+      ;(state as Record<string, unknown>)[key] = [...val]
+    } else {
+      ;(state as Record<string, unknown>)[key] = val
+    }
+  }
 
   const state = reactive<BrowseState>({
     searchTerm: '',
@@ -60,19 +72,31 @@ export function useCourseBrowse() {
     pageSize: 12
   })
 
+  for (const key of Object.keys(baseFilter) as (keyof BrowseState)[]) {
+    restoreBase(key)
+  }
+
   function syncFromRoute() {
     const q = route.query
-    state.searchTerm = (q.searchTerm as string) || ''
-    state.level = parseLevel(q.level as string | undefined)
-    state.status = parseStatus(q.status as string | undefined) ?? CourseStatus.Published
-    state.minPrice = parseNumber(q.minPrice as string | undefined)
-    state.maxPrice = parseNumber(q.maxPrice as string | undefined)
-    state.language = (q.language as string) || null
-    state.categoryIds = q.categoryIds ? (Array.isArray(q.categoryIds) ? q.categoryIds as string[] : [q.categoryIds as string]) : []
-    state.technologyIds = q.technologyIds ? (Array.isArray(q.technologyIds) ? q.technologyIds as string[] : [q.technologyIds as string]) : []
-    state.minRating = parseNumber(q.minRating as string | undefined)
-    state.sortBy = (q.sortBy as SortOption) || 'newest'
-    state.pageNumber = parseNumber(q.pageNumber as string | undefined) ?? 1
+    if (!isLocked('searchTerm')) state.searchTerm = (q.searchTerm as string) || ''
+    if (!isLocked('level')) state.level = parseLevel(q.level as string | undefined)
+    if (!isLocked('status')) state.status = parseStatus(q.status as string | undefined) ?? CourseStatus.Published
+    if (!isLocked('minPrice')) state.minPrice = parseNumber(q.minPrice as string | undefined)
+    if (!isLocked('maxPrice')) state.maxPrice = parseNumber(q.maxPrice as string | undefined)
+    if (!isLocked('language')) state.language = (q.language as string) || null
+    if (!isLocked('categoryIds')) {
+      state.categoryIds = q.categoryIds
+        ? (Array.isArray(q.categoryIds) ? q.categoryIds as string[] : [q.categoryIds as string])
+        : []
+    }
+    if (!isLocked('technologyIds')) {
+      state.technologyIds = q.technologyIds
+        ? (Array.isArray(q.technologyIds) ? q.technologyIds as string[] : [q.technologyIds as string])
+        : []
+    }
+    if (!isLocked('minRating')) state.minRating = parseNumber(q.minRating as string | undefined)
+    if (!isLocked('sortBy')) state.sortBy = (q.sortBy as SortOption) || 'newest'
+    if (!isLocked('pageNumber')) state.pageNumber = parseNumber(q.pageNumber as string | undefined) ?? 1
   }
 
   syncFromRoute()
@@ -85,17 +109,17 @@ export function useCourseBrowse() {
 
   function updateUrl() {
     const q: Record<string, string | string[]> = {}
-    if (state.searchTerm) q.searchTerm = state.searchTerm
-    if (state.level !== null) q.level = state.level.toString()
-    if (state.status !== null && state.status !== CourseStatus.Published) q.status = state.status.toString()
-    if (state.minPrice !== null) q.minPrice = state.minPrice.toString()
-    if (state.maxPrice !== null) q.maxPrice = state.maxPrice.toString()
-    if (state.language) q.language = state.language
-    if (state.categoryIds.length) q.categoryIds = state.categoryIds
-    if (state.technologyIds.length) q.technologyIds = state.technologyIds
-    if (state.minRating !== null) q.minRating = state.minRating.toString()
-    if (state.sortBy !== 'newest') q.sortBy = state.sortBy
-    if (state.pageNumber > 1) q.pageNumber = state.pageNumber.toString()
+    if (!isLocked('searchTerm') && state.searchTerm) q.searchTerm = state.searchTerm
+    if (!isLocked('level') && state.level !== null) q.level = state.level.toString()
+    if (!isLocked('status') && state.status !== null && state.status !== CourseStatus.Published) q.status = state.status.toString()
+    if (!isLocked('minPrice') && state.minPrice !== null) q.minPrice = state.minPrice.toString()
+    if (!isLocked('maxPrice') && state.maxPrice !== null) q.maxPrice = state.maxPrice.toString()
+    if (!isLocked('language') && state.language) q.language = state.language
+    if (!isLocked('categoryIds') && state.categoryIds.length) q.categoryIds = state.categoryIds
+    if (!isLocked('technologyIds') && state.technologyIds.length) q.technologyIds = state.technologyIds
+    if (!isLocked('minRating') && state.minRating !== null) q.minRating = state.minRating.toString()
+    if (!isLocked('sortBy') && state.sortBy !== 'newest') q.sortBy = state.sortBy
+    if (!isLocked('pageNumber') && state.pageNumber > 1) q.pageNumber = state.pageNumber.toString()
 
     router.replace({ query: q })
   }
@@ -191,16 +215,17 @@ export function useCourseBrowse() {
   }
 
   function resetFilters() {
-    state.searchTerm = ''
-    state.level = null
-    state.minPrice = null
-    state.maxPrice = null
-    state.language = null
-    state.categoryIds = []
-    state.technologyIds = []
-    state.minRating = null
-    state.sortBy = 'newest'
-    state.pageNumber = 1
+    if (!isLocked('searchTerm')) state.searchTerm = ''
+    if (!isLocked('level')) state.level = null
+    if (!isLocked('minPrice')) state.minPrice = null
+    if (!isLocked('maxPrice')) state.maxPrice = null
+    if (!isLocked('language')) state.language = null
+    if (!isLocked('categoryIds')) state.categoryIds = []
+    if (!isLocked('technologyIds')) state.technologyIds = []
+    if (!isLocked('minRating')) state.minRating = null
+    if (!isLocked('sortBy')) state.sortBy = 'newest'
+    if (!isLocked('pageNumber')) state.pageNumber = 1
+    for (const key of lockedKeys) restoreBase(key)
     updateUrl()
   }
 

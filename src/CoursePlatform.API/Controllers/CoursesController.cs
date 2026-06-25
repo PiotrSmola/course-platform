@@ -51,7 +51,7 @@ public class CoursesController : ControllerBase
         var categories = await _context.Categories
             .AsNoTracking()
             .OrderBy(c => c.Name)
-            .Select(c => new { c.Id, c.Name, c.Slug })
+            .Select(c => new { c.Id, c.Name, c.Slug, c.Description })
             .ToListAsync();
         return Ok(categories);
     }
@@ -63,7 +63,7 @@ public class CoursesController : ControllerBase
         var technologies = await _context.Technologies
             .AsNoTracking()
             .OrderBy(t => t.Name)
-            .Select(t => new { t.Id, t.Name, t.Slug })
+            .Select(t => new { t.Id, t.Name, t.Slug, t.Description })
             .ToListAsync();
         return Ok(technologies);
     }
