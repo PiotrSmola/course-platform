@@ -30,13 +30,15 @@
               <span class="sort-value">{{ currentSortLabel }}</span>
               <svg class="sort-arrow" :class="{ flipped: sortOpen }" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
             </button>
-            <ul v-if="sortOpen" class="sort-menu">
+            <ul v-if="sortOpen" class="sort-menu" @pointerleave="hideSortBlob">
+              <span ref="sortBlobEl" class="sort-blob" aria-hidden="true"></span>
               <li
                 v-for="opt in sortOptions"
                 :key="opt.value"
                 class="sort-option"
                 :class="{ active: state.sortBy === opt.value }"
                 @click="selectSort(opt.value)"
+                @pointerenter="moveSortBlob($event)"
               >
                 <span>{{ opt.label }}</span>
                 <svg v-if="state.sortBy === opt.value" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
@@ -245,6 +247,7 @@ const sortOptions: { value: SortOption; label: string }[] = [
 
 const sortOpen = ref(false)
 const sortBoxRef = ref<HTMLElement | null>(null)
+const sortBlobEl = ref<HTMLElement | null>(null)
 
 const currentSortLabel = computed(
   () => sortOptions.find((o) => o.value === state.sortBy)?.label ?? 'Najnowsze'
@@ -253,6 +256,27 @@ const currentSortLabel = computed(
 function selectSort(value: SortOption) {
   setSortBy(value)
   sortOpen.value = false
+}
+
+function moveSortBlob(e: PointerEvent) {
+  if (!sortBlobEl.value) return
+  const target = e.currentTarget as HTMLElement
+  const li = target.closest('li')
+  if (!li) return
+  const ul = li.parentElement
+  if (!ul) return
+  const ulRect = ul.getBoundingClientRect()
+  const liRect = li.getBoundingClientRect()
+  sortBlobEl.value.style.left = `${liRect.left - ulRect.left}px`
+  sortBlobEl.value.style.width = `${liRect.width}px`
+  sortBlobEl.value.style.top = `${liRect.top - ulRect.top}px`
+  sortBlobEl.value.style.height = `${liRect.height}px`
+  sortBlobEl.value.style.opacity = '1'
+}
+
+function hideSortBlob() {
+  if (!sortBlobEl.value) return
+  sortBlobEl.value.style.opacity = '0'
 }
 
 function handleClickOutside(event: MouseEvent) {
@@ -457,7 +481,29 @@ const visiblePages = computed(() => {
     inset 0 0 0 1px rgba(255, 255, 255, 0.08);
 }
 
+.sort-blob {
+  position: absolute;
+  top: 0;
+  left: 0;
+  border-radius: 10px;
+  background: rgba(245, 158, 11, 0.18);
+  box-shadow:
+    inset 1.5px 1.5px 1px -1px rgba(255, 255, 255, 0.55),
+    inset -1.5px -1.5px 1px -1px rgba(255, 255, 255, 0.18),
+    inset 0 0 0 1px rgba(245, 158, 11, 0.28);
+  opacity: 0;
+  pointer-events: none;
+  transition:
+    left 0.45s cubic-bezier(0.3, 1.55, 0.35, 1),
+    width 0.45s cubic-bezier(0.3, 1.55, 0.35, 1),
+    top 0.45s cubic-bezier(0.3, 1.55, 0.35, 1),
+    height 0.45s cubic-bezier(0.3, 1.55, 0.35, 1),
+    opacity 0.2s;
+}
+
 .sort-option {
+  position: relative;
+  z-index: 1;
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -467,20 +513,14 @@ const visiblePages = computed(() => {
   font-size: 0.9rem;
   color: $color-ink;
   cursor: pointer;
-  transition: background 0.18s, color 0.18s;
+  transition: color 0.18s;
 
   svg {
     color: $color-gold;
     flex-shrink: 0;
   }
 
-  &:hover {
-    background: rgba(245, 158, 11, 0.14);
-    color: $color-ink;
-  }
-
   &.active {
-    background: rgba(245, 158, 11, 0.22);
     color: $color-ink;
     font-weight: 600;
   }
