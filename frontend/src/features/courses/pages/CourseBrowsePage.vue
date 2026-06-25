@@ -3,7 +3,7 @@
     <div class="browse-hero">
       <div class="container">
         <h1 class="browse-title">Wszystkie kursy</h1>
-        <p class="browse-subtitle">Odkryj {{ browse.totalCount }} kursów i rozpocznij naukę już dziś</p>
+        <p class="browse-subtitle">Odkryj {{ totalCount }} kursów i rozpocznij naukę już dziś</p>
 
         <div class="browse-toolbar">
           <div class="search-box glass">
@@ -12,15 +12,15 @@
               type="text"
               placeholder="Szukaj kursów..."
               class="search-input"
-              @keyup.enter="browse.setSearchTerm(searchInput)"
+              @keyup.enter="setSearchTerm(searchInput)"
             />
-            <button class="search-btn" @click="browse.setSearchTerm(searchInput)">
+            <button class="search-btn" @click="setSearchTerm(searchInput)">
               <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
             </button>
           </div>
 
           <div class="sort-box">
-            <select v-model="sortValue" class="sort-select" @change="browse.setSortBy(sortValue as SortOption)">
+            <select v-model="sortValue" class="sort-select">
               <option value="newest">Najnowsze</option>
               <option value="popular">Najpopularniejsze</option>
               <option value="rating">Najwyżej oceniane</option>
@@ -37,7 +37,7 @@
         <div class="filter-group glass-card">
           <div class="filter-header">
             <h3>Filtry</h3>
-            <button v-if="hasActiveFilters" class="filter-reset" @click="browse.resetFilters">
+            <button v-if="hasActiveFilters" class="filter-reset" @click="resetFilters">
               Wyczyść
             </button>
           </div>
@@ -49,8 +49,8 @@
                 <input
                   type="radio"
                   name="level"
-                  :checked="browse.state.level === null"
-                  @change="browse.setLevel(null)"
+                  :checked="state.level === null"
+                  @change="setLevel(null)"
                 />
                 <span>Wszystkie</span>
               </label>
@@ -58,8 +58,8 @@
                 <input
                   type="radio"
                   name="level"
-                  :checked="browse.state.level === CourseLevel.Beginner"
-                  @change="browse.setLevel(CourseLevel.Beginner)"
+                  :checked="state.level === CourseLevel.Beginner"
+                  @change="setLevel(CourseLevel.Beginner)"
                 />
                 <span>Początkujący</span>
               </label>
@@ -67,8 +67,8 @@
                 <input
                   type="radio"
                   name="level"
-                  :checked="browse.state.level === CourseLevel.Intermediate"
-                  @change="browse.setLevel(CourseLevel.Intermediate)"
+                  :checked="state.level === CourseLevel.Intermediate"
+                  @change="setLevel(CourseLevel.Intermediate)"
                 />
                 <span>Średni</span>
               </label>
@@ -76,8 +76,8 @@
                 <input
                   type="radio"
                   name="level"
-                  :checked="browse.state.level === CourseLevel.Advanced"
-                  @change="browse.setLevel(CourseLevel.Advanced)"
+                  :checked="state.level === CourseLevel.Advanced"
+                  @change="setLevel(CourseLevel.Advanced)"
                 />
                 <span>Zaawansowany</span>
               </label>
@@ -91,8 +91,8 @@
                 <input
                   type="radio"
                   name="price"
-                  :checked="browse.state.minPrice === null && browse.state.maxPrice === null"
-                  @change="browse.setPriceRange(null, null)"
+                  :checked="state.minPrice === null && state.maxPrice === null"
+                  @change="setPriceRange(null, null)"
                 />
                 <span>Dowolna</span>
               </label>
@@ -100,8 +100,8 @@
                 <input
                   type="radio"
                   name="price"
-                  :checked="browse.state.minPrice === 0 && browse.state.maxPrice === 0"
-                  @change="browse.setPriceRange(0, 0)"
+                  :checked="state.minPrice === 0 && state.maxPrice === 0"
+                  @change="setPriceRange(0, 0)"
                 />
                 <span>Darmowe</span>
               </label>
@@ -109,8 +109,8 @@
                 <input
                   type="radio"
                   name="price"
-                  :checked="browse.state.minPrice === 0 && browse.state.maxPrice === 100"
-                  @change="browse.setPriceRange(0, 100)"
+                  :checked="state.minPrice === 0 && state.maxPrice === 100"
+                  @change="setPriceRange(0, 100)"
                 />
                 <span>0 – 100 zł</span>
               </label>
@@ -118,8 +118,8 @@
                 <input
                   type="radio"
                   name="price"
-                  :checked="browse.state.minPrice === 100 && browse.state.maxPrice === 500"
-                  @change="browse.setPriceRange(100, 500)"
+                  :checked="state.minPrice === 100 && state.maxPrice === 500"
+                  @change="setPriceRange(100, 500)"
                 />
                 <span>100 – 500 zł</span>
               </label>
@@ -127,8 +127,8 @@
                 <input
                   type="radio"
                   name="price"
-                  :checked="browse.state.minPrice === 500 && browse.state.maxPrice === null"
-                  @change="browse.setPriceRange(500, null)"
+                  :checked="state.minPrice === 500 && state.maxPrice === null"
+                  @change="setPriceRange(500, null)"
                 />
                 <span>500+ zł</span>
               </label>
@@ -138,34 +138,34 @@
       </aside>
 
       <main class="browse-main">
-        <div v-if="browse.isLoading" class="browse-loading">
+        <div v-if="isLoading" class="browse-loading">
           <div class="spinner" />
           <p>Ładowanie kursów...</p>
         </div>
 
-        <div v-else-if="browse.isError" class="browse-error">
+        <div v-else-if="isError" class="browse-error">
           <p>Wystąpił błąd podczas ładowania kursów.</p>
-          <button class="btn btn-primary" @click="browse.resetFilters">Spróbuj ponownie</button>
+          <button class="btn btn-primary" @click="resetFilters">Spróbuj ponownie</button>
         </div>
 
-        <div v-else-if="browse.filteredItems.length === 0" class="browse-empty">
+        <div v-else-if="filteredItems.length === 0" class="browse-empty">
           <p>Nie znaleziono kursów spełniających kryteria.</p>
-          <button class="btn btn-primary" @click="browse.resetFilters">Wyczyść filtry</button>
+          <button class="btn btn-primary" @click="resetFilters">Wyczyść filtry</button>
         </div>
 
         <div v-else class="browse-grid">
           <CourseBrowseCard
-            v-for="course in browse.filteredItems"
+            v-for="course in filteredItems"
             :key="course.id"
             :course="course"
           />
         </div>
 
-        <div v-if="browse.totalPages > 1 && !browse.isLoading" class="browse-pagination">
+        <div v-if="totalPages > 1 && !isLoading" class="browse-pagination">
           <button
             class="page-btn"
-            :disabled="browse.state.pageNumber <= 1"
-            @click="browse.setPage(browse.state.pageNumber - 1)"
+            :disabled="state.pageNumber <= 1"
+            @click="setPage(state.pageNumber - 1)"
           >
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"/></svg>
           </button>
@@ -174,16 +174,16 @@
             v-for="page in visiblePages"
             :key="page"
             class="page-btn"
-            :class="{ active: page === browse.state.pageNumber }"
-            @click="browse.setPage(page)"
+            :class="{ active: page === state.pageNumber }"
+            @click="setPage(page)"
           >
             {{ page }}
           </button>
 
           <button
             class="page-btn"
-            :disabled="browse.state.pageNumber >= browse.totalPages"
-            @click="browse.setPage(browse.state.pageNumber + 1)"
+            :disabled="state.pageNumber >= totalPages"
+            @click="setPage(state.pageNumber + 1)"
           >
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg>
           </button>
@@ -199,29 +199,42 @@ import { useCourseBrowse, type SortOption } from '@/features/courses/composables
 import CourseBrowseCard from '@/features/courses/components/CourseBrowseCard.vue'
 import { CourseLevel } from '@/features/courses/types/course.types'
 
-const browse = useCourseBrowse()
+const {
+  state,
+  isLoading,
+  isError,
+  filteredItems,
+  totalCount,
+  totalPages,
+  setSearchTerm,
+  setLevel,
+  setSortBy,
+  setPage,
+  setPriceRange,
+  resetFilters
+} = useCourseBrowse()
 
-const searchInput = ref(browse.state.searchTerm)
+const searchInput = ref(state.searchTerm)
 
-watch(() => browse.state.searchTerm, (val) => {
+watch(() => state.searchTerm, (val) => {
   searchInput.value = val
 })
 
 const sortValue = computed({
-  get: () => browse.state.sortBy,
-  set: (val: SortOption) => browse.setSortBy(val)
+  get: () => state.sortBy,
+  set: (val: SortOption) => setSortBy(val)
 })
 
 const hasActiveFilters = computed(() => {
-  return browse.state.level !== null ||
-    browse.state.minPrice !== null ||
-    browse.state.maxPrice !== null ||
-    browse.state.searchTerm !== ''
+  return state.level !== null ||
+    state.minPrice !== null ||
+    state.maxPrice !== null ||
+    state.searchTerm !== ''
 })
 
 const visiblePages = computed(() => {
-  const total = browse.totalPages.value
-  const current = browse.state.pageNumber
+  const total = totalPages.value
+  const current = state.pageNumber
   const pages: number[] = []
   const range = 2
 
@@ -246,6 +259,7 @@ const visiblePages = computed(() => {
 <style lang="scss" scoped>
 @use "@/assets/styles/abstracts/variables" as *;
 @use "@/assets/styles/abstracts/mixins" as *;
+@use "sass:color";
 
 .browse-page {
   padding-top: $header-height;
@@ -394,7 +408,7 @@ const visiblePages = computed(() => {
   text-decoration: underline;
 
   &:hover {
-    color: lighten($color-gold, 10%);
+    color: color.adjust($color-gold, $lightness: 10%);
   }
 }
 
