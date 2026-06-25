@@ -19,14 +19,29 @@
             </button>
           </div>
 
-          <div class="sort-box">
-            <select v-model="sortValue" class="sort-select">
-              <option value="newest">Najnowsze</option>
-              <option value="popular">Najpopularniejsze</option>
-              <option value="rating">Najwyżej oceniane</option>
-              <option value="price-asc">Cena: rosnąco</option>
-              <option value="price-desc">Cena: malejąco</option>
-            </select>
+          <div class="sort-box" ref="sortBoxRef">
+            <button
+              type="button"
+              class="sort-trigger"
+              :class="{ open: sortOpen }"
+              @click="sortOpen = !sortOpen"
+            >
+              <span class="sort-label">Sortuj:</span>
+              <span class="sort-value">{{ currentSortLabel }}</span>
+              <svg class="sort-arrow" :class="{ flipped: sortOpen }" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
+            </button>
+            <ul v-if="sortOpen" class="sort-menu">
+              <li
+                v-for="opt in sortOptions"
+                :key="opt.value"
+                class="sort-option"
+                :class="{ active: state.sortBy === opt.value }"
+                @click="selectSort(opt.value)"
+              >
+                <span>{{ opt.label }}</span>
+                <svg v-if="state.sortBy === opt.value" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+              </li>
+            </ul>
           </div>
         </div>
       </div>
@@ -194,7 +209,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, ref, watch } from 'vue'
+import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { useCourseBrowse, type SortOption } from '@/features/courses/composables/useCourseBrowse'
 import CourseBrowseCard from '@/features/courses/components/CourseBrowseCard.vue'
 import { CourseLevel } from '@/features/courses/types/course.types'
@@ -220,9 +235,38 @@ watch(() => state.searchTerm, (val) => {
   searchInput.value = val
 })
 
-const sortValue = computed({
-  get: () => state.sortBy,
-  set: (val: SortOption) => setSortBy(val)
+const sortOptions: { value: SortOption; label: string }[] = [
+  { value: 'newest', label: 'Najnowsze' },
+  { value: 'popular', label: 'Najpopularniejsze' },
+  { value: 'rating', label: 'Najwyżej oceniane' },
+  { value: 'price-asc', label: 'Cena: rosnąco' },
+  { value: 'price-desc', label: 'Cena: malejąco' }
+]
+
+const sortOpen = ref(false)
+const sortBoxRef = ref<HTMLElement | null>(null)
+
+const currentSortLabel = computed(
+  () => sortOptions.find((o) => o.value === state.sortBy)?.label ?? 'Najnowsze'
+)
+
+function selectSort(value: SortOption) {
+  setSortBy(value)
+  sortOpen.value = false
+}
+
+function handleClickOutside(event: MouseEvent) {
+  if (sortOpen.value && sortBoxRef.value && !sortBoxRef.value.contains(event.target as Node)) {
+    sortOpen.value = false
+  }
+}
+
+onMounted(() => {
+  document.addEventListener('mousedown', handleClickOutside)
+})
+
+onBeforeUnmount(() => {
+  document.removeEventListener('mousedown', handleClickOutside)
 })
 
 const hasActiveFilters = computed(() => {
@@ -321,20 +365,24 @@ const visiblePages = computed(() => {
   @include liquid-glass;
   --lg-r: 999px;
   --lg-blur: 0px;
-  --lg-tint: rgba(245, 158, 11, 0.15);
+  --lg-tint: rgba(245, 158, 11, 0.85);
   width: 40px;
   height: 40px;
   display: flex;
   align-items: center;
   justify-content: center;
   border: none;
-  color: $color-ink;
+  color: #1a1208;
   cursor: pointer;
   flex-shrink: 0;
-  transition: transform 0.2s;
+  transition: transform 0.2s, box-shadow 0.2s;
 
   &:hover {
+    --lg-tint: rgba(245, 158, 11, 1);
     transform: scale(1.05);
+    box-shadow:
+      0 10px 24px rgba(245, 158, 11, 0.35),
+      0 2px 8px rgba(3, 6, 24, 0.25);
   }
 }
 
@@ -342,7 +390,7 @@ const visiblePages = computed(() => {
   position: relative;
 }
 
-.sort-select {
+.sort-trigger {
   @include liquid-glass;
   --lg-r: 12px;
   --lg-blur: 0px;
@@ -352,10 +400,90 @@ const visiblePages = computed(() => {
   font: inherit;
   font-size: 0.9rem;
   color: $color-ink;
-  padding: 12px 40px 12px 16px;
+  padding: 12px 16px;
   cursor: pointer;
   outline: none;
-  min-width: 180px;
+  min-width: 240px;
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  text-align: left;
+
+  .sort-label {
+    color: $color-faint;
+    font-size: 0.78rem;
+    font-weight: 500;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+  }
+
+  .sort-value {
+    flex: 1;
+    color: $color-ink;
+    font-weight: 600;
+  }
+
+  .sort-arrow {
+    color: $color-gold;
+    transition: transform 0.25s;
+    flex-shrink: 0;
+
+    &.flipped {
+      transform: rotate(180deg);
+    }
+  }
+
+  &.open .sort-arrow {
+    color: $color-ink;
+  }
+}
+
+.sort-menu {
+  @include liquid-glass;
+  --lg-r: 14px;
+  --lg-blur: 0px;
+  --lg-tint: rgba(17, 24, 39, 0.92);
+  position: absolute;
+  top: calc(100% + 8px);
+  right: 0;
+  min-width: 260px;
+  margin: 0;
+  padding: 8px;
+  list-style: none;
+  z-index: 30;
+  box-shadow:
+    0 20px 50px rgba(3, 6, 24, 0.55),
+    0 4px 12px rgba(3, 6, 24, 0.35),
+    inset 0 0 0 1px rgba(255, 255, 255, 0.08);
+}
+
+.sort-option {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 11px 14px;
+  border-radius: 10px;
+  font-size: 0.9rem;
+  color: $color-ink;
+  cursor: pointer;
+  transition: background 0.18s, color 0.18s;
+
+  svg {
+    color: $color-gold;
+    flex-shrink: 0;
+  }
+
+  &:hover {
+    background: rgba(245, 158, 11, 0.14);
+    color: $color-ink;
+  }
+
+  &.active {
+    background: rgba(245, 158, 11, 0.22);
+    color: $color-ink;
+    font-weight: 600;
+  }
 }
 
 .browse-body {
