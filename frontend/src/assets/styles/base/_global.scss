@@ -50,6 +50,16 @@ body {
   }
 }
 
+.btn:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 2px $color-cyan;
+}
+
+.btn::before {
+  inset: 0;
+  clip-path: none;
+}
+
 .btn-primary {
   --lg-tint: rgba(245, 158, 11, 0.1);
   box-shadow: 0 10px 30px rgba(245, 158, 11, 0.25), 0 2px 8px rgba(3, 6, 24, 0.25);

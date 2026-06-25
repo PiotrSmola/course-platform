@@ -420,6 +420,16 @@ const visiblePages = computed(() => {
   position: relative;
 }
 
+.sort-trigger:focus-visible,
+.sort-option:focus-visible {
+  outline: none;
+}
+
+.sort-trigger::before {
+  inset: 0;
+  clip-path: none;
+}
+
 .sort-trigger {
   @include liquid-glass;
   --lg-r: 14px;
