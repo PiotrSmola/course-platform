@@ -21,6 +21,8 @@ public class GetCourseDetailsQueryHandler : IRequestHandler<GetCourseDetailsQuer
         var course = await _context.Courses
             .AsNoTracking()
             .Include(c => c.Instructor)
+            .Include(c => c.Categories)
+            .Include(c => c.Technologies)
             .Include(c => c.Modules)
             .ThenInclude(m => m.Lessons)
             .Include(c => c.Reviews)
@@ -60,9 +62,12 @@ public class GetCourseDetailsQueryHandler : IRequestHandler<GetCourseDetailsQuer
             course.Level,
             course.Status,
             course.ThumbnailUrl,
+            course.Language,
             course.InstructorId,
             $"{course.Instructor.FirstName} {course.Instructor.LastName}",
             course.CreatedAt,
+            course.Categories.Select(c => c.Name).ToList(),
+            course.Technologies.Select(t => t.Name).ToList(),
             modules,
             course.Reviews.Any() ? course.Reviews.Average(r => r.Rating) : 0,
             course.Reviews.Count,

@@ -14,6 +14,10 @@ export interface BrowseState {
   status: CourseStatus | null
   minPrice: number | null
   maxPrice: number | null
+  language: string | null
+  categoryIds: string[]
+  technologyIds: string[]
+  minRating: number | null
   sortBy: SortOption
   pageNumber: number
   pageSize: number
@@ -47,6 +51,10 @@ export function useCourseBrowse() {
     status: CourseStatus.Published,
     minPrice: null,
     maxPrice: null,
+    language: null,
+    categoryIds: [],
+    technologyIds: [],
+    minRating: null,
     sortBy: 'newest',
     pageNumber: 1,
     pageSize: 12
@@ -59,6 +67,10 @@ export function useCourseBrowse() {
     state.status = parseStatus(q.status as string | undefined) ?? CourseStatus.Published
     state.minPrice = parseNumber(q.minPrice as string | undefined)
     state.maxPrice = parseNumber(q.maxPrice as string | undefined)
+    state.language = (q.language as string) || null
+    state.categoryIds = q.categoryIds ? (Array.isArray(q.categoryIds) ? q.categoryIds as string[] : [q.categoryIds as string]) : []
+    state.technologyIds = q.technologyIds ? (Array.isArray(q.technologyIds) ? q.technologyIds as string[] : [q.technologyIds as string]) : []
+    state.minRating = parseNumber(q.minRating as string | undefined)
     state.sortBy = (q.sortBy as SortOption) || 'newest'
     state.pageNumber = parseNumber(q.pageNumber as string | undefined) ?? 1
   }
@@ -72,12 +84,16 @@ export function useCourseBrowse() {
   )
 
   function updateUrl() {
-    const q: Record<string, string> = {}
+    const q: Record<string, string | string[]> = {}
     if (state.searchTerm) q.searchTerm = state.searchTerm
     if (state.level !== null) q.level = state.level.toString()
     if (state.status !== null && state.status !== CourseStatus.Published) q.status = state.status.toString()
     if (state.minPrice !== null) q.minPrice = state.minPrice.toString()
     if (state.maxPrice !== null) q.maxPrice = state.maxPrice.toString()
+    if (state.language) q.language = state.language
+    if (state.categoryIds.length) q.categoryIds = state.categoryIds
+    if (state.technologyIds.length) q.technologyIds = state.technologyIds
+    if (state.minRating !== null) q.minRating = state.minRating.toString()
     if (state.sortBy !== 'newest') q.sortBy = state.sortBy
     if (state.pageNumber > 1) q.pageNumber = state.pageNumber.toString()
 
@@ -91,6 +107,10 @@ export function useCourseBrowse() {
     sortBy: state.sortBy,
     minPrice: state.minPrice ?? undefined,
     maxPrice: state.maxPrice ?? undefined,
+    language: state.language ?? undefined,
+    categoryIds: state.categoryIds.length ? state.categoryIds : undefined,
+    technologyIds: state.technologyIds.length ? state.technologyIds : undefined,
+    minRating: state.minRating ?? undefined,
     pageNumber: state.pageNumber,
     pageSize: state.pageSize
   }))
@@ -136,11 +156,49 @@ export function useCourseBrowse() {
     updateUrl()
   }
 
+  function setLanguage(language: string | null) {
+    state.language = language
+    state.pageNumber = 1
+    updateUrl()
+  }
+
+  function toggleCategoryId(id: string) {
+    const idx = state.categoryIds.indexOf(id)
+    if (idx >= 0) {
+      state.categoryIds.splice(idx, 1)
+    } else {
+      state.categoryIds.push(id)
+    }
+    state.pageNumber = 1
+    updateUrl()
+  }
+
+  function toggleTechnologyId(id: string) {
+    const idx = state.technologyIds.indexOf(id)
+    if (idx >= 0) {
+      state.technologyIds.splice(idx, 1)
+    } else {
+      state.technologyIds.push(id)
+    }
+    state.pageNumber = 1
+    updateUrl()
+  }
+
+  function setMinRating(rating: number | null) {
+    state.minRating = rating
+    state.pageNumber = 1
+    updateUrl()
+  }
+
   function resetFilters() {
     state.searchTerm = ''
     state.level = null
     state.minPrice = null
     state.maxPrice = null
+    state.language = null
+    state.categoryIds = []
+    state.technologyIds = []
+    state.minRating = null
     state.sortBy = 'newest'
     state.pageNumber = 1
     updateUrl()
@@ -159,6 +217,10 @@ export function useCourseBrowse() {
     setSortBy,
     setPage,
     setPriceRange,
+    setLanguage,
+    toggleCategoryId,
+    toggleTechnologyId,
+    setMinRating,
     resetFilters
   }
 }

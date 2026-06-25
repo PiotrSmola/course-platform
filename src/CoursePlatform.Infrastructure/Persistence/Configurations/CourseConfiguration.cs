@@ -26,11 +26,22 @@ public class CourseConfiguration : IEntityTypeConfiguration<Course>
         builder.Property(c => c.ThumbnailUrl)
             .HasMaxLength(500);
 
+        builder.Property(c => c.Language)
+            .IsRequired()
+            .HasMaxLength(50);
+
         builder.HasOne(c => c.Instructor)
             .WithMany(u => u.Courses)
             .HasForeignKey(c => c.InstructorId)
             .OnDelete(DeleteBehavior.Restrict);
 
+        builder.HasMany(c => c.Categories)
+            .WithMany(cat => cat.Courses);
+
+        builder.HasMany(c => c.Technologies)
+            .WithMany(tech => tech.Courses);
+
         builder.HasIndex(c => c.Status);
+        builder.HasIndex(c => c.Language);
     }
 }

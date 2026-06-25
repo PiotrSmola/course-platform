@@ -14,7 +14,10 @@ public record UpdateCourseCommand(
     decimal Price,
     CourseLevel Level,
     CourseStatus Status,
-    string ThumbnailUrl) : IRequest;
+    string ThumbnailUrl,
+    string Language,
+    List<Guid> CategoryIds,
+    List<Guid> TechnologyIds) : IRequest;
 
 public class UpdateCourseCommandHandler : IRequestHandler<UpdateCourseCommand>
 {
@@ -34,7 +37,10 @@ public class UpdateCourseCommandHandler : IRequestHandler<UpdateCourseCommand>
             throw new ForbiddenAccessException("User not authenticated.");
         }
 
-        var course = await _context.Courses.FirstOrDefaultAsync(c => c.Id == request.Id, cancellationToken);
+        var course = await _context.Courses
+            .Include(c => c.Categories)
+            .Include(c => c.Technologies)
+            .FirstOrDefaultAsync(c => c.Id == request.Id, cancellationToken);
         if (course == null)
         {
             throw new NotFoundException($"Course {request.Id} not found.");
@@ -45,6 +51,14 @@ public class UpdateCourseCommandHandler : IRequestHandler<UpdateCourseCommand>
             throw new ForbiddenAccessException("You are not the instructor of this course.");
         }
 
+        var categories = await _context.Categories
+            .Where(c => request.CategoryIds.Contains(c.Id))
+            .ToListAsync(cancellationToken);
+
+        var technologies = await _context.Technologies
+            .Where(t => request.TechnologyIds.Contains(t.Id))
+            .ToListAsync(cancellationToken);
+
         course.Title = request.Title;
         course.Description = request.Description;
         course.ShortDescription = request.ShortDescription;
@@ -52,6 +66,9 @@ public class UpdateCourseCommandHandler : IRequestHandler<UpdateCourseCommand>
         course.Level = request.Level;
         course.Status = request.Status;
         course.ThumbnailUrl = request.ThumbnailUrl;
+        course.Language = request.Language;
+        course.Categories = categories;
+        course.Technologies = technologies;
         course.UpdatedAt = DateTime.UtcNow;
 
         await _context.SaveChangesAsync(cancellationToken);

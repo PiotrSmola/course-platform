@@ -6,6 +6,10 @@
     <div class="course-body">
       <h3 class="course-title">{{ course.title }}</h3>
       <p class="course-instructor">{{ course.instructorName }}</p>
+      <div class="course-tags" v-if="course.categoryNames.length || course.technologyNames.length">
+        <span v-for="cat in course.categoryNames" :key="cat" class="tag">{{ cat }}</span>
+        <span v-for="tech in course.technologyNames" :key="tech" class="tag tech">{{ tech }}</span>
+      </div>
       <div class="course-meta">
         <div class="course-rating">
           <span class="rating-value">{{ course.averageRating.toFixed(1) }}</span>
@@ -133,7 +137,32 @@ const levelLabel = computed(() => {
 .course-instructor {
   font-size: 0.82rem;
   color: $color-faint;
+  margin-bottom: 8px;
+}
+
+.course-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
   margin-bottom: 10px;
+}
+
+.tag {
+  display: inline-block;
+  padding: 3px 10px;
+  border-radius: 999px;
+  font-size: 0.72rem;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  background: rgba(255, 255, 255, 0.06);
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.1);
+  color: $color-muted;
+
+  &.tech {
+    background: rgba(245, 158, 11, 0.1);
+    box-shadow: inset 0 0 0 1px rgba(245, 158, 11, 0.25);
+    color: #fbbf24;
+  }
 }
 
 .course-meta {

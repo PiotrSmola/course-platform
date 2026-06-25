@@ -79,7 +79,10 @@ const form = ref({
   price: 0,
   level: CourseLevel.Beginner,
   thumbnailUrl: '',
-  status: CourseStatus.Draft
+  status: CourseStatus.Draft,
+  language: 'English',
+  categoryIds: [] as string[],
+  technologyIds: [] as string[]
 })
 
 function submit() {
@@ -90,7 +93,10 @@ function submit() {
       shortDescription: form.value.shortDescription,
       price: form.value.price,
       level: form.value.level,
-      thumbnailUrl: form.value.thumbnailUrl
+      thumbnailUrl: form.value.thumbnailUrl,
+      language: form.value.language,
+      categoryIds: form.value.categoryIds,
+      technologyIds: form.value.technologyIds
     })
   } else if (props.id) {
     updateMutation.mutate({

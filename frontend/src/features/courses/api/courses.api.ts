@@ -8,6 +8,10 @@ export interface CoursesFilter {
   sortBy?: string
   minPrice?: number
   maxPrice?: number
+  language?: string
+  categoryIds?: string[]
+  technologyIds?: string[]
+  minRating?: number
   pageNumber?: number
   pageSize?: number
 }
@@ -20,6 +24,14 @@ export async function getCourses(filter: CoursesFilter = {}): Promise<CoursesVm>
   if (filter.sortBy) params.append('sortBy', filter.sortBy)
   if (filter.minPrice !== undefined) params.append('minPrice', filter.minPrice.toString())
   if (filter.maxPrice !== undefined) params.append('maxPrice', filter.maxPrice.toString())
+  if (filter.language) params.append('language', filter.language)
+  if (filter.categoryIds) {
+    filter.categoryIds.forEach(id => params.append('categoryIds', id))
+  }
+  if (filter.technologyIds) {
+    filter.technologyIds.forEach(id => params.append('technologyIds', id))
+  }
+  if (filter.minRating !== undefined) params.append('minRating', filter.minRating.toString())
   if (filter.pageNumber !== undefined) params.append('pageNumber', filter.pageNumber.toString())
   if (filter.pageSize !== undefined) params.append('pageSize', filter.pageSize.toString())
   
@@ -39,6 +51,9 @@ export interface CreateCourseRequest {
   price: number
   level: CourseLevel
   thumbnailUrl: string
+  language: string
+  categoryIds: string[]
+  technologyIds: string[]
 }
 
 export async function createCourse(data: CreateCourseRequest): Promise<string> {
@@ -55,8 +70,33 @@ export interface UpdateCourseRequest {
   level: CourseLevel
   status: CourseStatus
   thumbnailUrl: string
+  language: string
+  categoryIds: string[]
+  technologyIds: string[]
 }
 
 export async function updateCourse(data: UpdateCourseRequest): Promise<void> {
   await client.put(`/courses/${data.id}`, data)
+}
+
+export interface CategoryDto {
+  id: string
+  name: string
+  slug: string
+}
+
+export interface TechnologyDto {
+  id: string
+  name: string
+  slug: string
+}
+
+export async function getCategories(): Promise<CategoryDto[]> {
+  const response = await client.get('/courses/categories')
+  return response.data
+}
+
+export async function getTechnologies(): Promise<TechnologyDto[]> {
+  const response = await client.get('/courses/technologies')
+  return response.data
 }

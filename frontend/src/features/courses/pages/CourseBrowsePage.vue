@@ -151,6 +151,103 @@
               </label>
             </div>
           </div>
+          <div class="filter-section">
+            <h4>Język</h4>
+            <div class="filter-options">
+              <label class="filter-option">
+                <input
+                  type="radio"
+                  name="language"
+                  :checked="state.language === null"
+                  @change="setLanguage(null)"
+                />
+                <span>Wszystkie</span>
+              </label>
+              <label class="filter-option">
+                <input
+                  type="radio"
+                  name="language"
+                  :checked="state.language === 'Polski'"
+                  @change="setLanguage('Polski')"
+                />
+                <span>Polski</span>
+              </label>
+              <label class="filter-option">
+                <input
+                  type="radio"
+                  name="language"
+                  :checked="state.language === 'English'"
+                  @change="setLanguage('English')"
+                />
+                <span>English</span>
+              </label>
+            </div>
+          </div>
+
+          <div class="filter-section" v-if="categories.length">
+            <h4>Kategorie</h4>
+            <div class="filter-chips">
+              <button
+                v-for="cat in categories"
+                :key="cat.id"
+                type="button"
+                class="filter-chip"
+                :class="{ active: state.categoryIds.includes(cat.id) }"
+                @click="toggleCategoryId(cat.id)"
+              >
+                {{ cat.name }}
+              </button>
+            </div>
+          </div>
+
+          <div class="filter-section" v-if="technologies.length">
+            <h4>Technologie</h4>
+            <div class="filter-chips">
+              <button
+                v-for="tech in technologies"
+                :key="tech.id"
+                type="button"
+                class="filter-chip"
+                :class="{ active: state.technologyIds.includes(tech.id) }"
+                @click="toggleTechnologyId(tech.id)"
+              >
+                {{ tech.name }}
+              </button>
+            </div>
+          </div>
+
+          <div class="filter-section">
+            <h4>Minimalna ocena</h4>
+            <div class="filter-options">
+              <label class="filter-option">
+                <input
+                  type="radio"
+                  name="minRating"
+                  :checked="state.minRating === null"
+                  @change="setMinRating(null)"
+                />
+                <span>Dowolna</span>
+              </label>
+              <label class="filter-option">
+                <input
+                  type="radio"
+                  name="minRating"
+                  :checked="state.minRating === 4"
+                  @change="setMinRating(4)"
+                />
+                <span>4+ gwiazdek</span>
+              </label>
+              <label class="filter-option">
+                <input
+                  type="radio"
+                  name="minRating"
+                  :checked="state.minRating === 3"
+                  @change="setMinRating(3)"
+                />
+                <span>3+ gwiazdek</span>
+              </label>
+            </div>
+          </div>
         </div>
       </aside>
 
@@ -212,9 +309,11 @@
 
 <script setup lang="ts">
 import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
+import { useQuery } from '@tanstack/vue-query'
 import { useCourseBrowse, type SortOption } from '@/features/courses/composables/useCourseBrowse'
 import CourseBrowseCard from '@/features/courses/components/CourseBrowseCard.vue'
 import { CourseLevel } from '@/features/courses/types/course.types'
+import { getCategories, getTechnologies } from '@/features/courses/api/courses.api'
 
 const {
   state,
@@ -228,8 +327,24 @@ const {
   setSortBy,
   setPage,
   setPriceRange,
+  setLanguage,
+  toggleCategoryId,
+  toggleTechnologyId,
+  setMinRating,
   resetFilters
 } = useCourseBrowse()
+
+const { data: categories } = useQuery({
+  queryKey: ['categories'],
+  queryFn: getCategories,
+  initialData: []
+})
+
+const { data: technologies } = useQuery({
+  queryKey: ['technologies'],
+  queryFn: getTechnologies,
+  initialData: []
+})
 
 const searchInput = ref(state.searchTerm)
 
@@ -297,7 +412,11 @@ const hasActiveFilters = computed(() => {
   return state.level !== null ||
     state.minPrice !== null ||
     state.maxPrice !== null ||
-    state.searchTerm !== ''
+    state.searchTerm !== '' ||
+    state.language !== null ||
+    state.categoryIds.length > 0 ||
+    state.technologyIds.length > 0 ||
+    state.minRating !== null
 })
 
 const visiblePages = computed(() => {
@@ -651,6 +770,36 @@ const visiblePages = computed(() => {
   display: flex;
   flex-direction: column;
   gap: 8px;
+}
+
+.filter-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.filter-chip {
+  appearance: none;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 999px;
+  padding: 6px 14px;
+  font: inherit;
+  font-size: 0.82rem;
+  color: $color-muted;
+  cursor: pointer;
+  transition: background 0.2s, color 0.2s, border-color 0.2s;
+
+  &:hover {
+    background: rgba(255, 255, 255, 0.08);
+    color: $color-ink;
+  }
+
+  &.active {
+    background: rgba(245, 158, 11, 0.15);
+    border-color: rgba(245, 158, 11, 0.4);
+    color: #fbbf24;
+  }
 }
 
 .filter-option {

@@ -12,6 +12,10 @@ public record GetCoursesQuery(
     string? SortBy,
     decimal? MinPrice,
     decimal? MaxPrice,
+    string? Language,
+    List<Guid>? CategoryIds,
+    List<Guid>? TechnologyIds,
+    double? MinRating,
     int PageNumber = 1,
     int PageSize = 10) : IRequest<CoursesVm>;
 
@@ -32,11 +36,19 @@ public class GetCoursesQueryHandler : IRequestHandler<GetCoursesQuery, CoursesVm
             .Include(c => c.Modules)
             .ThenInclude(m => m.Lessons)
             .Include(c => c.Reviews)
+            .Include(c => c.Categories)
+            .Include(c => c.Technologies)
             .AsQueryable();
 
         if (!string.IsNullOrWhiteSpace(request.SearchTerm))
         {
-            query = query.Where(c => c.Title.Contains(request.SearchTerm) || c.ShortDescription.Contains(request.SearchTerm));
+            var search = request.SearchTerm.ToLower();
+            query = query.Where(c =>
+                c.Title.ToLower().Contains(search) ||
+                c.ShortDescription.ToLower().Contains(search) ||
+                c.Description.ToLower().Contains(search) ||
+                c.Categories.Any(cat => cat.Name.ToLower().Contains(search)) ||
+                c.Technologies.Any(tech => tech.Name.ToLower().Contains(search)));
         }
 
         if (request.Level.HasValue)
@@ -63,6 +75,26 @@ public class GetCoursesQueryHandler : IRequestHandler<GetCoursesQuery, CoursesVm
             query = query.Where(c => c.Price <= request.MaxPrice.Value);
         }
 
+        if (!string.IsNullOrWhiteSpace(request.Language))
+        {
+            query = query.Where(c => c.Language.ToLower() == request.Language.ToLower());
+        }
+
+        if (request.CategoryIds != null && request.CategoryIds.Any())
+        {
+            query = query.Where(c => c.Categories.Any(cat => request.CategoryIds.Contains(cat.Id)));
+        }
+
+        if (request.TechnologyIds != null && request.TechnologyIds.Any())
+        {
+            query = query.Where(c => c.Technologies.Any(tech => request.TechnologyIds.Contains(tech.Id)));
+        }
+
+        if (request.MinRating.HasValue)
+        {
+            query = query.Where(c => c.Reviews.Any() && c.Reviews.Average(r => r.Rating) >= request.MinRating.Value);
+        }
+
         var totalCount = await query.CountAsync(cancellationToken);
 
         query = request.SortBy switch
@@ -87,6 +119,9 @@ public class GetCoursesQueryHandler : IRequestHandler<GetCoursesQuery, CoursesVm
             c.Level,
             c.ThumbnailUrl,
             $"{c.Instructor.FirstName} {c.Instructor.LastName}",
+            c.Language,
+            c.Categories.Select(cat => cat.Name).ToList(),
+            c.Technologies.Select(tech => tech.Name).ToList(),
             c.Modules.Count,
             c.Modules.SelectMany(m => m.Lessons).Count(),
             c.Reviews.Any() ? c.Reviews.Average(r => r.Rating) : 0,

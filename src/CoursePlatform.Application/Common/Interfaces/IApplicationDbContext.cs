@@ -6,6 +6,8 @@ namespace CoursePlatform.Application.Common.Interfaces;
 public interface IApplicationDbContext
 {
     DbSet<Course> Courses { get; }
+    DbSet<Category> Categories { get; }
+    DbSet<Technology> Technologies { get; }
     DbSet<Module> Modules { get; }
     DbSet<Lesson> Lessons { get; }
     DbSet<Enrollment> Enrollments { get; }

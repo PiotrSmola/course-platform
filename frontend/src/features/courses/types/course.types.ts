@@ -18,6 +18,9 @@ export interface CourseListDto {
   level: CourseLevel
   thumbnailUrl: string
   instructorName: string
+  language: string
+  categoryNames: string[]
+  technologyNames: string[]
   moduleCount: number
   lessonCount: number
   averageRating: number
@@ -67,9 +70,12 @@ export interface CourseDetailsDto {
   level: CourseLevel
   status: CourseStatus
   thumbnailUrl: string
+  language: string
   instructorId: string
   instructorName: string
   createdAt: string
+  categoryNames: string[]
+  technologyNames: string[]
   modules: ModuleDto[]
   averageRating: number
   reviewCount: number

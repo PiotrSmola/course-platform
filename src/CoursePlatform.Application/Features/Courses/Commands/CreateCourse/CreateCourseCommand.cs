@@ -13,7 +13,10 @@ public record CreateCourseCommand(
     string ShortDescription,
     decimal Price,
     CourseLevel Level,
-    string ThumbnailUrl) : IRequest<Guid>;
+    string ThumbnailUrl,
+    string Language,
+    List<Guid> CategoryIds,
+    List<Guid> TechnologyIds) : IRequest<Guid>;
 
 public class CreateCourseCommandHandler : IRequestHandler<CreateCourseCommand, Guid>
 {
@@ -33,6 +36,14 @@ public class CreateCourseCommandHandler : IRequestHandler<CreateCourseCommand, G
             throw new ForbiddenAccessException("User not authenticated.");
         }
 
+        var categories = await _context.Categories
+            .Where(c => request.CategoryIds.Contains(c.Id))
+            .ToListAsync(cancellationToken);
+
+        var technologies = await _context.Technologies
+            .Where(t => request.TechnologyIds.Contains(t.Id))
+            .ToListAsync(cancellationToken);
+
         var course = new Course
         {
             Id = Guid.NewGuid(),
@@ -43,8 +54,11 @@ public class CreateCourseCommandHandler : IRequestHandler<CreateCourseCommand, G
             Level = request.Level,
             Status = CourseStatus.Draft,
             ThumbnailUrl = request.ThumbnailUrl,
+            Language = request.Language,
             InstructorId = _currentUserService.UserId.Value,
-            CreatedAt = DateTime.UtcNow
+            CreatedAt = DateTime.UtcNow,
+            Categories = categories,
+            Technologies = technologies
         };
 
         _context.Courses.Add(course);

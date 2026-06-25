@@ -12,6 +12,8 @@ public class ApplicationDbContext : IdentityDbContext<ApplicationUser, IdentityR
     public ApplicationDbContext(DbContextOptions<ApplicationDbContext> options) : base(options) { }
 
     public DbSet<Course> Courses => Set<Course>();
+    public DbSet<Category> Categories => Set<Category>();
+    public DbSet<Technology> Technologies => Set<Technology>();
     public DbSet<Domain.Entities.Module> Modules => Set<Domain.Entities.Module>();
     public DbSet<Lesson> Lessons => Set<Lesson>();
     public DbSet<Enrollment> Enrollments => Set<Enrollment>();
