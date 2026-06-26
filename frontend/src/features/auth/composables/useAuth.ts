@@ -13,11 +13,11 @@ export function useAuth() {
     mutationFn: login,
     onSuccess: (data) => {
       authStore.setAuth(data)
-      toast.success('Logged in successfully')
+      toast.success('Zalogowano pomyślnie')
       router.push({ name: 'Home' })
     },
     onError: (error: any) => {
-      toast.error(error.response?.data?.error || 'Login failed')
+      toast.error(error.response?.data?.error || 'Nie udało się zalogować')
     }
   })
 
@@ -25,11 +25,11 @@ export function useAuth() {
     mutationFn: register,
     onSuccess: (data) => {
       authStore.setAuth(data)
-      toast.success('Registered successfully')
+      toast.success('Konto zostało utworzone')
       router.push({ name: 'Home' })
     },
     onError: (error: any) => {
-      toast.error(error.response?.data?.error || 'Registration failed')
+      toast.error(error.response?.data?.error || 'Nie udało się utworzyć konta')
     }
   })
 
@@ -50,7 +50,7 @@ export function useAuth() {
 
   const logout = () => {
     authStore.logout()
-    toast.info('Logged out')
+    toast.info('Wylogowano')
     router.push({ name: 'Home' })
   }
 

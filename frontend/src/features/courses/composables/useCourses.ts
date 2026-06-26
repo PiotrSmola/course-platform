@@ -26,11 +26,11 @@ export function useCreateCourse() {
   return useMutation({
     mutationFn: createCourse,
     onSuccess: () => {
-      toast.success('Course created')
+      toast.success('Kurs został utworzony')
       router.push({ name: 'InstructorDashboard' })
     },
     onError: (error: any) => {
-      toast.error(error.response?.data?.error || 'Failed to create course')
+      toast.error(error.response?.data?.error || 'Nie udało się utworzyć kursu')
     }
   })
 }
@@ -39,10 +39,10 @@ export function useUpdateCourse() {
   return useMutation({
     mutationFn: updateCourse,
     onSuccess: () => {
-      toast.success('Course updated')
+      toast.success('Kurs został zaktualizowany')
     },
     onError: (error: any) => {
-      toast.error(error.response?.data?.error || 'Failed to update course')
+      toast.error(error.response?.data?.error || 'Nie udało się zaktualizować kursu')
     }
   })
 }

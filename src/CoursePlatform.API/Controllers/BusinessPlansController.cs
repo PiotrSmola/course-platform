@@ -1,12 +1,14 @@
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.RateLimiting;
 using CoursePlatform.Application.Features.BusinessPlans.Queries.GetBusinessPlans;
 
 namespace CoursePlatform.API.Controllers;
 
 [ApiController]
 [Route("api/business-plans")]
+[EnableRateLimiting("api")]
 public class BusinessPlansController : ControllerBase
 {
     private readonly IMediator _mediator;

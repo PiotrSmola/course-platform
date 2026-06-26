@@ -1,6 +1,7 @@
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.EntityFrameworkCore;
 using CoursePlatform.Application.Features.Courses.Queries.GetCourses;
 using CoursePlatform.Application.Features.Courses.Queries.GetCourseDetails;
@@ -13,6 +14,7 @@ namespace CoursePlatform.API.Controllers;
 
 [ApiController]
 [Route("api/[controller]")]
+[EnableRateLimiting("api")]
 public class CoursesController : ControllerBase
 {
     private readonly IMediator _mediator;

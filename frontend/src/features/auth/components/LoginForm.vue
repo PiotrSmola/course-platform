@@ -1,33 +1,47 @@
 <template>
-  <form @submit.prevent="handleSubmit" class="login-form">
+  <form @submit="onSubmit" class="login-form">
     <div class="form-group">
       <label>Email</label>
-      <input v-model="email" type="email" required placeholder="twoj@email.com" />
+      <input v-model="email" type="email" autocomplete="email" placeholder="twoj@email.com" />
+      <span v-if="errors.email" class="error">{{ errors.email }}</span>
     </div>
     <div class="form-group">
       <label>Hasło</label>
-      <input v-model="password" type="password" required placeholder="••••••" />
+      <input v-model="password" type="password" autocomplete="current-password" placeholder="••••••" />
+      <span v-if="errors.password" class="error">{{ errors.password }}</span>
     </div>
-    <button type="submit" class="btn btn-primary" :disabled="isLoading">
+    <button type="submit" class="btn btn-primary" :disabled="!meta.valid || isLoading">
       {{ isLoading ? 'Logowanie...' : 'Zaloguj się' }}
     </button>
   </form>
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue'
+import { useForm } from 'vee-validate'
+import { toTypedSchema } from '@vee-validate/zod'
 import { useAuth } from '@/features/auth/composables/useAuth'
+import { loginSchema } from '@/features/auth/schemas/auth.schema'
+import { ref } from 'vue'
 
 const { login } = useAuth()
-const email = ref('')
-const password = ref('')
+
+const { handleSubmit, defineField, errors, meta } = useForm({
+  validationSchema: toTypedSchema(loginSchema)
+})
+
+const [email] = defineField('email')
+const [password] = defineField('password')
+
 const isLoading = ref(false)
 
-async function handleSubmit() {
+const onSubmit = handleSubmit(async (values) => {
   isLoading.value = true
-  await login.mutateAsync({ email: email.value, password: password.value })
-  isLoading.value = false
-}
+  try {
+    await login.mutateAsync(values)
+  } finally {
+    isLoading.value = false
+  }
+})
 </script>
 
 <style lang="scss" scoped>
@@ -71,6 +85,12 @@ async function handleSubmit() {
       background: rgba(255, 255, 255, 0.07);
       box-shadow: inset 0 1px 1px rgba(255, 255, 255, 0.35), inset 0 0 0 1px rgba(167, 139, 250, 0.5), 0 0 0 4px rgba(139, 92, 246, 0.18);
     }
+  }
+
+  .error {
+    color: #f87171;
+    font-size: 0.82rem;
+    font-weight: 500;
   }
 }
 

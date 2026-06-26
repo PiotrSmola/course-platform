@@ -22,11 +22,13 @@ public class CreateCourseCommandHandler : IRequestHandler<CreateCourseCommand, G
 {
     private readonly IApplicationDbContext _context;
     private readonly ICurrentUserService _currentUserService;
+    private readonly IHtmlSanitizer _htmlSanitizer;
 
-    public CreateCourseCommandHandler(IApplicationDbContext context, ICurrentUserService currentUserService)
+    public CreateCourseCommandHandler(IApplicationDbContext context, ICurrentUserService currentUserService, IHtmlSanitizer htmlSanitizer)
     {
         _context = context;
         _currentUserService = currentUserService;
+        _htmlSanitizer = htmlSanitizer;
     }
 
     public async Task<Guid> Handle(CreateCourseCommand request, CancellationToken cancellationToken)
@@ -48,8 +50,8 @@ public class CreateCourseCommandHandler : IRequestHandler<CreateCourseCommand, G
         {
             Id = Guid.NewGuid(),
             Title = request.Title,
-            Description = request.Description,
-            ShortDescription = request.ShortDescription,
+            Description = _htmlSanitizer.Sanitize(request.Description),
+            ShortDescription = _htmlSanitizer.Sanitize(request.ShortDescription),
             Price = request.Price,
             Level = request.Level,
             Status = CourseStatus.Draft,

@@ -1,4 +1,5 @@
 using FluentValidation;
+using CoursePlatform.Application.Common.Validation;
 
 namespace CoursePlatform.Application.Features.Auth.Commands.Register;
 
@@ -6,9 +7,9 @@ public class RegisterCommandValidator : AbstractValidator<RegisterCommand>
 {
     public RegisterCommandValidator()
     {
-        RuleFor(x => x.Email).NotEmpty().EmailAddress();
-        RuleFor(x => x.Password).NotEmpty().MinimumLength(6);
-        RuleFor(x => x.FirstName).NotEmpty().MaximumLength(100);
-        RuleFor(x => x.LastName).NotEmpty().MaximumLength(100);
+        RuleFor(x => x.Email).ValidEmail();
+        RuleFor(x => x.Password).ValidPassword();
+        RuleFor(x => x.FirstName).ValidName("Imię");
+        RuleFor(x => x.LastName).ValidName("Nazwisko");
     }
 }

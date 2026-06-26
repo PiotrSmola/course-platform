@@ -1,6 +1,7 @@
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.RateLimiting;
 using CoursePlatform.Application.Features.Auth;
 using CoursePlatform.Application.Features.Auth.Commands.Login;
 using CoursePlatform.Application.Features.Auth.Commands.Register;
@@ -10,6 +11,7 @@ namespace CoursePlatform.API.Controllers;
 
 [ApiController]
 [Route("api/[controller]")]
+[EnableRateLimiting("api")]
 public class AuthController : ControllerBase
 {
     private readonly IMediator _mediator;
@@ -21,6 +23,7 @@ public class AuthController : ControllerBase
 
     [HttpPost("register")]
     [AllowAnonymous]
+    [EnableRateLimiting("auth")]
     public async Task<ActionResult<AuthResponse>> Register(RegisterCommand command)
     {
         var result = await _mediator.Send(command);
@@ -29,6 +32,7 @@ public class AuthController : ControllerBase
 
     [HttpPost("login")]
     [AllowAnonymous]
+    [EnableRateLimiting("auth")]
     public async Task<ActionResult<AuthResponse>> Login(LoginCommand command)
     {
         var result = await _mediator.Send(command);

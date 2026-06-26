@@ -1,6 +1,7 @@
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.RateLimiting;
 using CoursePlatform.Application.Features.Reviews.Commands.CreateReview;
 using CoursePlatform.Application.Features.Reviews.Queries.GetCourseReviews;
 
@@ -8,6 +9,7 @@ namespace CoursePlatform.API.Controllers;
 
 [ApiController]
 [Route("api/courses/{courseId:guid}/reviews")]
+[EnableRateLimiting("api")]
 public class ReviewsController : ControllerBase
 {
     private readonly IMediator _mediator;

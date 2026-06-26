@@ -1,5 +1,7 @@
 using MediatR;
 using Microsoft.AspNetCore.Identity;
+using FluentValidation;
+using FluentValidation.Results;
 using CoursePlatform.Domain.Entities;
 using CoursePlatform.Application.Common.Interfaces;
 
@@ -25,13 +27,13 @@ public class LoginCommandHandler : IRequestHandler<LoginCommand, AuthResponse>
         var user = await _userManager.FindByEmailAsync(request.Email);
         if (user == null)
         {
-            throw new Exception("Invalid email or password.");
+            throw new ValidationException(new[] { new ValidationFailure("Email", "Invalid email or password.") });
         }
 
         var result = await _signInManager.CheckPasswordSignInAsync(user, request.Password, false);
         if (!result.Succeeded)
         {
-            throw new Exception("Invalid email or password.");
+            throw new ValidationException(new[] { new ValidationFailure("Password", "Invalid email or password.") });
         }
 
         var roles = await _userManager.GetRolesAsync(user);

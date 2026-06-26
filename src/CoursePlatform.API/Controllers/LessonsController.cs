@@ -1,6 +1,7 @@
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.RateLimiting;
 using CoursePlatform.Application.Features.Lessons.Queries.GetLesson;
 using CoursePlatform.Application.Features.Lessons.Commands.UpdateProgress;
 
@@ -8,6 +9,7 @@ namespace CoursePlatform.API.Controllers;
 
 [ApiController]
 [Route("api/courses/{courseId:guid}/lessons")]
+[EnableRateLimiting("api")]
 public class LessonsController : ControllerBase
 {
     private readonly IMediator _mediator;

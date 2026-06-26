@@ -70,12 +70,10 @@ const router = createRouter({
   }
 })
 
-router.beforeEach((to, _from, next) => {
+router.beforeEach((to) => {
   const authStore = useAuthStore()
   if (to.meta.guest && authStore.isAuthenticated) {
-    next({ name: 'Home' })
-  } else {
-    next()
+    return { name: 'Home' }
   }
 })
 

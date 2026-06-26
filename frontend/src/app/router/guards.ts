@@ -1,20 +1,16 @@
 import { useAuthStore } from '@/features/auth/stores/auth.store'
-import type { NavigationGuard } from 'vue-router'
+import type { RouteLocationNormalized } from 'vue-router'
 
-export const authGuard: NavigationGuard = (to, _from, next) => {
+export function authGuard(to: RouteLocationNormalized) {
   const authStore = useAuthStore()
   if (!authStore.isAuthenticated) {
-    next({ name: 'Login', query: { redirect: to.fullPath } })
-  } else {
-    next()
+    return { name: 'Login', query: { redirect: to.fullPath } }
   }
 }
 
-export const instructorGuard: NavigationGuard = (_to, _from, next) => {
+export function instructorGuard() {
   const authStore = useAuthStore()
   if (!authStore.isInstructor) {
-    next({ name: 'Home' })
-  } else {
-    next()
+    return { name: 'Home' }
   }
 }

@@ -1,5 +1,7 @@
 using MediatR;
 using Microsoft.AspNetCore.Identity;
+using FluentValidation;
+using FluentValidation.Results;
 using CoursePlatform.Domain.Entities;
 using CoursePlatform.Application.Common.Interfaces;
 
@@ -35,7 +37,7 @@ public class RegisterCommandHandler : IRequestHandler<RegisterCommand, AuthRespo
         var result = await _userManager.CreateAsync(user, request.Password);
         if (!result.Succeeded)
         {
-            throw new Exception(string.Join(", ", result.Errors.Select(e => e.Description)));
+            throw new ValidationException(result.Errors.Select(e => new ValidationFailure(e.Code, e.Description)));
         }
 
         await _userManager.AddToRoleAsync(user, "Student");

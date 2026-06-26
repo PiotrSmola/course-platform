@@ -1,6 +1,7 @@
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.RateLimiting;
 using CoursePlatform.Application.Features.LearningPaths.Queries.GetLearningPaths;
 using CoursePlatform.Application.Features.LearningPaths.Queries.GetLearningPathBySlug;
 
@@ -8,6 +9,7 @@ namespace CoursePlatform.API.Controllers;
 
 [ApiController]
 [Route("api/learning-paths")]
+[EnableRateLimiting("api")]
 public class LearningPathsController : ControllerBase
 {
     private readonly IMediator _mediator;

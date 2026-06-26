@@ -21,6 +21,7 @@ public static class DependencyInjection
         services.AddScoped<IFileStorageService, MinioFileStorageService>();
         services.AddScoped<IJwtTokenGenerator, JwtTokenGenerator>();
         services.AddSingleton<IDateTimeService, DateTimeService>();
+        services.AddSingleton<IHtmlSanitizer, HtmlSanitizerWrapper>();
 
         return services;
     }

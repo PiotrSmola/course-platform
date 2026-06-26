@@ -23,11 +23,13 @@ public class UpdateCourseCommandHandler : IRequestHandler<UpdateCourseCommand>
 {
     private readonly IApplicationDbContext _context;
     private readonly ICurrentUserService _currentUserService;
+    private readonly IHtmlSanitizer _htmlSanitizer;
 
-    public UpdateCourseCommandHandler(IApplicationDbContext context, ICurrentUserService currentUserService)
+    public UpdateCourseCommandHandler(IApplicationDbContext context, ICurrentUserService currentUserService, IHtmlSanitizer htmlSanitizer)
     {
         _context = context;
         _currentUserService = currentUserService;
+        _htmlSanitizer = htmlSanitizer;
     }
 
     public async Task Handle(UpdateCourseCommand request, CancellationToken cancellationToken)
@@ -60,8 +62,8 @@ public class UpdateCourseCommandHandler : IRequestHandler<UpdateCourseCommand>
             .ToListAsync(cancellationToken);
 
         course.Title = request.Title;
-        course.Description = request.Description;
-        course.ShortDescription = request.ShortDescription;
+        course.Description = _htmlSanitizer.Sanitize(request.Description);
+        course.ShortDescription = _htmlSanitizer.Sanitize(request.ShortDescription);
         course.Price = request.Price;
         course.Level = request.Level;
         course.Status = request.Status;

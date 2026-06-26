@@ -1,3 +1,5 @@
+using FluentValidation;
+using FluentValidation.Results;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 using CoursePlatform.Application.Common.Interfaces;
@@ -12,11 +14,13 @@ public class CreateReviewCommandHandler : IRequestHandler<CreateReviewCommand, G
 {
     private readonly IApplicationDbContext _context;
     private readonly ICurrentUserService _currentUserService;
+    private readonly IHtmlSanitizer _htmlSanitizer;
 
-    public CreateReviewCommandHandler(IApplicationDbContext context, ICurrentUserService currentUserService)
+    public CreateReviewCommandHandler(IApplicationDbContext context, ICurrentUserService currentUserService, IHtmlSanitizer htmlSanitizer)
     {
         _context = context;
         _currentUserService = currentUserService;
+        _htmlSanitizer = htmlSanitizer;
     }
 
     public async Task<Guid> Handle(CreateReviewCommand request, CancellationToken cancellationToken)
@@ -39,12 +43,12 @@ public class CreateReviewCommandHandler : IRequestHandler<CreateReviewCommand, G
 
         if (existing != null)
         {
-            throw new Exception("You have already reviewed this course.");
+            throw new ValidationException(new[] { new ValidationFailure("Comment", "Już dodałeś opinię do tego kursu.") });
         }
 
         if (request.Rating < 1 || request.Rating > 5)
         {
-            throw new Exception("Rating must be between 1 and 5.");
+            throw new ValidationException(new[] { new ValidationFailure("Rating", "Ocena musi być w zakresie 1-5.") });
         }
 
         var review = new Review
@@ -53,7 +57,7 @@ public class CreateReviewCommandHandler : IRequestHandler<CreateReviewCommand, G
             UserId = _currentUserService.UserId.Value,
             CourseId = request.CourseId,
             Rating = request.Rating,
-            Comment = request.Comment,
+            Comment = _htmlSanitizer.Sanitize(request.Comment),
             CreatedAt = DateTime.UtcNow
         };
 

@@ -1,4 +1,5 @@
 using FluentValidation;
+using CoursePlatform.Application.Common.Validation;
 
 namespace CoursePlatform.Application.Features.Courses.Commands.CreateCourse;
 
@@ -6,11 +7,13 @@ public class CreateCourseCommandValidator : AbstractValidator<CreateCourseComman
 {
     public CreateCourseCommandValidator()
     {
-        RuleFor(x => x.Title).NotEmpty().MaximumLength(200);
-        RuleFor(x => x.Description).NotEmpty();
-        RuleFor(x => x.ShortDescription).MaximumLength(500);
-        RuleFor(x => x.Price).GreaterThanOrEqualTo(0);
-        RuleFor(x => x.ThumbnailUrl).MaximumLength(500);
-        RuleFor(x => x.Language).NotEmpty().MaximumLength(50);
+        RuleFor(x => x.Title).ValidCourseTitle();
+        RuleFor(x => x.Description).ValidCourseDescription();
+        RuleFor(x => x.ShortDescription).ValidShortDescription();
+        RuleFor(x => x.Price).ValidPrice();
+        RuleFor(x => x.ThumbnailUrl).ValidThumbnailUrl();
+        RuleFor(x => x.Language).ValidLanguage();
+        RuleFor(x => x.CategoryIds).NotNull().WithMessage("Kategorie nie mogą być null");
+        RuleFor(x => x.TechnologyIds).NotNull().WithMessage("Technologie nie mogą być null");
     }
 }

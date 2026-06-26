@@ -1,3 +1,5 @@
+using FluentValidation;
+using FluentValidation.Results;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 using CoursePlatform.Application.Common.Interfaces;
@@ -42,7 +44,7 @@ public class EnrollCommandHandler : IRequestHandler<EnrollCommand, Guid>
 
         if (existing != null)
         {
-            throw new Exception("You are already enrolled in this course.");
+            throw new ValidationException(new[] { new ValidationFailure("CourseId", "Jesteś już zapisany na ten kurs.") });
         }
 
         var enrollment = new Enrollment

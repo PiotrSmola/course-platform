@@ -1,50 +1,61 @@
 <template>
-  <form @submit.prevent="handleSubmit" class="register-form">
+  <form @submit="onSubmit" class="register-form">
     <div class="form-row">
       <div class="form-group">
         <label>Imię</label>
-        <input v-model="firstName" type="text" required placeholder="Jan" />
+        <input v-model="firstName" type="text" autocomplete="given-name" placeholder="Jan" />
+        <span v-if="errors.firstName" class="error">{{ errors.firstName }}</span>
       </div>
       <div class="form-group">
         <label>Nazwisko</label>
-        <input v-model="lastName" type="text" required placeholder="Kowalski" />
+        <input v-model="lastName" type="text" autocomplete="family-name" placeholder="Kowalski" />
+        <span v-if="errors.lastName" class="error">{{ errors.lastName }}</span>
       </div>
     </div>
     <div class="form-group">
       <label>Email</label>
-      <input v-model="email" type="email" required placeholder="jan@email.com" />
+      <input v-model="email" type="email" autocomplete="email" placeholder="jan@email.com" />
+      <span v-if="errors.email" class="error">{{ errors.email }}</span>
     </div>
     <div class="form-group">
       <label>Hasło</label>
-      <input v-model="password" type="password" required placeholder="Min. 6 znaków" />
+      <input v-model="password" type="password" autocomplete="new-password" placeholder="Min. 6 znaków" />
+      <span v-if="errors.password" class="error">{{ errors.password }}</span>
     </div>
-    <button type="submit" class="btn btn-primary" :disabled="isLoading">
+    <button type="submit" class="btn btn-primary" :disabled="!meta.valid || isLoading">
       {{ isLoading ? 'Tworzenie konta...' : 'Utwórz konto' }}
     </button>
   </form>
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue'
+import { useForm } from 'vee-validate'
+import { toTypedSchema } from '@vee-validate/zod'
 import { useAuth } from '@/features/auth/composables/useAuth'
+import { registerSchema } from '@/features/auth/schemas/auth.schema'
+import { ref } from 'vue'
 
 const { register } = useAuth()
-const firstName = ref('')
-const lastName = ref('')
-const email = ref('')
-const password = ref('')
+
+const { handleSubmit, defineField, errors, meta } = useForm({
+  validationSchema: toTypedSchema(registerSchema)
+})
+
+const [firstName] = defineField('firstName')
+const [lastName] = defineField('lastName')
+const [email] = defineField('email')
+const [password] = defineField('password')
+
 const isLoading = ref(false)
 
-async function handleSubmit() {
+const onSubmit = handleSubmit(async (values) => {
   isLoading.value = true
-  await register.mutateAsync({
-    firstName: firstName.value,
-    lastName: lastName.value,
-    email: email.value,
-    password: password.value
-  })
-  isLoading.value = false
-}
+  try {
+    await register.mutateAsync(values)
+  } finally {
+    isLoading.value = false
+  }
+})
 </script>
 
 <style lang="scss" scoped>
@@ -92,12 +103,19 @@ async function handleSubmit() {
 
     &::placeholder {
       color: $color-faint;
+      font-size: 0.82rem;
     }
 
     &:focus {
       background: rgba(255, 255, 255, 0.07);
       box-shadow: inset 0 1px 1px rgba(255, 255, 255, 0.35), inset 0 0 0 1px rgba(167, 139, 250, 0.5), 0 0 0 4px rgba(139, 92, 246, 0.18);
     }
+  }
+
+  .error {
+    color: #f87171;
+    font-size: 0.82rem;
+    font-weight: 500;
   }
 }
 
