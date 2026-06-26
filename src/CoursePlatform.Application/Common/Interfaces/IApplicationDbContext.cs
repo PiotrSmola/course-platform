@@ -17,6 +17,7 @@ public interface IApplicationDbContext
     DbSet<LearningPathCourse> LearningPathCourses { get; }
     DbSet<BusinessPlan> BusinessPlans { get; }
     DbSet<BusinessPlanFeature> BusinessPlanFeatures { get; }
+    DbSet<UserStatistics> UserStatistics { get; }
     DbSet<ApplicationUser> Users { get; }
 
     Task<int> SaveChangesAsync(CancellationToken cancellationToken = default);

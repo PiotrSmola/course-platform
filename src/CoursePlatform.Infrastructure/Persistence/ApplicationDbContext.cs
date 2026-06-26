@@ -23,6 +23,8 @@ public class ApplicationDbContext : IdentityDbContext<ApplicationUser, IdentityR
     public DbSet<LearningPathCourse> LearningPathCourses => Set<LearningPathCourse>();
     public DbSet<BusinessPlan> BusinessPlans => Set<BusinessPlan>();
     public DbSet<BusinessPlanFeature> BusinessPlanFeatures => Set<BusinessPlanFeature>();
+    public DbSet<UserStatistics> UserStatistics => Set<UserStatistics>();
+    public new DbSet<ApplicationUser> Users => Set<ApplicationUser>();
 
     protected override void OnModelCreating(ModelBuilder builder)
     {

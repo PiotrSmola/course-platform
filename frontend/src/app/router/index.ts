@@ -43,6 +43,14 @@ const routes: RouteRecordRaw[] = [
     ]
   },
   {
+    path: '/profile',
+    component: () => import('@/app/layouts/DashboardLayout.vue'),
+    beforeEnter: authGuard,
+    children: [
+      { path: '', component: () => import('@/features/profile/pages/ProfilePage.vue'), name: 'Profile' }
+    ]
+  },
+  {
     path: '/learn/:courseId/:lessonId',
     component: () => import('@/app/layouts/DashboardLayout.vue'),
     beforeEnter: authGuard,

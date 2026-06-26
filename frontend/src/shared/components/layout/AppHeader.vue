@@ -137,9 +137,9 @@
           <router-link class="btn btn-primary" :to="{ name: 'Register' }">Rejestracja</router-link>
         </template>
         <template v-else>
-          <button class="avatar-btn" aria-label="Konto">
+          <router-link class="avatar-btn" :to="{ name: 'Profile' }" aria-label="Konto">
             <span>{{ authStore.user?.firstName.charAt(0) }}</span>
-          </button>
+          </router-link>
           <button class="btn btn-ghost" @click="logout">Wyloguj</button>
         </template>
       </div>
