@@ -2,7 +2,7 @@ import { ref, watch } from 'vue'
 import { useMutation, useQueryClient } from '@tanstack/vue-query'
 import { getMyEnrollments, enroll } from '@/features/enrollment/api/enrollment.api'
 import { useAuthStore } from '@/features/auth/stores/auth.store'
-import { toast } from 'vue3-toastify'
+import { toast } from '@/shared/toast/toast'
 import type { EnrollmentDto } from '@/features/enrollment/types/enrollment.types'
 
 export function useEnrollments() {
@@ -39,8 +39,9 @@ export function useEnroll() {
   const queryClient = useQueryClient()
   return useMutation({
     mutationFn: enroll,
-    onSuccess: () => {
+    onSuccess: (_data, courseId) => {
       queryClient.invalidateQueries({ queryKey: ['enrollments'] })
+      queryClient.invalidateQueries({ queryKey: ['course', courseId] })
       toast.success('Zapisano na kurs')
     },
     onError: (error: any) => {

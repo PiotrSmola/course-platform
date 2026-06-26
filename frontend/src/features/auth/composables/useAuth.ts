@@ -2,7 +2,7 @@ import { useMutation, useQuery } from '@tanstack/vue-query'
 import { useRouter } from 'vue-router'
 import { useAuthStore } from '@/features/auth/stores/auth.store'
 import { login, register, getCurrentUser } from '@/features/auth/api/auth.api'
-import { toast } from 'vue3-toastify'
+import { toast } from '@/shared/toast/toast'
 import { watch } from 'vue'
 
 export function useAuth() {

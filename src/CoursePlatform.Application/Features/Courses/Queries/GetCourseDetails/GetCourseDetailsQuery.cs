@@ -10,10 +10,12 @@ public record GetCourseDetailsQuery(Guid Id) : IRequest<CourseDetailsDto>;
 public class GetCourseDetailsQueryHandler : IRequestHandler<GetCourseDetailsQuery, CourseDetailsDto>
 {
     private readonly IApplicationDbContext _context;
+    private readonly ICurrentUserService _currentUserService;
 
-    public GetCourseDetailsQueryHandler(IApplicationDbContext context)
+    public GetCourseDetailsQueryHandler(IApplicationDbContext context, ICurrentUserService currentUserService)
     {
         _context = context;
+        _currentUserService = currentUserService;
     }
 
     public async Task<CourseDetailsDto> Handle(GetCourseDetailsQuery request, CancellationToken cancellationToken)
@@ -53,6 +55,13 @@ public class GetCourseDetailsQueryHandler : IRequestHandler<GetCourseDetailsQuer
             $"{r.User.FirstName} {r.User.LastName}",
             r.CreatedAt)).ToList();
 
+        var isEnrolled = false;
+        if (_currentUserService.UserId.HasValue)
+        {
+            isEnrolled = await _context.Enrollments
+                .AnyAsync(e => e.UserId == _currentUserService.UserId.Value && e.CourseId == request.Id, cancellationToken);
+        }
+
         return new CourseDetailsDto(
             course.Id,
             course.Title,
@@ -71,6 +80,7 @@ public class GetCourseDetailsQueryHandler : IRequestHandler<GetCourseDetailsQuer
             modules,
             course.Reviews.Any() ? course.Reviews.Average(r => r.Rating) : 0,
             course.Reviews.Count,
-            reviews);
+            reviews,
+            isEnrolled);
     }
 }

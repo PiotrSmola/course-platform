@@ -65,15 +65,17 @@ import { computed } from 'vue'
 import { useRoute } from 'vue-router'
 import { useAuthStore } from '@/features/auth/stores/auth.store'
 import { useCourseDetails } from '@/features/courses/composables/useCourses'
+import { useEnroll } from '@/features/enrollment/composables/useEnrollment'
 import { CourseLevel } from '@/features/courses/types/course.types'
 
 const route = useRoute()
 const authStore = useAuthStore()
 const courseQuery = useCourseDetails(route.params.id as string)
 const course = computed(() => courseQuery.data.value)
+const enrollMutation = useEnroll()
 
 const isInstructor = computed(() => authStore.user?.id === course.value?.instructorId)
-const isEnrolled = false // TODO: check enrollment
+const isEnrolled = computed(() => course.value?.isEnrolled ?? false)
 
 const levelLabel = computed(() => {
   if (!course.value) return ''
@@ -86,7 +88,8 @@ const levelLabel = computed(() => {
 })
 
 const enroll = () => {
-  // TODO: implement enrollment
+  if (!course.value) return
+  enrollMutation.mutate(course.value.id)
 }
 </script>
 

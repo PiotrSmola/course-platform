@@ -20,7 +20,8 @@ public record CourseDetailsDto(
     List<ModuleDto> Modules,
     double AverageRating,
     int ReviewCount,
-    List<ReviewDto> Reviews);
+    List<ReviewDto> Reviews,
+    bool IsEnrolled);
 
 public record ModuleDto(Guid Id, string Title, int Order, List<LessonDto> Lessons);
 public record LessonDto(Guid Id, string Title, string? Description, int Duration, int Order, string VideoUrl);

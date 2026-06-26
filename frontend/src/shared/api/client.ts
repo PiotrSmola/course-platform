@@ -1,7 +1,7 @@
 import axios from 'axios'
 import { useAuthStore } from '@/features/auth/stores/auth.store'
 import { router } from '@/app/router'
-import { toast } from 'vue3-toastify'
+import { toast } from '@/shared/toast/toast'
 
 const client = axios.create({
   baseURL: import.meta.env.VITE_API_URL || 'http://localhost:8080/api',

@@ -80,4 +80,5 @@ export interface CourseDetailsDto {
   averageRating: number
   reviewCount: number
   reviews: ReviewDto[]
+  isEnrolled: boolean
 }

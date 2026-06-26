@@ -1,7 +1,7 @@
 import { useQuery, useMutation } from '@tanstack/vue-query'
 import { useRouter } from 'vue-router'
 import { getCourses, getCourseDetails, createCourse, updateCourse } from '@/features/courses/api/courses.api'
-import { toast } from 'vue3-toastify'
+import { toast } from '@/shared/toast/toast'
 
 export function useCourses() {
   const { isLoading, isError, error, data } = useQuery({

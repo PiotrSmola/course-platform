@@ -12,4 +12,6 @@ app.use(createPinia())
 app.use(router)
 app.use(VueQueryPlugin)
 
+app.provide('toastContainerClass', 'liquid-toast-container')
+
 app.mount('#app')
