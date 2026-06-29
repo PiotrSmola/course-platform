@@ -32,18 +32,18 @@
 
           <ul class="hero-metrics">
             <li>
-              <strong>240+</strong>
+              <strong>{{ stats?.totalCount ?? '—' }}</strong>
               <span>kursów</span>
             </li>
             <li class="divider"></li>
             <li>
-              <strong>18k</strong>
-              <span>studentów</span>
+              <strong>{{ featuredRating }}</strong>
+              <span>średnia ocen</span>
             </li>
             <li class="divider"></li>
             <li>
-              <strong>4.8</strong>
-              <span>średnia ocen</span>
+              <strong>{{ featuredCount }}</strong>
+              <span>na stronie głównej</span>
             </li>
           </ul>
         </div>
@@ -239,6 +239,29 @@
     </div>
   </section>
 
+  <section class="featured-section" v-if="featuredCourses.length">
+    <div class="container">
+      <div class="section-head">
+        <span class="eyebrow">Polecane</span>
+        <h2>Popularne kursy</h2>
+      </div>
+      <div class="featured-grid">
+        <router-link
+          v-for="course in featuredCourses"
+          :key="course.id"
+          class="featured-card glass-card"
+          :to="{ name: 'CourseDetails', params: { id: course.id } }"
+        >
+          <div class="thumb" :style="{ backgroundImage: `url(${course.thumbnailUrl})` }" />
+          <div class="info">
+            <h3>{{ course.title }}</h3>
+            <p>{{ course.instructorName }} · {{ course.averageRating.toFixed(1) }} ★</p>
+          </div>
+        </router-link>
+      </div>
+    </div>
+  </section>
+
   <section class="cta-section" id="start-learning">
     <div class="container">
       <div class="cta-card glass-card">
@@ -256,9 +279,34 @@
 </template>
 
 <script setup lang="ts">
+import { computed } from 'vue'
+import { useQuery } from '@tanstack/vue-query'
 import { useAuthStore } from '@/features/auth/stores/auth.store'
+import { getCourses } from '@/features/courses/api/courses.api'
+import { queryKeys } from '@/shared/queryKeys'
 
 const authStore = useAuthStore()
+
+const { data: stats } = useQuery({
+  queryKey: queryKeys.catalogStats(),
+  queryFn: () => getCourses({ pageSize: 1 })
+})
+
+const { data: featuredData } = useQuery({
+  queryKey: [...queryKeys.courses(), 'featured'],
+  queryFn: () => getCourses({ pageSize: 6, sortBy: 'rating' })
+})
+
+const featuredCourses = computed(() => featuredData.value?.items ?? [])
+
+const featuredRating = computed(() => {
+  const items = featuredCourses.value
+  if (!items.length) return '—'
+  const avg = items.reduce((sum, c) => sum + c.averageRating, 0) / items.length
+  return avg.toFixed(1)
+})
+
+const featuredCount = computed(() => featuredCourses.value.length || '—')
 </script>
 
 <style lang="scss" scoped>
@@ -710,6 +758,58 @@ const authStore = useAuthStore()
   font-size: 0.88rem;
   color: $color-muted;
   line-height: 1.6;
+}
+
+.featured-section {
+  padding: 40px 0 60px;
+
+  .section-head {
+    margin-bottom: 28px;
+
+    h2 {
+      font-size: 1.6rem;
+      margin-top: 8px;
+    }
+  }
+}
+
+.featured-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  gap: 20px;
+}
+
+.featured-card {
+  text-decoration: none;
+  color: inherit;
+  overflow: hidden;
+  padding: 0;
+  transition: transform 0.2s;
+
+  &:hover {
+    transform: translateY(-4px);
+  }
+
+  .thumb {
+    height: 140px;
+    background-size: cover;
+    background-position: center;
+    background-color: rgba(139, 92, 246, 0.15);
+  }
+
+  .info {
+    padding: 16px;
+
+    h3 {
+      font-size: 1rem;
+      margin-bottom: 6px;
+    }
+
+    p {
+      font-size: 0.85rem;
+      color: $color-muted;
+    }
+  }
 }
 
 .cta-section {

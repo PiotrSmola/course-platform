@@ -69,7 +69,10 @@ public class GetCoursesQueryHandler : IRequestHandler<GetCoursesQuery, CoursesVm
         }
         else
         {
-            query = query.Where(c => c.Status == CourseStatus.Published);
+            if (!_currentUserService.IsAdmin)
+            {
+                query = query.Where(c => c.Status == CourseStatus.Published);
+            }
         }
 
         if (request.MinPrice.HasValue)
@@ -125,6 +128,7 @@ public class GetCoursesQueryHandler : IRequestHandler<GetCoursesQuery, CoursesVm
                 c.ShortDescription,
                 c.Price,
                 c.Level,
+                c.Status,
                 c.ThumbnailUrl,
                 $"{c.Instructor.FirstName} {c.Instructor.LastName}",
                 c.Language,

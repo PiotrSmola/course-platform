@@ -11,6 +11,11 @@ export const queryKeys = {
   courseSearch: (term: string) => ['course-search', term] as const,
   coursesBrowse: (filter: unknown) => ['courses-browse', filter] as const,
 
-  lesson: (courseId: string, lessonId: string) => ['lesson', courseId, lessonId] as const
+  lesson: (courseId: string, lessonId: string) => ['lesson', courseId, lessonId] as const,
+
+  instructorCourses: () => ['instructor-courses'] as const,
+  adminUsers: () => ['admin-users'] as const,
+  adminCourses: () => ['admin-courses'] as const,
+  catalogStats: () => ['catalog-stats'] as const
 }
 

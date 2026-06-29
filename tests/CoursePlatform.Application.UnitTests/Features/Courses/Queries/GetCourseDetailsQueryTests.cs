@@ -79,8 +79,7 @@ public class GetCourseDetailsQueryTests
         result.Should().NotBeNull();
         result.Modules.Should().HaveCount(1);
         result.Modules[0].Lessons.Should().HaveCount(1);
-        result.Modules[0].Lessons[0].Should().BeOfType<LessonListDto>();
-        typeof(LessonListDto).GetProperties().Should().NotContain(p => p.Name == "VideoUrl");
+        result.Modules[0].Lessons[0].VideoUrl.Should().BeNull();
     }
 
     [Fact]

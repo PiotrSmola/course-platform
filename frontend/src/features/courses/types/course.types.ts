@@ -16,6 +16,7 @@ export interface CourseListDto {
   shortDescription: string
   price: number
   level: CourseLevel
+  status: CourseStatus
   thumbnailUrl: string
   instructorName: string
   language: string
@@ -52,6 +53,8 @@ export interface LessonListDto {
   description: string | null
   duration: number
   order: number
+  isCompleted?: boolean
+  videoUrl?: string | null
 }
 
 export interface ModuleDto {
@@ -89,4 +92,18 @@ export interface CourseDetailsDto {
   reviewCount: number
   reviews: ReviewDto[]
   isEnrolled: boolean
+  hasUserReviewed: boolean
+  canReview: boolean
+}
+
+export interface InstructorCourseDto {
+  id: string
+  title: string
+  status: CourseStatus
+  price: number
+  thumbnailUrl: string
+  enrollmentCount: number
+  moduleCount: number
+  lessonCount: number
+  createdAt: string
 }

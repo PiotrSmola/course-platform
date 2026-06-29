@@ -4,6 +4,15 @@
 body {
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  @include liquid-glass-scrollbar;
+}
+
+html {
+  @include liquid-glass-scrollbar;
+}
+
+* {
+  @include liquid-glass-scrollbar;
 }
 
 .container {

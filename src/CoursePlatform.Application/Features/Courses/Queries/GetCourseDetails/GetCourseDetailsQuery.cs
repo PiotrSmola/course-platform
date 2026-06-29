@@ -45,6 +45,33 @@ public class GetCourseDetailsQueryHandler : IRequestHandler<GetCourseDetailsQuer
             }
         }
 
+        var isEnrolled = false;
+        var hasUserReviewed = false;
+        HashSet<Guid> completedLessonIds = new();
+
+        if (_currentUserService.UserId.HasValue)
+        {
+            var userId = _currentUserService.UserId.Value;
+            isEnrolled = await _context.Enrollments
+                .AnyAsync(e => e.UserId == userId && e.CourseId == request.Id, cancellationToken);
+
+            hasUserReviewed = await _context.Reviews
+                .AnyAsync(r => r.UserId == userId && r.CourseId == request.Id, cancellationToken);
+
+            if (isEnrolled)
+            {
+                var lessonIds = course.Modules.SelectMany(m => m.Lessons).Select(l => l.Id).ToList();
+                completedLessonIds = (await _context.LessonProgresses
+                    .Where(lp => lp.UserId == userId && lessonIds.Contains(lp.LessonId) && lp.IsCompleted)
+                    .Select(lp => lp.LessonId)
+                    .ToListAsync(cancellationToken))
+                    .ToHashSet();
+            }
+        }
+
+        var canManage = _currentUserService.UserId.HasValue &&
+            (_currentUserService.UserId.Value == course.InstructorId || _currentUserService.IsAdmin);
+
         var modules = course.Modules.OrderBy(m => m.Order).Select(m => new ModuleDto(
             m.Id,
             m.Title,
@@ -54,7 +81,9 @@ public class GetCourseDetailsQueryHandler : IRequestHandler<GetCourseDetailsQuer
                 l.Title,
                 l.Description,
                 l.Duration,
-                l.Order)).ToList())).ToList();
+                l.Order,
+                completedLessonIds.Contains(l.Id),
+                canManage ? l.VideoUrl : null)).ToList())).ToList();
 
         var reviews = course.Reviews.OrderByDescending(r => r.CreatedAt).Select(r => new ReviewDto(
             r.Id,
@@ -63,12 +92,7 @@ public class GetCourseDetailsQueryHandler : IRequestHandler<GetCourseDetailsQuer
             $"{r.User.FirstName} {r.User.LastName}",
             r.CreatedAt)).ToList();
 
-        var isEnrolled = false;
-        if (_currentUserService.UserId.HasValue)
-        {
-            isEnrolled = await _context.Enrollments
-                .AnyAsync(e => e.UserId == _currentUserService.UserId.Value && e.CourseId == request.Id, cancellationToken);
-        }
+        var canReview = isEnrolled && !hasUserReviewed;
 
         return new CourseDetailsDto(
             course.Id,
@@ -89,6 +113,8 @@ public class GetCourseDetailsQueryHandler : IRequestHandler<GetCourseDetailsQuer
             course.Reviews.Any() ? course.Reviews.Average(r => r.Rating) : 0,
             course.Reviews.Count,
             reviews,
-            isEnrolled);
+            isEnrolled,
+            hasUserReviewed,
+            canReview);
     }
 }

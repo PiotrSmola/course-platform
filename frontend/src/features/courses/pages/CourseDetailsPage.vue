@@ -32,11 +32,22 @@
                 <h3>{{ module.title }}</h3>
               </div>
               <div class="lessons-list">
-                <div v-for="lesson in module.lessons" :key="lesson.id" class="lesson-item">
-                  <span class="lesson-icon">▶</span>
-                  <span class="lesson-title">{{ lesson.title }}</span>
-                  <span class="lesson-duration">{{ lesson.duration }} min</span>
-                </div>
+                <template v-for="lesson in module.lessons" :key="lesson.id">
+                  <router-link
+                    v-if="isEnrolled"
+                    class="lesson-item link"
+                    :to="{ name: 'Learning', params: { courseId: course.id, lessonId: lesson.id } }"
+                  >
+                    <span class="lesson-icon">{{ lesson.isCompleted ? '✓' : '▶' }}</span>
+                    <span class="lesson-title">{{ lesson.title }}</span>
+                    <span class="lesson-duration">{{ lesson.duration }} min</span>
+                  </router-link>
+                  <div v-else class="lesson-item">
+                    <span class="lesson-icon">▶</span>
+                    <span class="lesson-title">{{ lesson.title }}</span>
+                    <span class="lesson-duration">{{ lesson.duration }} min</span>
+                  </div>
+                </template>
               </div>
             </div>
           </div>
@@ -44,6 +55,22 @@
 
         <div class="reviews-section">
           <h2>Opinie</h2>
+
+          <form v-if="course.canReview" class="review-form glass-card" @submit.prevent="submitReview">
+            <h3>Dodaj opinię</h3>
+            <div class="rating-row">
+              <label>Ocena</label>
+              <select v-model.number="reviewRating">
+                <option v-for="n in 5" :key="n" :value="n">{{ n }} ★</option>
+              </select>
+            </div>
+            <textarea v-model="reviewComment" rows="3" placeholder="Twoja opinia o kursie..." required />
+            <button type="submit" class="btn btn-primary" :disabled="createReview.isPending.value || !reviewComment.trim()">
+              Opublikuj opinię
+            </button>
+          </form>
+          <p v-else-if="course.isEnrolled && course.hasUserReviewed" class="review-note">Dodałeś już opinię do tego kursu.</p>
+
           <div class="reviews-list">
             <div v-for="review in course.reviews" :key="review.id" class="review-card glass-card">
               <div class="stars">{{ '★'.repeat(review.rating) }}</div>
@@ -69,11 +96,12 @@
 </template>
 
 <script setup lang="ts">
-import { computed } from 'vue'
+import { computed, ref } from 'vue'
 import { useRoute } from 'vue-router'
 import { useAuthStore } from '@/features/auth/stores/auth.store'
 import { useCourseDetails } from '@/features/courses/composables/useCourses'
 import { useEnroll } from '@/features/enrollment/composables/useEnrollment'
+import { useCreateReview } from '@/features/reviews/composables/useReviews'
 import { CourseLevel } from '@/features/courses/types/course.types'
 
 const route = useRoute()
@@ -81,6 +109,9 @@ const authStore = useAuthStore()
 const courseQuery = useCourseDetails(route.params.id as string)
 const course = computed(() => courseQuery.data.value)
 const enrollMutation = useEnroll()
+const reviewRating = ref(5)
+const reviewComment = ref('')
+const createReview = useCreateReview(route.params.id as string)
 
 const isInstructor = computed(() => authStore.user?.id === course.value?.instructorId)
 const isEnrolled = computed(() => course.value?.isEnrolled ?? false)
@@ -98,6 +129,14 @@ const levelLabel = computed(() => {
 const enroll = () => {
   if (!course.value) return
   enrollMutation.mutate(course.value.id)
+}
+
+function submitReview() {
+  if (!reviewComment.value.trim()) return
+  createReview.mutate(
+    { rating: reviewRating.value, comment: reviewComment.value },
+    { onSuccess: () => { reviewComment.value = '' } }
+  )
 }
 </script>
 
@@ -196,6 +235,58 @@ const enroll = () => {
 
   @media (max-width: 880px) {
     grid-template-columns: 1fr;
+  }
+}
+
+.reviews-section h2 {
+  font-size: 1.5rem;
+  margin-bottom: 28px;
+}
+
+.review-form {
+  padding: 24px;
+  margin-bottom: 24px;
+
+  h3 {
+    font-size: 1rem;
+    margin-bottom: 16px;
+  }
+
+  textarea {
+    width: 100%;
+    margin: 12px 0 16px;
+    padding: 12px;
+    border-radius: 12px;
+    border: none;
+    background: rgba(255, 255, 255, 0.04);
+    color: $color-ink;
+    font: inherit;
+    resize: vertical;
+  }
+
+  select {
+    margin-left: 12px;
+    padding: 6px 12px;
+    border-radius: 8px;
+    background: rgba(255, 255, 255, 0.06);
+    color: $color-ink;
+    border: none;
+  }
+}
+
+.review-note {
+  color: $color-muted;
+  margin-bottom: 20px;
+  font-size: 0.9rem;
+}
+
+.lesson-item.link {
+  text-decoration: none;
+  color: inherit;
+  transition: background 0.2s;
+
+  &:hover {
+    background: rgba(255, 255, 255, 0.06);
   }
 }
 

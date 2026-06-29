@@ -21,8 +21,10 @@ public record CourseDetailsDto(
     double AverageRating,
     int ReviewCount,
     List<ReviewDto> Reviews,
-    bool IsEnrolled);
+    bool IsEnrolled,
+    bool HasUserReviewed,
+    bool CanReview);
 
 public record ModuleDto(Guid Id, string Title, int Order, List<LessonListDto> Lessons);
-public record LessonListDto(Guid Id, string Title, string? Description, int Duration, int Order);
+public record LessonListDto(Guid Id, string Title, string? Description, int Duration, int Order, bool IsCompleted = false, string? VideoUrl = null);
 public record ReviewDto(Guid Id, int Rating, string Comment, string AuthorName, DateTime CreatedAt);

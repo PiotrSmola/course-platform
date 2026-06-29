@@ -26,7 +26,7 @@ builder.Host.UseSerilog((context, configuration) =>
     configuration.ReadFrom.Configuration(context.Configuration));
 
 builder.Services.AddApplication();
-builder.Services.AddInfrastructure(builder.Configuration);
+builder.Services.AddInfrastructure(builder.Configuration, builder.Environment);
 
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
@@ -153,15 +153,19 @@ app.MapControllers();
 using (var scope = app.Services.CreateScope())
 {
     var context = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
-    await context.Database.MigrateAsync();
 
-    var userManager = scope.ServiceProvider.GetRequiredService<UserManager<ApplicationUser>>();
-    var roleManager = scope.ServiceProvider.GetRequiredService<RoleManager<IdentityRole<Guid>>>();
-
-    var seedEnabled = builder.Configuration.GetValue("Dev:Seed", false);
-    if (app.Environment.IsDevelopment() && seedEnabled)
+    if (!app.Environment.IsEnvironment("Testing"))
     {
-        await ApplicationDbContextSeed.SeedAsync(context, userManager, roleManager);
+        await context.Database.MigrateAsync();
+
+        var userManager = scope.ServiceProvider.GetRequiredService<UserManager<ApplicationUser>>();
+        var roleManager = scope.ServiceProvider.GetRequiredService<RoleManager<IdentityRole<Guid>>>();
+
+        var seedEnabled = builder.Configuration.GetValue("Dev:Seed", false);
+        if (app.Environment.IsDevelopment() && seedEnabled)
+        {
+            await ApplicationDbContextSeed.SeedAsync(context, userManager, roleManager);
+        }
     }
 }
 

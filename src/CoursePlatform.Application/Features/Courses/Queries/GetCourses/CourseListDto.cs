@@ -8,6 +8,7 @@ public record CourseListDto(
     string ShortDescription,
     decimal Price,
     CourseLevel Level,
+    CourseStatus Status,
     string ThumbnailUrl,
     string InstructorName,
     string Language,

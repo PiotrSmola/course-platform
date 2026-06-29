@@ -77,6 +77,12 @@
           {{ isNew ? 'Utwórz kurs' : 'Zapisz zmiany' }}
         </button>
       </form>
+
+      <CourseStructureEditor
+        v-if="!isNew && props.id && course"
+        :course-id="props.id"
+        :course-modules="course.modules"
+      />
     </div>
   </div>
 </template>
@@ -90,6 +96,7 @@ import { useCreateCourse, useUpdateCourse, useCourseDetails } from '@/features/c
 import { getCategories, getTechnologies } from '@/features/courses/api/courses.api'
 import { CourseLevel, CourseStatus } from '@/features/courses/types/course.types'
 import { createCourseSchema, updateCourseSchema } from '@/features/courses/schemas/course.schema'
+import CourseStructureEditor from '@/features/instructor/components/CourseStructureEditor.vue'
 
 const props = defineProps<{
   id?: string
@@ -145,6 +152,8 @@ const categories = computed(() => categoriesQuery.data.value ?? [])
 const technologies = computed(() => technologiesQuery.data.value ?? [])
 
 const courseQuery = useCourseDetails(props.id ?? '', !isNew.value)
+
+const course = computed(() => courseQuery.data.value)
 
 watch(
   () => [courseQuery.data.value, categories.value, technologies.value] as const,

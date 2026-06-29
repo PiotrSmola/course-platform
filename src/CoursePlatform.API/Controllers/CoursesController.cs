@@ -8,6 +8,7 @@ using CoursePlatform.Application.Features.Courses.Queries.GetCategories;
 using CoursePlatform.Application.Features.Courses.Queries.GetTechnologies;
 using CoursePlatform.Application.Features.Courses.Commands.CreateCourse;
 using CoursePlatform.Application.Features.Courses.Commands.UpdateCourse;
+using CoursePlatform.Application.Features.Courses.Queries.GetInstructorCourses;
 using CoursePlatform.Domain.Enums;
 
 namespace CoursePlatform.API.Controllers;
@@ -57,6 +58,14 @@ public class CoursesController : ControllerBase
     public async Task<ActionResult<List<TechnologyDto>>> GetTechnologies()
     {
         var result = await _mediator.Send(new GetTechnologiesQuery());
+        return Ok(result);
+    }
+
+    [HttpGet("instructor/my")]
+    [Authorize(Roles = "Instructor,Admin")]
+    public async Task<ActionResult<List<InstructorCourseDto>>> GetInstructorCourses()
+    {
+        var result = await _mediator.Send(new GetInstructorCoursesQuery());
         return Ok(result);
     }
 

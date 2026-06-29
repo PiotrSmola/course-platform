@@ -28,10 +28,11 @@ export function useCreateCourse() {
 
   return useMutation({
     mutationFn: createCourse,
-    onSuccess: () => {
+    onSuccess: (courseId) => {
       queryClient.invalidateQueries({ queryKey: queryKeys.courses() })
+      queryClient.invalidateQueries({ queryKey: queryKeys.instructorCourses() })
       toast.success('Kurs został utworzony')
-      router.push({ name: 'InstructorDashboard' })
+      router.push({ name: 'EditCourse', params: { id: courseId } })
     },
     onError: (error) => {
       toast.error(getApiErrorMessage(error) || 'Nie udało się utworzyć kursu')
