@@ -31,6 +31,7 @@
             <li><router-link :to="{ name: 'Courses' }">Katalog kursów</router-link></li>
             <li><router-link v-if="authStore.isAuthenticated" :to="{ name: 'MyCourses' }">Moje kursy</router-link></li>
             <li><router-link v-if="authStore.isInstructor" :to="{ name: 'InstructorDashboard' }">Panel instruktora</router-link></li>
+            <li><router-link v-if="authStore.isAdmin" :to="{ name: 'AdminDashboard' }">Panel administratora</router-link></li>
           </ul>
         </nav>
 

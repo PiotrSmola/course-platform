@@ -1,4 +1,4 @@
-import { useMutation, useQuery } from '@tanstack/vue-query'
+import { useMutation, useQuery, useQueryClient } from '@tanstack/vue-query'
 import { useRouter } from 'vue-router'
 import { useAuthStore } from '@/features/auth/stores/auth.store'
 import { login, register, getCurrentUser } from '@/features/auth/api/auth.api'
@@ -10,11 +10,13 @@ import { queryKeys } from '@/shared/queryKeys'
 export function useAuth() {
   const authStore = useAuthStore()
   const router = useRouter()
+  const queryClient = useQueryClient()
 
   const loginMutation = useMutation({
     mutationFn: login,
-    onSuccess: (data) => {
+    onSuccess: async (data) => {
       authStore.setAuth(data)
+      await queryClient.invalidateQueries({ queryKey: queryKeys.currentUser() })
       toast.success('Zalogowano pomyślnie')
       const redirect = router.currentRoute.value.query.redirect as string | undefined
       router.push(redirect || { name: 'Home' })
@@ -26,8 +28,9 @@ export function useAuth() {
 
   const registerMutation = useMutation({
     mutationFn: register,
-    onSuccess: (data) => {
+    onSuccess: async (data) => {
       authStore.setAuth(data)
+      await queryClient.invalidateQueries({ queryKey: queryKeys.currentUser() })
       toast.success('Konto zostało utworzone')
       const redirect = router.currentRoute.value.query.redirect as string | undefined
       router.push(redirect || { name: 'Home' })

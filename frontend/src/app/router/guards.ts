@@ -41,3 +41,15 @@ export async function instructorGuard(to: RouteLocationNormalized) {
     return { name: 'Home' }
   }
 }
+
+export async function adminGuard(to: RouteLocationNormalized) {
+  const authStore = useAuthStore()
+  await authStore.bootstrap()
+  if (!authStore.isAuthenticated) {
+    return { name: 'Login', query: { redirect: to.fullPath } }
+  }
+  await waitForAuthReady(authStore)
+  if (!authStore.isAdmin) {
+    return { name: 'Home' }
+  }
+}

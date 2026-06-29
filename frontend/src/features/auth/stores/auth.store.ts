@@ -2,6 +2,18 @@ import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
 import type { AuthResponse, CurrentUser } from '@/features/auth/types/auth.types'
 import { getCurrentUser } from '@/features/auth/api/auth.api'
+import { hasRole, normalizeRoles } from '@/features/auth/utils/roles'
+
+function toCurrentUser(data: AuthResponse | CurrentUser): CurrentUser {
+  const raw = data as AuthResponse & { Roles?: string[] }
+  return {
+    id: data.id,
+    email: data.email,
+    firstName: data.firstName,
+    lastName: data.lastName,
+    roles: normalizeRoles(raw.roles ?? raw.Roles)
+  }
+}
 
 export const useAuthStore = defineStore('auth', () => {
   const token = ref<string | null>(localStorage.getItem('token'))
@@ -10,23 +22,17 @@ export const useAuthStore = defineStore('auth', () => {
   const bootstrapPromise = ref<Promise<void> | null>(null)
 
   const isAuthenticated = computed(() => !!token.value)
-  const isInstructor = computed(() => user.value?.roles.includes('Instructor') || user.value?.roles.includes('Admin') || false)
-  const isAdmin = computed(() => user.value?.roles.includes('Admin') || false)
+  const isInstructor = computed(() => hasRole(user.value?.roles, 'Instructor'))
+  const isAdmin = computed(() => hasRole(user.value?.roles, 'Admin'))
 
   function setAuth(data: AuthResponse) {
     token.value = data.token
-    user.value = {
-      id: data.id,
-      email: data.email,
-      firstName: data.firstName,
-      lastName: data.lastName,
-      roles: data.roles
-    }
+    user.value = toCurrentUser(data)
     localStorage.setItem('token', data.token)
   }
 
   function setUser(data: CurrentUser) {
-    user.value = data
+    user.value = toCurrentUser(data)
   }
 
   function setReady(ready: boolean) {

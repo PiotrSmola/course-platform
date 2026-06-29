@@ -1,7 +1,7 @@
 import { createRouter, createWebHistory } from 'vue-router'
 import type { RouteRecordRaw } from 'vue-router'
 import { useAuthStore } from '@/features/auth/stores/auth.store'
-import { authGuard, instructorGuard } from './guards'
+import { authGuard, instructorGuard, adminGuard } from './guards'
 
 const routes: RouteRecordRaw[] = [
   {
@@ -66,6 +66,14 @@ const routes: RouteRecordRaw[] = [
       { path: '', component: () => import('@/features/instructor/pages/InstructorDashboardPage.vue'), name: 'InstructorDashboard' },
       { path: 'courses/new', component: () => import('@/features/instructor/pages/CourseEditorPage.vue'), name: 'NewCourse', props: () => ({ isNew: true }) },
       { path: 'courses/:id', component: () => import('@/features/instructor/pages/CourseEditorPage.vue'), name: 'EditCourse', props: true }
+    ]
+  },
+  {
+    path: '/admin',
+    component: () => import('@/app/layouts/DashboardLayout.vue'),
+    beforeEnter: [authGuard, adminGuard],
+    children: [
+      { path: '', component: () => import('@/features/admin/pages/AdminDashboardPage.vue'), name: 'AdminDashboard' }
     ]
   }
 ]

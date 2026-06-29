@@ -2,7 +2,8 @@
   <aside class="sidebar">
     <nav>
       <router-link :to="{ name: 'MyCourses' }">My Courses</router-link>
-      <router-link v-if="authStore.isInstructor" :to="{ name: 'InstructorDashboard' }">Dashboard</router-link>
+      <router-link v-if="authStore.isInstructor" :to="{ name: 'InstructorDashboard' }">Instructor</router-link>
+      <router-link v-if="authStore.isAdmin" :to="{ name: 'AdminDashboard' }">Admin</router-link>
       <router-link v-if="authStore.isInstructor" :to="{ name: 'NewCourse' }">New Course</router-link>
     </nav>
   </aside>

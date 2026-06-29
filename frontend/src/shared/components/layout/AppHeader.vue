@@ -79,7 +79,10 @@
             <router-link :to="{ name: 'Business' }" :class="{ 'force-active': isBusinessRoute }" @pointerenter="moveBlob($event)">Dla firm</router-link>
           </li>
           <li v-if="authStore.isInstructor">
-            <router-link :to="{ name: 'InstructorDashboard' }" @pointerenter="moveBlob($event)">Panel</router-link>
+            <router-link :to="{ name: 'InstructorDashboard' }" @pointerenter="moveBlob($event)">Panel instruktora</router-link>
+          </li>
+          <li v-if="authStore.isAdmin">
+            <router-link :to="{ name: 'AdminDashboard' }" @pointerenter="moveBlob($event)">Panel admina</router-link>
           </li>
           <li v-if="authStore.isAuthenticated">
             <router-link :to="{ name: 'MyCourses' }" @pointerenter="moveBlob($event)">Moje kursy</router-link>
@@ -132,6 +135,22 @@
       </div>
 
       <div class="nav-actions">
+        <template v-if="authStore.isInstructor || authStore.isAdmin">
+          <router-link
+            v-if="authStore.isInstructor"
+            class="btn btn-ghost mobile-panel-link"
+            :to="{ name: 'InstructorDashboard' }"
+          >
+            Instruktor
+          </router-link>
+          <router-link
+            v-if="authStore.isAdmin"
+            class="btn btn-ghost mobile-panel-link"
+            :to="{ name: 'AdminDashboard' }"
+          >
+            Admin
+          </router-link>
+        </template>
         <template v-if="!authStore.isAuthenticated">
           <router-link class="btn btn-ghost" :to="{ name: 'Login' }">Zaloguj</router-link>
           <router-link class="btn btn-primary" :to="{ name: 'Register' }">Rejestracja</router-link>
@@ -485,6 +504,18 @@ onUnmounted(() => {
 .btn {
   padding: 9px 18px;
   font-size: 0.85rem;
+}
+
+.mobile-panel-link {
+  display: none;
+}
+
+@media (max-width: 880px) {
+  .mobile-panel-link {
+    display: inline-flex;
+    padding: 9px 12px;
+    font-size: 0.8rem;
+  }
 }
 
 @media (max-width: 880px) {
