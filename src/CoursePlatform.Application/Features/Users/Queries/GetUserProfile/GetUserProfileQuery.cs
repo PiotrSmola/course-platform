@@ -32,12 +32,7 @@ public class GetUserProfileQueryHandler : IRequestHandler<GetUserProfileQuery, U
         if (user == null)
             throw new NotFoundException("User", _currentUserService.UserId.Value.ToString());
 
-        var stats = user.Statistics;
-
-        if (stats == null)
-        {
-            stats = await ComputeStatisticsAsync(user.Id, cancellationToken);
-        }
+        var stats = await ComputeStatisticsAsync(user.Id, cancellationToken);
 
         return new UserProfileDto(
             user.Id,
@@ -104,7 +99,7 @@ public class GetUserProfileQueryHandler : IRequestHandler<GetUserProfileQuery, U
             ? (double)totalLessonsCompleted / totalLessonsAvailable * 100
             : 0;
 
-        var stats = new UserStatistics
+        return new UserStatistics
         {
             UserId = userId,
             TotalEnrollments = totalEnrollments,
@@ -116,11 +111,6 @@ public class GetUserProfileQueryHandler : IRequestHandler<GetUserProfileQuery, U
             CertificatesEarned = completedCourses,
             LastActivityAt = DateTime.UtcNow
         };
-
-        _context.UserStatistics.Add(stats);
-        await _context.SaveChangesAsync(cancellationToken);
-
-        return stats;
     }
 }
 

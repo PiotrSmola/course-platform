@@ -8,8 +8,8 @@
 
       <div v-if="!authStore.token" class="empty">Zaloguj się, aby zobaczyć swoje kursy.</div>
       <div v-else-if="isLoading" class="loading">Ładowanie...</div>
-      <div v-else-if="error" class="error">Nie udało się załadować kursów</div>
-      <div v-else-if="enrollments.length === 0" class="empty">
+      <div v-else-if="isError" class="error">Nie udało się załadować kursów</div>
+      <div v-else-if="!enrollments || enrollments.length === 0" class="empty">
         Nie masz jeszcze żadnych kursów. Sprawdź
         <router-link :to="{ name: 'Courses' }">katalog</router-link>.
       </div>
@@ -37,36 +37,13 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, watch } from 'vue'
+import { computed } from 'vue'
 import { useAuthStore } from '@/features/auth/stores/auth.store'
-import { getMyEnrollments } from '@/features/enrollment/api/enrollment.api'
-import type { EnrollmentDto } from '@/features/enrollment/types/enrollment.types'
+import { useEnrollments } from '@/features/enrollment/composables/useEnrollment'
 
 const authStore = useAuthStore()
-const enrollments = ref<EnrollmentDto[]>([])
-const isLoading = ref(false)
-const error = ref<unknown>(null)
-
-async function load() {
-  isLoading.value = true
-  error.value = null
-  try {
-    enrollments.value = await getMyEnrollments()
-  } catch (e) {
-    error.value = e
-  } finally {
-    isLoading.value = false
-  }
-}
-
-onMounted(() => {
-  if (authStore.token) load()
-})
-
-watch(() => authStore.token, (token) => {
-  if (token) load()
-  else enrollments.value = []
-})
+const { data, isLoading, isError } = useEnrollments()
+const enrollments = computed(() => data.value ?? [])
 </script>
 
 <style lang="scss" scoped>

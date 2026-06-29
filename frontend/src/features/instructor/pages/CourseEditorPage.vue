@@ -50,6 +50,20 @@
           </div>
         </div>
         <div class="form-group">
+          <label>Kategorie</label>
+          <select v-model="categoryIds" multiple class="multi-select">
+            <option v-for="cat in categories" :key="cat.id" :value="cat.id">{{ cat.name }}</option>
+          </select>
+          <span v-if="errors.categoryIds" class="error">{{ errors.categoryIds }}</span>
+        </div>
+        <div class="form-group">
+          <label>Technologie</label>
+          <select v-model="technologyIds" multiple class="multi-select">
+            <option v-for="tech in technologies" :key="tech.id" :value="tech.id">{{ tech.name }}</option>
+          </select>
+          <span v-if="errors.technologyIds" class="error">{{ errors.technologyIds }}</span>
+        </div>
+        <div class="form-group">
           <label>URL miniaturki</label>
           <input v-model="thumbnailUrl" placeholder="https://..." />
           <span v-if="errors.thumbnailUrl" class="error">{{ errors.thumbnailUrl }}</span>
@@ -68,12 +82,14 @@
 </template>
 
 <script setup lang="ts">
-import { computed, ref } from 'vue'
+import { computed, ref, watch } from 'vue'
 import { useForm } from 'vee-validate'
 import { toTypedSchema } from '@vee-validate/zod'
-import { useCreateCourse, useUpdateCourse } from '@/features/courses/composables/useCourses'
+import { useQuery } from '@tanstack/vue-query'
+import { useCreateCourse, useUpdateCourse, useCourseDetails } from '@/features/courses/composables/useCourses'
+import { getCategories, getTechnologies } from '@/features/courses/api/courses.api'
 import { CourseLevel, CourseStatus } from '@/features/courses/types/course.types'
-import { createCourseSchema } from '@/features/courses/schemas/course.schema'
+import { createCourseSchema, updateCourseSchema } from '@/features/courses/schemas/course.schema'
 
 const props = defineProps<{
   id?: string
@@ -87,8 +103,10 @@ const updateMutation = useUpdateCourse()
 
 const isSubmitting = computed(() => createMutation.isPending.value || updateMutation.isPending.value)
 
-const { handleSubmit, defineField, errors, meta } = useForm({
-  validationSchema: toTypedSchema(createCourseSchema)
+const schema = computed(() => (isNew.value ? createCourseSchema : updateCourseSchema))
+
+const { handleSubmit, defineField, errors, meta, resetForm } = useForm({
+  validationSchema: computed(() => toTypedSchema(schema.value))
 })
 
 const [title] = defineField('title')
@@ -113,26 +131,77 @@ language.value = 'English'
 categoryIds.value = []
 technologyIds.value = []
 
-const onSubmit = handleSubmit(async (values) => {
-  if (isNew.value) {
-    const { status: _status, ...createData } = values as any
-    createMutation.mutate({
-      title: createData.title,
-      description: createData.description,
-      shortDescription: createData.shortDescription || '',
-      price: createData.price,
-      level: createData.level,
-      thumbnailUrl: createData.thumbnailUrl || '',
-      language: createData.language,
-      categoryIds: createData.categoryIds || [],
-      technologyIds: createData.technologyIds || []
+const categoriesQuery = useQuery({
+  queryKey: ['categories'],
+  queryFn: getCategories
+})
+
+const technologiesQuery = useQuery({
+  queryKey: ['technologies'],
+  queryFn: getTechnologies
+})
+
+const categories = computed(() => categoriesQuery.data.value ?? [])
+const technologies = computed(() => technologiesQuery.data.value ?? [])
+
+const courseQuery = useCourseDetails(props.id ?? '', !isNew.value)
+
+watch(
+  () => [courseQuery.data.value, categories.value, technologies.value] as const,
+  ([data, cats, techs]) => {
+    if (!data) return
+    if (cats.length === 0 || techs.length === 0) return
+    resetForm({
+      values: {
+        title: data.title,
+        description: data.description,
+        shortDescription: data.shortDescription,
+        price: data.price,
+        level: data.level,
+        status: data.status,
+        thumbnailUrl: data.thumbnailUrl,
+        language: data.language,
+        categoryIds: data.categoryNames.map(name => {
+          const cat = cats.find(c => c.name === name)
+          return cat?.id ?? ''
+        }).filter(Boolean),
+        technologyIds: data.technologyNames.map(name => {
+          const tech = techs.find(t => t.name === name)
+          return tech?.id ?? ''
+        }).filter(Boolean)
+      }
     })
-  } else if (props.id) {
-    updateMutation.mutate({
-      id: props.id,
-      ...values
-    } as any)
+  },
+  { immediate: true }
+)
+
+const onSubmit = handleSubmit(async (values) => {
+  const basePayload = {
+    title: values.title,
+    description: values.description,
+    shortDescription: values.shortDescription ?? '',
+    price: values.price,
+    level: values.level,
+    thumbnailUrl: values.thumbnailUrl ?? '',
+    language: values.language,
+    categoryIds: values.categoryIds ?? [],
+    technologyIds: values.technologyIds ?? []
   }
+
+  if (isNew.value) {
+    createMutation.mutate(basePayload)
+    return
+  }
+
+  if (!props.id) return
+
+  if (values.status === undefined) return
+
+  updateMutation.mutate({
+    id: props.id,
+    status: values.status,
+    ...basePayload
+  })
 })
 </script>
 
@@ -206,6 +275,17 @@ const onSubmit = handleSubmit(async (values) => {
 
   @media (max-width: 560px) {
     grid-template-columns: 1fr;
+  }
+}
+
+.multi-select {
+  height: auto;
+  min-height: 120px;
+  padding: 8px 12px;
+
+  option {
+    padding: 6px 8px;
+    border-radius: 8px;
   }
 }
 

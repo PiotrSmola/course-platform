@@ -35,8 +35,10 @@ public class ExceptionHandlingMiddleware
         catch (ValidationException ex)
         {
             _logger.LogWarning(ex, "Validation error");
-            var errors = string.Join(", ", ex.Errors.Select(e => e.ErrorMessage));
-            await HandleExceptionAsync(context, HttpStatusCode.BadRequest, errors);
+            var errors = ex.Errors
+                .GroupBy(e => e.PropertyName)
+                .ToDictionary(g => g.Key, g => g.Select(e => e.ErrorMessage).ToList());
+            await HandleValidationExceptionAsync(context, errors);
         }
         catch (Exception ex)
         {
@@ -51,6 +53,15 @@ public class ExceptionHandlingMiddleware
         context.Response.StatusCode = (int)statusCode;
 
         var result = JsonSerializer.Serialize(new { error = message, statusCode = (int)statusCode });
+        return context.Response.WriteAsync(result);
+    }
+
+    private static Task HandleValidationExceptionAsync(HttpContext context, Dictionary<string, List<string>> errors)
+    {
+        context.Response.ContentType = "application/json";
+        context.Response.StatusCode = (int)HttpStatusCode.BadRequest;
+
+        var result = JsonSerializer.Serialize(new { errors, statusCode = (int)HttpStatusCode.BadRequest });
         return context.Response.WriteAsync(result);
     }
 }

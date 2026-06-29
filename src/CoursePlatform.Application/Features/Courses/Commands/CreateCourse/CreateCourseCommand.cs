@@ -42,9 +42,19 @@ public class CreateCourseCommandHandler : IRequestHandler<CreateCourseCommand, G
             .Where(c => request.CategoryIds.Contains(c.Id))
             .ToListAsync(cancellationToken);
 
+        if (categories.Count != request.CategoryIds.Count)
+        {
+            throw new FluentValidation.ValidationException(new[] { new FluentValidation.Results.ValidationFailure("CategoryIds", "One or more categories do not exist.") });
+        }
+
         var technologies = await _context.Technologies
             .Where(t => request.TechnologyIds.Contains(t.Id))
             .ToListAsync(cancellationToken);
+
+        if (technologies.Count != request.TechnologyIds.Count)
+        {
+            throw new FluentValidation.ValidationException(new[] { new FluentValidation.Results.ValidationFailure("TechnologyIds", "One or more technologies do not exist.") });
+        }
 
         var course = new Course
         {

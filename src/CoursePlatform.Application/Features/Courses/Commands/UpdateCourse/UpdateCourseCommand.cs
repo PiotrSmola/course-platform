@@ -1,4 +1,5 @@
 using MediatR;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using CoursePlatform.Application.Common.Interfaces;
 using CoursePlatform.Application.Common.Exceptions;
@@ -24,12 +25,14 @@ public class UpdateCourseCommandHandler : IRequestHandler<UpdateCourseCommand>
     private readonly IApplicationDbContext _context;
     private readonly ICurrentUserService _currentUserService;
     private readonly IHtmlSanitizer _htmlSanitizer;
+    private readonly UserManager<Domain.Entities.ApplicationUser> _userManager;
 
-    public UpdateCourseCommandHandler(IApplicationDbContext context, ICurrentUserService currentUserService, IHtmlSanitizer htmlSanitizer)
+    public UpdateCourseCommandHandler(IApplicationDbContext context, ICurrentUserService currentUserService, IHtmlSanitizer htmlSanitizer, UserManager<Domain.Entities.ApplicationUser> userManager)
     {
         _context = context;
         _currentUserService = currentUserService;
         _htmlSanitizer = htmlSanitizer;
+        _userManager = userManager;
     }
 
     public async Task Handle(UpdateCourseCommand request, CancellationToken cancellationToken)
@@ -48,7 +51,10 @@ public class UpdateCourseCommandHandler : IRequestHandler<UpdateCourseCommand>
             throw new NotFoundException($"Course {request.Id} not found.");
         }
 
-        if (course.InstructorId != _currentUserService.UserId.Value)
+        var currentUser = await _userManager.FindByIdAsync(_currentUserService.UserId.Value.ToString());
+        var isAdmin = currentUser != null && await _userManager.IsInRoleAsync(currentUser, "Admin");
+
+        if (!isAdmin && course.InstructorId != _currentUserService.UserId.Value)
         {
             throw new ForbiddenAccessException("You are not the instructor of this course.");
         }
@@ -57,9 +63,19 @@ public class UpdateCourseCommandHandler : IRequestHandler<UpdateCourseCommand>
             .Where(c => request.CategoryIds.Contains(c.Id))
             .ToListAsync(cancellationToken);
 
+        if (categories.Count != request.CategoryIds.Count)
+        {
+            throw new FluentValidation.ValidationException(new[] { new FluentValidation.Results.ValidationFailure("CategoryIds", "One or more categories do not exist.") });
+        }
+
         var technologies = await _context.Technologies
             .Where(t => request.TechnologyIds.Contains(t.Id))
             .ToListAsync(cancellationToken);
+
+        if (technologies.Count != request.TechnologyIds.Count)
+        {
+            throw new FluentValidation.ValidationException(new[] { new FluentValidation.Results.ValidationFailure("TechnologyIds", "One or more technologies do not exist.") });
+        }
 
         course.Title = request.Title;
         course.Description = _htmlSanitizer.Sanitize(request.Description);

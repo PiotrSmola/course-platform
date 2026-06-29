@@ -11,8 +11,8 @@ export const courseSchema = z.object({
   status: z.nativeEnum(CourseStatus).optional(),
   thumbnailUrl: sharedSchemas.thumbnailUrl,
   language: sharedSchemas.language,
-  categoryIds: z.array(z.string()).optional(),
-  technologyIds: z.array(z.string()).optional()
+  categoryIds: z.array(z.string()).default([]),
+  technologyIds: z.array(z.string()).default([])
 })
 
 export const createCourseSchema = courseSchema

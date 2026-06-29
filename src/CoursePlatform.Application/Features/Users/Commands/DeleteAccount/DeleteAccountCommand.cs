@@ -3,6 +3,8 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using CoursePlatform.Application.Common.Interfaces;
 using CoursePlatform.Application.Common.Exceptions;
+using FluentValidation;
+using FluentValidation.Results;
 
 namespace CoursePlatform.Application.Features.Users.Commands.DeleteAccount;
 
@@ -32,6 +34,12 @@ public class DeleteAccountCommandHandler : IRequestHandler<DeleteAccountCommand>
         var user = await _userManager.FindByIdAsync(_currentUserService.UserId.Value.ToString());
         if (user == null)
             throw new NotFoundException("User", _currentUserService.UserId.Value.ToString());
+
+        var hasCourses = await _context.Courses.AnyAsync(c => c.InstructorId == user.Id, cancellationToken);
+        if (hasCourses)
+        {
+            throw new ValidationException(new[] { new ValidationFailure("", "Cannot delete account with active courses. Remove or transfer them first.") });
+        }
 
         var result = await _userManager.DeleteAsync(user);
         if (!result.Succeeded)

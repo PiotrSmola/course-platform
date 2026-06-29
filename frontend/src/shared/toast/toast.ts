@@ -9,12 +9,13 @@ const defaultOptions: ToastOptions = {
   theme: 'dark'
 }
 
-function wrap<T extends (...args: any[]) => any>(fn: T): T {
-  return ((...args: any[]) => {
-    const [content, options] = args
+type ToastFn = (content: unknown, options?: ToastOptions) => unknown
+
+function wrap(fn: ToastFn): ToastFn {
+  return (content: unknown, options?: ToastOptions) => {
     const merged = { ...defaultOptions, ...(options ?? {}) }
     return fn(content, merged)
-  }) as T
+  }
 }
 
 export const toast = {

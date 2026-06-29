@@ -2,6 +2,7 @@ using MediatR;
 using Microsoft.EntityFrameworkCore;
 using CoursePlatform.Application.Common.Interfaces;
 using CoursePlatform.Application.Common.Exceptions;
+using CoursePlatform.Domain.Enums;
 
 namespace CoursePlatform.Application.Features.LearningPaths.Queries.GetLearningPathBySlug;
 
@@ -31,6 +32,7 @@ public class GetLearningPathBySlugQueryHandler : IRequestHandler<GetLearningPath
         }
 
         var courses = path.PathCourses
+            .Where(pc => pc.Course.Status == CourseStatus.Published)
             .OrderBy(pc => pc.Order)
             .Select(pc => new LearningPathCourseItemDto(
                 pc.Id,

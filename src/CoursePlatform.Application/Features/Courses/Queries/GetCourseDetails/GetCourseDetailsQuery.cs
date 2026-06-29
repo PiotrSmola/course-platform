@@ -36,17 +36,25 @@ public class GetCourseDetailsQueryHandler : IRequestHandler<GetCourseDetailsQuer
             throw new NotFoundException($"Course {request.Id} not found.");
         }
 
+        if (course.Status != Domain.Enums.CourseStatus.Published)
+        {
+            if (!_currentUserService.UserId.HasValue ||
+                (_currentUserService.UserId.Value != course.InstructorId && !_currentUserService.IsAdmin))
+            {
+                throw new NotFoundException($"Course {request.Id} not found.");
+            }
+        }
+
         var modules = course.Modules.OrderBy(m => m.Order).Select(m => new ModuleDto(
             m.Id,
             m.Title,
             m.Order,
-            m.Lessons.OrderBy(l => l.Order).Select(l => new LessonDto(
+            m.Lessons.OrderBy(l => l.Order).Select(l => new LessonListDto(
                 l.Id,
                 l.Title,
                 l.Description,
                 l.Duration,
-                l.Order,
-                l.VideoUrl)).ToList())).ToList();
+                l.Order)).ToList())).ToList();
 
         var reviews = course.Reviews.OrderByDescending(r => r.CreatedAt).Select(r => new ReviewDto(
             r.Id,

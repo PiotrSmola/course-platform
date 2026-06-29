@@ -152,9 +152,7 @@ import { ref, onMounted, onUnmounted, nextTick, computed, watch } from 'vue'
 import { useRoute } from 'vue-router'
 import { useAuth } from '@/features/auth/composables/useAuth'
 import { useAuthStore } from '@/features/auth/stores/auth.store'
-import { useQuery } from '@tanstack/vue-query'
-import { getCategories, getTechnologies, getCourses } from '@/features/courses/api/courses.api'
-import type { CategoryDto, TechnologyDto } from '@/features/courses/api/courses.api'
+import { useCategories, useTechnologies, useCourseSearch } from '@/features/courses/composables/useCourseMeta'
 
 const authStore = useAuthStore()
 const { logout } = useAuth()
@@ -186,28 +184,15 @@ const isCatalogRoute = computed(() => {
 const isPathsRoute = computed(() => route.path === '/paths' || route.path.startsWith('/paths/'))
 const isBusinessRoute = computed(() => route.path === '/business')
 
-const { data: categories } = useQuery<CategoryDto[]>({
-  queryKey: ['categories'],
-  queryFn: getCategories,
-  initialData: []
-})
-
-const { data: technologies } = useQuery<TechnologyDto[]>({
-  queryKey: ['technologies'],
-  queryFn: getTechnologies,
-  initialData: []
-})
+const { data: categories } = useCategories()
+const { data: technologies } = useTechnologies()
 
 const activeItems = computed(() => {
   if (activeSection.value === 'technologies') return technologies.value
   return categories.value
 })
 
-const { isLoading: isSearchLoading, data: searchResults } = useQuery({
-  queryKey: computed(() => ['course-search', debouncedQuery.value]),
-  queryFn: () => getCourses({ searchTerm: debouncedQuery.value, pageSize: 6 }),
-  enabled: computed(() => debouncedQuery.value.length > 0)
-})
+const { isLoading: isSearchLoading, data: searchResults } = useCourseSearch(debouncedQuery)
 
 watch(searchQuery, (val) => {
   if (searchTimer) clearTimeout(searchTimer)
@@ -244,7 +229,7 @@ function onCatalogEnter() {
   }
 }
 
-function itemLink(item: CategoryDto | TechnologyDto) {
+function itemLink(item: { slug: string }) {
   const isTech = activeSection.value === 'technologies'
   return {
     name: isTech ? 'TechnologyDetails' : 'CategoryDetails',

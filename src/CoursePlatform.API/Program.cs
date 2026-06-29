@@ -1,3 +1,4 @@
+using System.Text;
 using CoursePlatform.Application;
 using CoursePlatform.Infrastructure;
 using CoursePlatform.Infrastructure.Persistence;
@@ -8,7 +9,11 @@ using CoursePlatform.Domain.Entities;
 using Serilog;
 using System.Threading.RateLimiting;
 
+const string JwtKeyPlaceholder = "REPLACE_WITH_YOUR_OWN_KEY_AT_LEAST_32_CHARS";
+
 var builder = WebApplication.CreateBuilder(args);
+
+ValidateJwtConfiguration(builder.Configuration);
 
 builder.WebHost.ConfigureKestrel(options =>
 {
@@ -52,16 +57,18 @@ builder.Services
     .AddJwtBearer(options =>
     {
         options.MapInboundClaims = false;
+        var jwtKey = builder.Configuration["Jwt:Key"]!;
+
         options.TokenValidationParameters = new Microsoft.IdentityModel.Tokens.TokenValidationParameters
         {
             ValidateIssuer = true,
             ValidateAudience = true,
             ValidateLifetime = true,
             ValidateIssuerSigningKey = true,
-            ValidIssuer = builder.Configuration["Jwt:Issuer"],
-            ValidAudience = builder.Configuration["Jwt:Audience"],
+            ValidIssuer = builder.Configuration["Jwt:Issuer"]!,
+            ValidAudience = builder.Configuration["Jwt:Audience"]!,
             IssuerSigningKey = new Microsoft.IdentityModel.Tokens.SymmetricSecurityKey(
-                System.Text.Encoding.UTF8.GetBytes(builder.Configuration["Jwt:Key"] ?? "super-secret-key-for-development-only-12345")),
+                System.Text.Encoding.UTF8.GetBytes(jwtKey)),
             RoleClaimType = System.Security.Claims.ClaimTypes.Role,
             NameClaimType = System.Security.Claims.ClaimTypes.Name,
             ClockSkew = TimeSpan.Zero
@@ -111,7 +118,8 @@ builder.Services.AddRateLimiter(options =>
 
     options.AddPolicy("api", httpContext =>
     {
-        var partitionKey = httpContext.User.Identity?.Name ?? httpContext.Connection.RemoteIpAddress?.ToString() ?? "unknown";
+        var userId = httpContext.User.FindFirst("sub")?.Value;
+        var partitionKey = userId ?? httpContext.Connection.RemoteIpAddress?.ToString() ?? "unknown";
         return RateLimitPartition.GetFixedWindowLimiter(partitionKey, _ => new FixedWindowRateLimiterOptions
         {
             PermitLimit = 100,
@@ -149,7 +157,33 @@ using (var scope = app.Services.CreateScope())
 
     var userManager = scope.ServiceProvider.GetRequiredService<UserManager<ApplicationUser>>();
     var roleManager = scope.ServiceProvider.GetRequiredService<RoleManager<IdentityRole<Guid>>>();
-    await ApplicationDbContextSeed.SeedAsync(context, userManager, roleManager);
+
+    var seedEnabled = builder.Configuration.GetValue("Dev:Seed", false);
+    if (app.Environment.IsDevelopment() && seedEnabled)
+    {
+        await ApplicationDbContextSeed.SeedAsync(context, userManager, roleManager);
+    }
 }
 
 app.Run();
+
+static void ValidateJwtConfiguration(IConfiguration configuration)
+{
+    var jwtKey = configuration["Jwt:Key"];
+    if (string.IsNullOrWhiteSpace(jwtKey))
+        throw new InvalidOperationException("Jwt:Key is not configured.");
+
+    if (jwtKey == JwtKeyPlaceholder)
+        throw new InvalidOperationException("Jwt:Key must be changed from the .env.example placeholder.");
+
+    if (Encoding.UTF8.GetByteCount(jwtKey) < 32)
+        throw new InvalidOperationException("Jwt:Key must be at least 32 bytes for HMAC-SHA256.");
+
+    if (string.IsNullOrWhiteSpace(configuration["Jwt:Issuer"]))
+        throw new InvalidOperationException("Jwt:Issuer is not configured.");
+
+    if (string.IsNullOrWhiteSpace(configuration["Jwt:Audience"]))
+        throw new InvalidOperationException("Jwt:Audience is not configured.");
+}
+
+public partial class Program { }

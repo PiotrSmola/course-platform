@@ -30,7 +30,7 @@ public class LoginCommandHandler : IRequestHandler<LoginCommand, AuthResponse>
             throw new ValidationException(new[] { new ValidationFailure("Email", "Invalid email or password.") });
         }
 
-        var result = await _signInManager.CheckPasswordSignInAsync(user, request.Password, false);
+        var result = await _signInManager.CheckPasswordSignInAsync(user, request.Password, true);
         if (!result.Succeeded)
         {
             throw new ValidationException(new[] { new ValidationFailure("Password", "Invalid email or password.") });

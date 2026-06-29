@@ -2,12 +2,12 @@ using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.RateLimiting;
-using Microsoft.EntityFrameworkCore;
 using CoursePlatform.Application.Features.Courses.Queries.GetCourses;
 using CoursePlatform.Application.Features.Courses.Queries.GetCourseDetails;
+using CoursePlatform.Application.Features.Courses.Queries.GetCategories;
+using CoursePlatform.Application.Features.Courses.Queries.GetTechnologies;
 using CoursePlatform.Application.Features.Courses.Commands.CreateCourse;
 using CoursePlatform.Application.Features.Courses.Commands.UpdateCourse;
-using CoursePlatform.Application.Common.Interfaces;
 using CoursePlatform.Domain.Enums;
 
 namespace CoursePlatform.API.Controllers;
@@ -18,12 +18,10 @@ namespace CoursePlatform.API.Controllers;
 public class CoursesController : ControllerBase
 {
     private readonly IMediator _mediator;
-    private readonly IApplicationDbContext _context;
 
-    public CoursesController(IMediator mediator, IApplicationDbContext context)
+    public CoursesController(IMediator mediator)
     {
         _mediator = mediator;
-        _context = context;
     }
 
     [HttpGet]
@@ -48,26 +46,18 @@ public class CoursesController : ControllerBase
 
     [HttpGet("categories")]
     [AllowAnonymous]
-    public async Task<ActionResult> GetCategories()
+    public async Task<ActionResult<List<CategoryDto>>> GetCategories()
     {
-        var categories = await _context.Categories
-            .AsNoTracking()
-            .OrderBy(c => c.Name)
-            .Select(c => new { c.Id, c.Name, c.Slug, c.Description })
-            .ToListAsync();
-        return Ok(categories);
+        var result = await _mediator.Send(new GetCategoriesQuery());
+        return Ok(result);
     }
 
     [HttpGet("technologies")]
     [AllowAnonymous]
-    public async Task<ActionResult> GetTechnologies()
+    public async Task<ActionResult<List<TechnologyDto>>> GetTechnologies()
     {
-        var technologies = await _context.Technologies
-            .AsNoTracking()
-            .OrderBy(t => t.Name)
-            .Select(t => new { t.Id, t.Name, t.Slug, t.Description })
-            .ToListAsync();
-        return Ok(technologies);
+        var result = await _mediator.Send(new GetTechnologiesQuery());
+        return Ok(result);
     }
 
     [HttpGet("{id:guid}")]

@@ -1,38 +1,18 @@
-import { ref, watch } from 'vue'
-import { useMutation, useQueryClient } from '@tanstack/vue-query'
+import { computed } from 'vue'
+import { useMutation, useQuery, useQueryClient } from '@tanstack/vue-query'
 import { getMyEnrollments, enroll } from '@/features/enrollment/api/enrollment.api'
 import { useAuthStore } from '@/features/auth/stores/auth.store'
 import { toast } from '@/shared/toast/toast'
-import type { EnrollmentDto } from '@/features/enrollment/types/enrollment.types'
+import { getApiErrorMessage } from '@/shared/api/apiError'
+import { queryKeys } from '@/shared/queryKeys'
 
 export function useEnrollments() {
   const authStore = useAuthStore()
-  const data = ref<EnrollmentDto[]>([])
-  const isLoading = ref(false)
-  const error = ref<unknown>(null)
-
-  async function load() {
-    isLoading.value = true
-    error.value = null
-    try {
-      data.value = await getMyEnrollments()
-    } catch (e) {
-      error.value = e
-    } finally {
-      isLoading.value = false
-    }
-  }
-
-  watch(
-    () => authStore.token,
-    (token) => {
-      if (token) load()
-      else { data.value = [] }
-    },
-    { immediate: true }
-  )
-
-  return { data, isLoading, error, refetch: load }
+  return useQuery({
+    queryKey: queryKeys.enrollments(),
+    queryFn: getMyEnrollments,
+    enabled: computed(() => authStore.isAuthenticated)
+  })
 }
 
 export function useEnroll() {
@@ -40,12 +20,12 @@ export function useEnroll() {
   return useMutation({
     mutationFn: enroll,
     onSuccess: (_data, courseId) => {
-      queryClient.invalidateQueries({ queryKey: ['enrollments'] })
-      queryClient.invalidateQueries({ queryKey: ['course', courseId] })
+      queryClient.invalidateQueries({ queryKey: queryKeys.enrollments() })
+      queryClient.invalidateQueries({ queryKey: queryKeys.course(courseId) })
       toast.success('Zapisano na kurs')
     },
-    onError: (error: any) => {
-      toast.error(error.response?.data?.error || 'Nie udało się zapisać na kurs')
+    onError: (error) => {
+      toast.error(getApiErrorMessage(error) || 'Nie udało się zapisać na kurs')
     }
   })
 }

@@ -23,6 +23,6 @@ public record CourseDetailsDto(
     List<ReviewDto> Reviews,
     bool IsEnrolled);
 
-public record ModuleDto(Guid Id, string Title, int Order, List<LessonDto> Lessons);
-public record LessonDto(Guid Id, string Title, string? Description, int Duration, int Order, string VideoUrl);
+public record ModuleDto(Guid Id, string Title, int Order, List<LessonListDto> Lessons);
+public record LessonListDto(Guid Id, string Title, string? Description, int Duration, int Order);
 public record ReviewDto(Guid Id, int Rating, string Comment, string AuthorName, DateTime CreatedAt);

@@ -1,3 +1,6 @@
+<script setup lang="ts">
+</script>
+
 <template>
   <div class="app-wrapper">
     <div class="bg" aria-hidden="true">

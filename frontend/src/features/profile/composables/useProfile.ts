@@ -1,12 +1,14 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/vue-query'
 import { getUserProfile, updateUserProfile, deleteUserAccount } from '@/features/profile/api/profile.api'
 import { toast } from '@/shared/toast/toast'
+import { getApiErrorMessage } from '@/shared/api/apiError'
+import { queryKeys } from '@/shared/queryKeys'
 
 export function useProfile() {
   const queryClient = useQueryClient()
 
   const profileQuery = useQuery({
-    queryKey: ['userProfile'],
+    queryKey: queryKeys.userProfile(),
     queryFn: getUserProfile,
     retry: false
   })
@@ -15,11 +17,11 @@ export function useProfile() {
     mutationFn: updateUserProfile,
     onSuccess: () => {
       toast.success('Profil został zaktualizowany')
-      queryClient.invalidateQueries({ queryKey: ['userProfile'] })
-      queryClient.invalidateQueries({ queryKey: ['currentUser'] })
+      queryClient.invalidateQueries({ queryKey: queryKeys.userProfile() })
+      queryClient.invalidateQueries({ queryKey: queryKeys.currentUser() })
     },
-    onError: (error: any) => {
-      toast.error(error.response?.data?.error || 'Nie udało się zaktualizować profilu')
+    onError: (error) => {
+      toast.error(getApiErrorMessage(error) || 'Nie udało się zaktualizować profilu')
     }
   })
 
@@ -28,8 +30,8 @@ export function useProfile() {
     onSuccess: () => {
       toast.success('Konto zostało usunięte')
     },
-    onError: (error: any) => {
-      toast.error(error.response?.data?.error || 'Nie udało się usunąć konta')
+    onError: (error) => {
+      toast.error(getApiErrorMessage(error) || 'Nie udało się usunąć konta')
     }
   })
 

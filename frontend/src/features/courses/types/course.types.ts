@@ -46,11 +46,19 @@ export interface LessonDto {
   isCompleted?: boolean
 }
 
+export interface LessonListDto {
+  id: string
+  title: string
+  description: string | null
+  duration: number
+  order: number
+}
+
 export interface ModuleDto {
   id: string
   title: string
   order: number
-  lessons: LessonDto[]
+  lessons: LessonListDto[]
 }
 
 export interface ReviewDto {

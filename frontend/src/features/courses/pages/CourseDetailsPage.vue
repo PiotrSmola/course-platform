@@ -11,9 +11,10 @@
             <span class="badge modules">{{ course.modules.length }} modułów</span>
             <span class="badge price">{{ course.price }} zł</span>
           </div>
-          <div class="actions" v-if="authStore.isAuthenticated && !isInstructor">
-            <button class="btn btn-primary" @click="enroll" v-if="!isEnrolled">Zapisz się</button>
-            <router-link class="btn btn-primary" :to="{ name: 'MyCourses' }" v-else>Przejdź do kursu</router-link>
+          <div class="actions" v-if="!isInstructor">
+            <button class="btn btn-primary" @click="enroll" v-if="authStore.isAuthenticated && !isEnrolled">Zapisz się</button>
+            <router-link class="btn btn-primary" :to="{ name: 'MyCourses' }" v-else-if="authStore.isAuthenticated && isEnrolled">Przejdź do kursu</router-link>
+            <router-link class="btn btn-primary" :to="{ name: 'Login', query: { redirect: route.fullPath } }" v-else>Zaloguj się, aby zapisać</router-link>
           </div>
         </div>
         <div class="hero-visual">
@@ -58,6 +59,13 @@
     </div>
   </div>
   <div v-else-if="courseQuery.isLoading" class="loading">Ładowanie...</div>
+  <div v-else-if="courseQuery.isError" class="error-state">
+    <div class="container">
+      <h2>Nie znaleziono kursu</h2>
+      <p>Kurs nie istnieje lub nie masz do niego dostępu.</p>
+      <router-link class="btn btn-primary" :to="{ name: 'Courses' }">Przeglądaj kursy</router-link>
+    </div>
+  </div>
 </template>
 
 <script setup lang="ts">
@@ -98,6 +106,21 @@ const enroll = () => {
 
 .course-details {
   padding: calc($header-height + 40px) 0 80px;
+}
+
+.error-state {
+  padding: calc($header-height + 80px) 0 80px;
+  text-align: center;
+
+  h2 {
+    font-size: 1.5rem;
+    margin-bottom: 12px;
+  }
+
+  p {
+    color: $color-muted;
+    margin-bottom: 24px;
+  }
 }
 
 .hero-section {

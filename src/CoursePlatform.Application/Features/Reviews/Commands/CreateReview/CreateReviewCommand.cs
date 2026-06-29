@@ -46,11 +46,6 @@ public class CreateReviewCommandHandler : IRequestHandler<CreateReviewCommand, G
             throw new ValidationException(new[] { new ValidationFailure("Comment", "Już dodałeś opinię do tego kursu.") });
         }
 
-        if (request.Rating < 1 || request.Rating > 5)
-        {
-            throw new ValidationException(new[] { new ValidationFailure("Rating", "Ocena musi być w zakresie 1-5.") });
-        }
-
         var review = new Review
         {
             Id = Guid.NewGuid(),

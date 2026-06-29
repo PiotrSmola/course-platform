@@ -5,6 +5,7 @@ import { getCourses } from '@/features/courses/api/courses.api'
 import type { CoursesFilter } from '@/features/courses/api/courses.api'
 import type { CourseListDto } from '@/features/courses/types/course.types'
 import { CourseLevel, CourseStatus } from '@/features/courses/types/course.types'
+import { queryKeys } from '@/shared/queryKeys'
 
 export type SortOption = 'newest' | 'price-asc' | 'price-desc' | 'rating' | 'popular'
 
@@ -140,7 +141,7 @@ export function useCourseBrowse(options: { baseFilter?: Partial<BrowseState> } =
   }))
 
   const { isLoading, isError, error, data } = useQuery({
-    queryKey: computed(() => ['courses-browse', { ...filter.value }]),
+    queryKey: computed(() => queryKeys.coursesBrowse({ ...filter.value })),
     queryFn: () => getCourses(filter.value)
   })
 

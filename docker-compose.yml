@@ -20,6 +20,13 @@ services:
     container_name: cp_api
     working_dir: /src/src/CoursePlatform.API
     command: dotnet watch run --urls http://0.0.0.0:8080
+    env_file:
+      - .env
+    environment:
+      ASPNETCORE_ENVIRONMENT: Development
+      Jwt__Key: ${JWT_KEY:?JWT_KEY is required — copy .env.example to .env and set a unique key}
+      Jwt__Issuer: CoursePlatform
+      Jwt__Audience: CoursePlatform
     ports:
       - "8080:8080"
     volumes:

@@ -22,27 +22,23 @@ public record GetCoursesQuery(
 public class GetCoursesQueryHandler : IRequestHandler<GetCoursesQuery, CoursesVm>
 {
     private readonly IApplicationDbContext _context;
+    private readonly ICurrentUserService _currentUserService;
 
-    public GetCoursesQueryHandler(IApplicationDbContext context)
+    public GetCoursesQueryHandler(IApplicationDbContext context, ICurrentUserService currentUserService)
     {
         _context = context;
+        _currentUserService = currentUserService;
     }
 
     public async Task<CoursesVm> Handle(GetCoursesQuery request, CancellationToken cancellationToken)
     {
         var query = _context.Courses
             .AsNoTracking()
-            .Include(c => c.Instructor)
-            .Include(c => c.Modules)
-            .ThenInclude(m => m.Lessons)
-            .Include(c => c.Reviews)
-            .Include(c => c.Categories)
-            .Include(c => c.Technologies)
             .AsQueryable();
 
         if (!string.IsNullOrWhiteSpace(request.SearchTerm))
         {
-            var search = request.SearchTerm.ToLower();
+            var search = request.SearchTerm.Trim().ToLower();
             query = query.Where(c =>
                 c.Title.ToLower().Contains(search) ||
                 c.ShortDescription.ToLower().Contains(search) ||
@@ -58,7 +54,18 @@ public class GetCoursesQueryHandler : IRequestHandler<GetCoursesQuery, CoursesVm
 
         if (request.Status.HasValue)
         {
-            query = query.Where(c => c.Status == request.Status.Value);
+            if (_currentUserService.IsAdmin)
+            {
+                query = query.Where(c => c.Status == request.Status.Value);
+            }
+            else if (_currentUserService.UserId.HasValue)
+            {
+                query = query.Where(c => c.Status == request.Status.Value && c.InstructorId == _currentUserService.UserId.Value);
+            }
+            else
+            {
+                query = query.Where(c => c.Status == CourseStatus.Published);
+            }
         }
         else
         {
@@ -77,7 +84,8 @@ public class GetCoursesQueryHandler : IRequestHandler<GetCoursesQuery, CoursesVm
 
         if (!string.IsNullOrWhiteSpace(request.Language))
         {
-            query = query.Where(c => c.Language.ToLower() == request.Language.ToLower());
+            var language = request.Language.Trim().ToLower();
+            query = query.Where(c => c.Language.ToLower() == language);
         }
 
         if (request.CategoryIds != null && request.CategoryIds.Any())
@@ -92,7 +100,9 @@ public class GetCoursesQueryHandler : IRequestHandler<GetCoursesQuery, CoursesVm
 
         if (request.MinRating.HasValue)
         {
-            query = query.Where(c => c.Reviews.Any() && c.Reviews.Average(r => r.Rating) >= request.MinRating.Value);
+            query = query.Where(c =>
+                c.Reviews.Any() &&
+                c.Reviews.Average(r => r.Rating) >= request.MinRating.Value);
         }
 
         var totalCount = await query.CountAsync(cancellationToken);
@@ -106,26 +116,25 @@ public class GetCoursesQueryHandler : IRequestHandler<GetCoursesQuery, CoursesVm
             _ => query.OrderByDescending(c => c.CreatedAt)
         };
 
-        var courses = await query
+        var items = await query
             .Skip((request.PageNumber - 1) * request.PageSize)
             .Take(request.PageSize)
+            .Select(c => new CourseListDto(
+                c.Id,
+                c.Title,
+                c.ShortDescription,
+                c.Price,
+                c.Level,
+                c.ThumbnailUrl,
+                $"{c.Instructor.FirstName} {c.Instructor.LastName}",
+                c.Language,
+                c.Categories.Select(cat => cat.Name).ToList(),
+                c.Technologies.Select(tech => tech.Name).ToList(),
+                c.Modules.Count,
+                c.Modules.SelectMany(m => m.Lessons).Count(),
+                c.Reviews.Any() ? c.Reviews.Average(r => r.Rating) : 0,
+                c.Reviews.Count))
             .ToListAsync(cancellationToken);
-
-        var items = courses.Select(c => new CourseListDto(
-            c.Id,
-            c.Title,
-            c.ShortDescription,
-            c.Price,
-            c.Level,
-            c.ThumbnailUrl,
-            $"{c.Instructor.FirstName} {c.Instructor.LastName}",
-            c.Language,
-            c.Categories.Select(cat => cat.Name).ToList(),
-            c.Technologies.Select(tech => tech.Name).ToList(),
-            c.Modules.Count,
-            c.Modules.SelectMany(m => m.Lessons).Count(),
-            c.Reviews.Any() ? c.Reviews.Average(r => r.Rating) : 0,
-            c.Reviews.Count)).ToList();
 
         return new CoursesVm(items, totalCount);
     }

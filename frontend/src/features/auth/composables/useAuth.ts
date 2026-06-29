@@ -3,7 +3,9 @@ import { useRouter } from 'vue-router'
 import { useAuthStore } from '@/features/auth/stores/auth.store'
 import { login, register, getCurrentUser } from '@/features/auth/api/auth.api'
 import { toast } from '@/shared/toast/toast'
-import { watch } from 'vue'
+import { watch, computed } from 'vue'
+import { getApiErrorMessage } from '@/shared/api/apiError'
+import { queryKeys } from '@/shared/queryKeys'
 
 export function useAuth() {
   const authStore = useAuthStore()
@@ -14,10 +16,11 @@ export function useAuth() {
     onSuccess: (data) => {
       authStore.setAuth(data)
       toast.success('Zalogowano pomyślnie')
-      router.push({ name: 'Home' })
+      const redirect = router.currentRoute.value.query.redirect as string | undefined
+      router.push(redirect || { name: 'Home' })
     },
-    onError: (error: any) => {
-      toast.error(error.response?.data?.error || 'Nie udało się zalogować')
+    onError: (error) => {
+      toast.error(getApiErrorMessage(error) || 'Nie udało się zalogować')
     }
   })
 
@@ -26,27 +29,40 @@ export function useAuth() {
     onSuccess: (data) => {
       authStore.setAuth(data)
       toast.success('Konto zostało utworzone')
-      router.push({ name: 'Home' })
+      const redirect = router.currentRoute.value.query.redirect as string | undefined
+      router.push(redirect || { name: 'Home' })
     },
-    onError: (error: any) => {
-      toast.error(error.response?.data?.error || 'Nie udało się utworzyć konta')
+    onError: (error) => {
+      toast.error(getApiErrorMessage(error) || 'Nie udało się utworzyć konta')
     }
   })
 
   const currentUserQuery = useQuery({
-    queryKey: ['currentUser'],
+    queryKey: queryKeys.currentUser(),
     queryFn: getCurrentUser,
-    enabled: authStore.isAuthenticated,
+    enabled: computed(() => authStore.isAuthenticated),
     retry: false
   })
 
-  watch(currentUserQuery.data, (data) => {
-    if (data) authStore.setUser(data)
-  })
-
-  watch(currentUserQuery.error, (error) => {
-    if (error) authStore.logout()
-  })
+  if (!authStore.isAuthenticated) {
+    authStore.setReady(true)
+  } else {
+    watch(
+      () => currentUserQuery.isFetched.value,
+      (fetched) => {
+        if (fetched) {
+          if (currentUserQuery.data.value) {
+            authStore.setUser(currentUserQuery.data.value)
+          }
+          if (currentUserQuery.error.value) {
+            authStore.logout()
+          }
+          authStore.setReady(true)
+        }
+      },
+      { immediate: true }
+    )
+  }
 
   const logout = () => {
     authStore.logout()
