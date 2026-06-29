@@ -19,7 +19,6 @@ export function useCompleteLesson() {
       queryClient.invalidateQueries({ queryKey: queryKeys.lesson(variables.courseId, variables.lessonId) })
       queryClient.invalidateQueries({ queryKey: queryKeys.enrollments() })
       queryClient.invalidateQueries({ queryKey: queryKeys.course(variables.courseId) })
-      queryClient.invalidateQueries({ queryKey: queryKeys.currentUser() })
     }
   })
 }

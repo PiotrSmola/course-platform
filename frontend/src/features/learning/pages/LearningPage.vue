@@ -8,7 +8,7 @@
       />
       <div class="video-section">
         <div class="video-container glass">
-          <video :key="lesson.videoUrl" :src="lesson.videoUrl" controls></video>
+          <video :key="lesson.videoUrl" :src="lesson.videoUrl" controls crossorigin="anonymous"></video>
         </div>
         <div class="lesson-info glass">
           <h1>{{ lesson.title }}</h1>

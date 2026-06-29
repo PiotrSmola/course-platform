@@ -1,6 +1,5 @@
 using FluentValidation;
 using MediatR;
-using Microsoft.AspNetCore.Identity;
 using CoursePlatform.Application.Common.Helpers;
 using CoursePlatform.Application.Common.Interfaces;
 using CoursePlatform.Domain.Entities;
@@ -33,33 +32,28 @@ public class CreateLessonCommandHandler : IRequestHandler<CreateLessonCommand, G
 {
     private readonly IApplicationDbContext _context;
     private readonly ICurrentUserService _currentUserService;
-    private readonly UserManager<ApplicationUser> _userManager;
 
     public CreateLessonCommandHandler(
         IApplicationDbContext context,
-        ICurrentUserService currentUserService,
-        UserManager<ApplicationUser> userManager)
+        ICurrentUserService currentUserService)
     {
         _context = context;
         _currentUserService = currentUserService;
-        _userManager = userManager;
     }
 
     public async Task<Guid> Handle(CreateLessonCommand request, CancellationToken cancellationToken)
     {
         await CourseAccessHelper.GetManagedModuleAsync(
-            _context, _userManager, _currentUserService, request.CourseId, request.ModuleId, cancellationToken);
+            _context, _currentUserService, request.CourseId, request.ModuleId, cancellationToken);
 
         var lesson = new Lesson
         {
-            Id = Guid.NewGuid(),
             ModuleId = request.ModuleId,
             Title = request.Title,
             Description = request.Description,
             VideoUrl = request.VideoUrl,
             Duration = request.Duration,
-            Order = request.Order,
-            CreatedAt = DateTime.UtcNow
+            Order = request.Order
         };
 
         _context.Lessons.Add(lesson);

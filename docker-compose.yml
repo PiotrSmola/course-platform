@@ -27,12 +27,14 @@ services:
       Jwt__Key: ${JWT_KEY:?JWT_KEY is required — copy .env.example to .env and set a unique key}
       Jwt__Issuer: CoursePlatform
       Jwt__Audience: CoursePlatform
+      Jwt__ExpiryMinutes: ${JWT_EXPIRY_MINUTES:-120}
     ports:
       - "8080:8080"
     volumes:
       - .:/src
     depends_on:
       - db
+    mem_limit: 2g
 
   frontend:
     build:

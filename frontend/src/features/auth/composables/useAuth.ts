@@ -1,9 +1,8 @@
-import { useMutation, useQuery, useQueryClient } from '@tanstack/vue-query'
+import { useMutation, useQueryClient } from '@tanstack/vue-query'
 import { useRouter } from 'vue-router'
 import { useAuthStore } from '@/features/auth/stores/auth.store'
-import { login, register, getCurrentUser } from '@/features/auth/api/auth.api'
+import { login, register } from '@/features/auth/api/auth.api'
 import { toast } from '@/shared/toast/toast'
-import { watch, computed } from 'vue'
 import { getApiErrorMessage } from '@/shared/api/apiError'
 import { queryKeys } from '@/shared/queryKeys'
 
@@ -12,11 +11,21 @@ export function useAuth() {
   const router = useRouter()
   const queryClient = useQueryClient()
 
+  async function invalidateAuthDependentQueries() {
+    await Promise.all([
+      queryClient.invalidateQueries({ queryKey: queryKeys.enrollments() }),
+      queryClient.invalidateQueries({ queryKey: queryKeys.userProfile() }),
+      queryClient.invalidateQueries({ queryKey: queryKeys.instructorCourses() }),
+      queryClient.invalidateQueries({ queryKey: queryKeys.adminUsers() }),
+      queryClient.invalidateQueries({ queryKey: queryKeys.adminCourses() })
+    ])
+  }
+
   const loginMutation = useMutation({
     mutationFn: login,
     onSuccess: async (data) => {
       authStore.setAuth(data)
-      await queryClient.invalidateQueries({ queryKey: queryKeys.currentUser() })
+      await invalidateAuthDependentQueries()
       toast.success('Zalogowano pomyślnie')
       const redirect = router.currentRoute.value.query.redirect as string | undefined
       router.push(redirect || { name: 'Home' })
@@ -30,7 +39,7 @@ export function useAuth() {
     mutationFn: register,
     onSuccess: async (data) => {
       authStore.setAuth(data)
-      await queryClient.invalidateQueries({ queryKey: queryKeys.currentUser() })
+      await invalidateAuthDependentQueries()
       toast.success('Konto zostało utworzone')
       const redirect = router.currentRoute.value.query.redirect as string | undefined
       router.push(redirect || { name: 'Home' })
@@ -40,35 +49,9 @@ export function useAuth() {
     }
   })
 
-  const currentUserQuery = useQuery({
-    queryKey: queryKeys.currentUser(),
-    queryFn: getCurrentUser,
-    enabled: computed(() => authStore.isAuthenticated),
-    retry: false
-  })
-
-  if (!authStore.isAuthenticated) {
-    authStore.setReady(true)
-  } else {
-    watch(
-      () => currentUserQuery.isFetched.value,
-      (fetched) => {
-        if (fetched) {
-          if (currentUserQuery.data.value) {
-            authStore.setUser(currentUserQuery.data.value)
-          }
-          if (currentUserQuery.error.value) {
-            authStore.logout()
-          }
-          authStore.setReady(true)
-        }
-      },
-      { immediate: true }
-    )
-  }
-
   const logout = () => {
     authStore.logout()
+    queryClient.clear()
     toast.info('Wylogowano')
     router.push({ name: 'Home' })
   }
@@ -76,7 +59,6 @@ export function useAuth() {
   return {
     login: loginMutation,
     register: registerMutation,
-    currentUser: currentUserQuery,
     logout
   }
 }

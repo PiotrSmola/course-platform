@@ -38,13 +38,13 @@ public class GetCoursesQueryHandler : IRequestHandler<GetCoursesQuery, CoursesVm
 
         if (!string.IsNullOrWhiteSpace(request.SearchTerm))
         {
-            var search = request.SearchTerm.Trim().ToLower();
+            var search = $"%{request.SearchTerm.Trim()}%";
             query = query.Where(c =>
-                c.Title.ToLower().Contains(search) ||
-                c.ShortDescription.ToLower().Contains(search) ||
-                c.Description.ToLower().Contains(search) ||
-                c.Categories.Any(cat => cat.Name.ToLower().Contains(search)) ||
-                c.Technologies.Any(tech => tech.Name.ToLower().Contains(search)));
+                EF.Functions.Like(c.Title, search) ||
+                EF.Functions.Like(c.ShortDescription, search) ||
+                EF.Functions.Like(c.Description, search) ||
+                c.Categories.Any(cat => EF.Functions.Like(cat.Name, search)) ||
+                c.Technologies.Any(tech => EF.Functions.Like(tech.Name, search)));
         }
 
         if (request.Level.HasValue)
@@ -87,8 +87,8 @@ public class GetCoursesQueryHandler : IRequestHandler<GetCoursesQuery, CoursesVm
 
         if (!string.IsNullOrWhiteSpace(request.Language))
         {
-            var language = request.Language.Trim().ToLower();
-            query = query.Where(c => c.Language.ToLower() == language);
+            var language = request.Language.Trim();
+            query = query.Where(c => EF.Functions.Like(c.Language, language));
         }
 
         if (request.CategoryIds != null && request.CategoryIds.Any())

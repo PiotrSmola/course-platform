@@ -20,9 +20,9 @@ public class BusinessPlansController : ControllerBase
 
     [HttpGet]
     [AllowAnonymous]
-    public async Task<ActionResult<BusinessPlansVm>> GetBusinessPlans()
+    public async Task<ActionResult<BusinessPlansVm>> GetBusinessPlans(CancellationToken cancellationToken)
     {
-        var result = await _mediator.Send(new GetBusinessPlansQuery());
+        var result = await _mediator.Send(new GetBusinessPlansQuery(), cancellationToken);
         return Ok(result);
     }
 }

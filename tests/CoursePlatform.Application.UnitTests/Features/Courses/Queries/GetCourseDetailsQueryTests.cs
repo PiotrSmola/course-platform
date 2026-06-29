@@ -28,9 +28,11 @@ public class GetCourseDetailsQueryTests
     public async Task Handle_PublishedCourseAnonymous_ReturnsDetailsWithoutVideoUrl()
     {
         var instructor = new ApplicationUser { Id = Guid.NewGuid(), UserName = "inst", Email = "i@t.com", FirstName = "A", LastName = "B" };
+        _context.Users.Add(instructor);
+        await _context.SaveChangesAsync();
+
         var course = new Course
         {
-            Id = Guid.NewGuid(),
             Title = "Test",
             Description = "Desc",
             ShortDescription = "Short",
@@ -40,21 +42,18 @@ public class GetCourseDetailsQueryTests
             ThumbnailUrl = "",
             Language = "pl",
             InstructorId = instructor.Id,
-            CreatedAt = DateTime.UtcNow,
             Categories = new List<Category>(),
             Technologies = new List<Technology>(),
             Modules = new List<Module>
             {
                 new()
                 {
-                    Id = Guid.NewGuid(),
                     Title = "M1",
                     Order = 1,
                     Lessons = new List<Lesson>
                     {
                         new()
                         {
-                            Id = Guid.NewGuid(),
                             Title = "L1",
                             Description = "Desc",
                             Duration = 10,
@@ -66,7 +65,6 @@ public class GetCourseDetailsQueryTests
             },
             Reviews = new List<Review>()
         };
-        _context.Users.Add(instructor);
         _context.Courses.Add(course);
         await _context.SaveChangesAsync();
 
@@ -86,9 +84,11 @@ public class GetCourseDetailsQueryTests
     public async Task Handle_DraftCourseAnonymous_ThrowsNotFound()
     {
         var instructor = new ApplicationUser { Id = Guid.NewGuid(), UserName = "inst", Email = "i@t.com", FirstName = "A", LastName = "B" };
+        _context.Users.Add(instructor);
+        await _context.SaveChangesAsync();
+
         var course = new Course
         {
-            Id = Guid.NewGuid(),
             Title = "Draft",
             Description = "Desc",
             ShortDescription = "Short",
@@ -98,13 +98,11 @@ public class GetCourseDetailsQueryTests
             ThumbnailUrl = "",
             Language = "pl",
             InstructorId = instructor.Id,
-            CreatedAt = DateTime.UtcNow,
             Categories = new List<Category>(),
             Technologies = new List<Technology>(),
             Modules = new List<Module>(),
             Reviews = new List<Review>()
         };
-        _context.Users.Add(instructor);
         _context.Courses.Add(course);
         await _context.SaveChangesAsync();
 

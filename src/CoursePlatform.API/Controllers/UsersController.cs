@@ -22,23 +22,23 @@ public class UsersController : ControllerBase
     }
 
     [HttpGet("me")]
-    public async Task<ActionResult<UserProfileDto>> GetProfile()
+    public async Task<ActionResult<UserProfileDto>> GetProfile(CancellationToken cancellationToken)
     {
-        var result = await _mediator.Send(new GetUserProfileQuery());
+        var result = await _mediator.Send(new GetUserProfileQuery(), cancellationToken);
         return Ok(result);
     }
 
     [HttpPut("me")]
-    public async Task<ActionResult<UserProfileSummaryDto>> UpdateProfile(UpdateProfileCommand command)
+    public async Task<ActionResult<UserProfileSummaryDto>> UpdateProfile(UpdateProfileCommand command, CancellationToken cancellationToken)
     {
-        var result = await _mediator.Send(command);
+        var result = await _mediator.Send(command, cancellationToken);
         return Ok(result);
     }
 
     [HttpDelete("me")]
-    public async Task<IActionResult> DeleteAccount()
+    public async Task<IActionResult> DeleteAccount(CancellationToken cancellationToken)
     {
-        await _mediator.Send(new DeleteAccountCommand());
+        await _mediator.Send(new DeleteAccountCommand(), cancellationToken);
         return NoContent();
     }
 }

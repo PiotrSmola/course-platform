@@ -17,9 +17,9 @@ public class GetCategoriesQueryTests
         await using var context = new TestDbContext(options);
 
         context.Categories.AddRange(
-            new Category { Id = Guid.NewGuid(), Name = "Backend", Slug = "backend", Description = "Be" },
-            new Category { Id = Guid.NewGuid(), Name = "AI", Slug = "ai", Description = "AI" },
-            new Category { Id = Guid.NewGuid(), Name = "Frontend", Slug = "frontend", Description = "Fe" }
+            new Category { Name = "Backend", Slug = "backend", Description = "Be" },
+            new Category { Name = "AI", Slug = "ai", Description = "AI" },
+            new Category { Name = "Frontend", Slug = "frontend", Description = "Fe" }
         );
         await context.SaveChangesAsync();
 

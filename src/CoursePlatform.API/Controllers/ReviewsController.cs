@@ -21,18 +21,18 @@ public class ReviewsController : ControllerBase
 
     [HttpGet]
     [AllowAnonymous]
-    public async Task<ActionResult<List<ReviewListDto>>> GetCourseReviews(Guid courseId)
+    public async Task<ActionResult<List<ReviewListDto>>> GetCourseReviews(Guid courseId, CancellationToken cancellationToken)
     {
-        var result = await _mediator.Send(new GetCourseReviewsQuery(courseId));
+        var result = await _mediator.Send(new GetCourseReviewsQuery(courseId), cancellationToken);
         return Ok(result);
     }
 
     [HttpPost]
     [Authorize]
-    public async Task<ActionResult<Guid>> CreateReview(Guid courseId, CreateReviewCommand command)
+    public async Task<ActionResult<Guid>> CreateReview(Guid courseId, CreateReviewCommand command, CancellationToken cancellationToken)
     {
         if (courseId != command.CourseId) return BadRequest();
-        var result = await _mediator.Send(command);
+        var result = await _mediator.Send(command, cancellationToken);
         return Ok(result);
     }
 }

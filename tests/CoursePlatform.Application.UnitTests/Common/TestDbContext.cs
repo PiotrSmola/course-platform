@@ -1,6 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 using CoursePlatform.Application.Common.Interfaces;
 using CoursePlatform.Domain.Entities;
+using CoursePlatform.Infrastructure.Persistence.Configurations;
 
 namespace CoursePlatform.Application.UnitTests.Common;
 
@@ -25,19 +26,7 @@ public class TestDbContext : DbContext, IApplicationDbContext
 
     protected override void OnModelCreating(ModelBuilder builder)
     {
-        builder.Entity<LessonProgress>().HasKey(lp => new { lp.UserId, lp.LessonId });
-        builder.Entity<UserStatistics>().HasKey(us => us.UserId);
         builder.Entity<ApplicationUser>().HasKey(u => u.Id);
-        builder.Entity<LearningPathCourse>().HasKey(lpc => lpc.Id);
-        builder.Entity<BusinessPlanFeature>().HasKey(bf => bf.Id);
-        builder.Entity<BusinessPlan>().HasKey(bp => bp.Id);
-        builder.Entity<LearningPath>().HasKey(lp => lp.Id);
-        builder.Entity<Review>().HasKey(r => r.Id);
-        builder.Entity<Enrollment>().HasKey(e => e.Id);
-        builder.Entity<Lesson>().HasKey(l => l.Id);
-        builder.Entity<Module>().HasKey(m => m.Id);
-        builder.Entity<Course>().HasKey(c => c.Id);
-        builder.Entity<Category>().HasKey(c => c.Id);
-        builder.Entity<Technology>().HasKey(t => t.Id);
+        builder.ApplyConfigurationsFromAssembly(typeof(CourseConfiguration).Assembly);
     }
 }

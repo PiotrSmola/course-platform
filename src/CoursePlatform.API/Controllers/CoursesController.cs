@@ -39,58 +39,61 @@ public class CoursesController : ControllerBase
         [FromQuery] List<Guid>? technologyIds,
         [FromQuery] double? minRating,
         [FromQuery] int pageNumber = 1,
-        [FromQuery] int pageSize = 10)
+        [FromQuery] int pageSize = 10,
+        CancellationToken cancellationToken = default)
     {
-        var result = await _mediator.Send(new GetCoursesQuery(searchTerm, level, status, sortBy, minPrice, maxPrice, language, categoryIds, technologyIds, minRating, pageNumber, pageSize));
+        var result = await _mediator.Send(
+            new GetCoursesQuery(searchTerm, level, status, sortBy, minPrice, maxPrice, language, categoryIds, technologyIds, minRating, pageNumber, pageSize),
+            cancellationToken);
         return Ok(result);
     }
 
     [HttpGet("categories")]
     [AllowAnonymous]
-    public async Task<ActionResult<List<CategoryDto>>> GetCategories()
+    public async Task<ActionResult<List<CategoryDto>>> GetCategories(CancellationToken cancellationToken)
     {
-        var result = await _mediator.Send(new GetCategoriesQuery());
+        var result = await _mediator.Send(new GetCategoriesQuery(), cancellationToken);
         return Ok(result);
     }
 
     [HttpGet("technologies")]
     [AllowAnonymous]
-    public async Task<ActionResult<List<TechnologyDto>>> GetTechnologies()
+    public async Task<ActionResult<List<TechnologyDto>>> GetTechnologies(CancellationToken cancellationToken)
     {
-        var result = await _mediator.Send(new GetTechnologiesQuery());
+        var result = await _mediator.Send(new GetTechnologiesQuery(), cancellationToken);
         return Ok(result);
     }
 
     [HttpGet("instructor/my")]
     [Authorize(Roles = "Instructor,Admin")]
-    public async Task<ActionResult<List<InstructorCourseDto>>> GetInstructorCourses()
+    public async Task<ActionResult<List<InstructorCourseDto>>> GetInstructorCourses(CancellationToken cancellationToken)
     {
-        var result = await _mediator.Send(new GetInstructorCoursesQuery());
+        var result = await _mediator.Send(new GetInstructorCoursesQuery(), cancellationToken);
         return Ok(result);
     }
 
     [HttpGet("{id:guid}")]
     [AllowAnonymous]
-    public async Task<ActionResult<CourseDetailsDto>> GetCourseDetails(Guid id)
+    public async Task<ActionResult<CourseDetailsDto>> GetCourseDetails(Guid id, CancellationToken cancellationToken)
     {
-        var result = await _mediator.Send(new GetCourseDetailsQuery(id));
+        var result = await _mediator.Send(new GetCourseDetailsQuery(id), cancellationToken);
         return Ok(result);
     }
 
     [HttpPost]
     [Authorize(Roles = "Instructor,Admin")]
-    public async Task<ActionResult<Guid>> CreateCourse(CreateCourseCommand command)
+    public async Task<ActionResult<Guid>> CreateCourse(CreateCourseCommand command, CancellationToken cancellationToken)
     {
-        var result = await _mediator.Send(command);
+        var result = await _mediator.Send(command, cancellationToken);
         return Ok(result);
     }
 
     [HttpPut("{id:guid}")]
     [Authorize(Roles = "Instructor,Admin")]
-    public async Task<ActionResult> UpdateCourse(Guid id, UpdateCourseCommand command)
+    public async Task<ActionResult> UpdateCourse(Guid id, UpdateCourseCommand command, CancellationToken cancellationToken)
     {
         if (id != command.Id) return BadRequest();
-        await _mediator.Send(command);
+        await _mediator.Send(command, cancellationToken);
         return NoContent();
     }
 }

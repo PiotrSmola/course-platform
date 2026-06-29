@@ -117,11 +117,9 @@ public static class ApplicationDbContextSeed
             {
                 context.Categories.Add(new Category
                 {
-                    Id = Guid.NewGuid(),
                     Name = name,
                     Slug = slug,
                     Description = description,
-                    CreatedAt = DateTime.UtcNow
                 });
             }
             else if (string.IsNullOrEmpty(cat.Description))
@@ -157,11 +155,9 @@ public static class ApplicationDbContextSeed
             {
                 context.Technologies.Add(new Technology
                 {
-                    Id = Guid.NewGuid(),
                     Name = name,
                     Slug = slug,
                     Description = description,
-                    CreatedAt = DateTime.UtcNow
                 });
             }
             else if (string.IsNullOrEmpty(tech.Description))
@@ -200,8 +196,7 @@ public static class ApplicationDbContextSeed
             john.Id,
             new List<Category> { Cat("frontend") },
             new List<Technology> { Tech("vue") },
-            "https://placeholder.local/courses/vue3-fundamentals.jpg",
-            now.AddDays(-90));
+            "https://placeholder.local/courses/vue3-fundamentals.jpg");
         AddModules(vueCourse,
             ("Wprowadzenie do Vue 3", new[]
             {
@@ -239,8 +234,7 @@ public static class ApplicationDbContextSeed
             john.Id,
             new List<Category> { Cat("backend") },
             new List<Technology> { Tech("dotnet") },
-            "https://placeholder.local/courses/dotnet9-advanced.jpg",
-            now.AddDays(-80));
+            "https://placeholder.local/courses/dotnet9-advanced.jpg");
         AddModules(dotnetCourse,
             ("Architektura i podstawy", new[]
             {
@@ -278,8 +272,7 @@ public static class ApplicationDbContextSeed
             anna.Id,
             new List<Category> { Cat("frontend") },
             new List<Technology> { Tech("react") },
-            "https://placeholder.local/courses/react18-practice.jpg",
-            now.AddDays(-70));
+            "https://placeholder.local/courses/react18-practice.jpg");
         AddModules(reactCourse,
             ("Fundamenty React 18", new[]
             {
@@ -317,8 +310,7 @@ public static class ApplicationDbContextSeed
             anna.Id,
             new List<Category> { Cat("ai") },
             new List<Technology> { Tech("python") },
-            "https://placeholder.local/courses/python-data-science.jpg",
-            now.AddDays(-60));
+            "https://placeholder.local/courses/python-data-science.jpg");
         AddModules(pythonCourse,
             ("Python dla analityka", new[]
             {
@@ -362,8 +354,7 @@ public static class ApplicationDbContextSeed
             marcin.Id,
             new List<Category> { Cat("databases") },
             new List<Technology> { Tech("sql") },
-            "https://placeholder.local/courses/sql-complete.jpg",
-            now.AddDays(-55));
+            "https://placeholder.local/courses/sql-complete.jpg");
         AddModules(sqlCourse,
             ("Relacyjny model danych", new[]
             {
@@ -407,8 +398,7 @@ public static class ApplicationDbContextSeed
             marcin.Id,
             new List<Category> { Cat("devops") },
             new List<Technology> { Tech("docker") },
-            "https://placeholder.local/courses/docker-kubernetes.jpg",
-            now.AddDays(-50));
+            "https://placeholder.local/courses/docker-kubernetes.jpg");
         AddModules(dockerCourse,
             ("Docker od podstaw", new[]
             {
@@ -452,8 +442,7 @@ public static class ApplicationDbContextSeed
             marcin.Id,
             new List<Category> { Cat("devops") },
             new List<Technology> { Tech("aws") },
-            "https://placeholder.local/courses/aws-solutions-architect.jpg",
-            now.AddDays(-45));
+            "https://placeholder.local/courses/aws-solutions-architect.jpg");
         AddModules(awsCourse,
             ("Fundamenty AWS", new[]
             {
@@ -503,8 +492,7 @@ public static class ApplicationDbContextSeed
             anna.Id,
             new List<Category> { Cat("databases") },
             new List<Technology> { Tech("mongodb") },
-            "https://placeholder.local/courses/mongodb-aggregations.jpg",
-            now.AddDays(-40));
+            "https://placeholder.local/courses/mongodb-aggregations.jpg");
         AddModules(mongoCourse,
             ("Modelowanie danych w MongoDB", new[]
             {
@@ -542,8 +530,7 @@ public static class ApplicationDbContextSeed
             john.Id,
             new List<Category> { Cat("ai") },
             new List<Technology> { Tech("python") },
-            "https://placeholder.local/courses/llm-applications.jpg",
-            now.AddDays(-30));
+            "https://placeholder.local/courses/llm-applications.jpg");
         AddModules(llmCourse,
             ("Podstawy LLM", new[]
             {
@@ -587,8 +574,7 @@ public static class ApplicationDbContextSeed
             john.Id,
             new List<Category> { Cat("backend") },
             new List<Technology> { Tech("laravel") },
-            "https://placeholder.local/courses/laravel11-api.jpg",
-            now.AddDays(-25));
+            "https://placeholder.local/courses/laravel11-api.jpg");
         AddModules(laravelCourse,
             ("Fundamenty Laravel 11", new[]
             {
@@ -632,8 +618,7 @@ public static class ApplicationDbContextSeed
             anna.Id,
             new List<Category> { Cat("frontend") },
             new List<Technology> { Tech("angular") },
-            "https://placeholder.local/courses/angular-enterprise.jpg",
-            now.AddDays(-20));
+            "https://placeholder.local/courses/angular-enterprise.jpg");
         AddModules(angularCourse,
             ("Architektura Angular", new[]
             {
@@ -677,8 +662,7 @@ public static class ApplicationDbContextSeed
             anna.Id,
             new List<Category> { Cat("ai") },
             new List<Technology> { Tech("python") },
-            "https://placeholder.local/courses/ml-intro.jpg",
-            now.AddDays(-15));
+            "https://placeholder.local/courses/ml-intro.jpg");
         AddModules(mlIntroCourse,
             ("Czym jest uczenie maszynowe", new[]
             {
@@ -726,12 +710,10 @@ public static class ApplicationDbContextSeed
         Guid instructorId,
         List<Category> categories,
         List<Technology> technologies,
-        string thumbnailUrl,
-        DateTime createdAt)
+        string thumbnailUrl)
     {
         return new Course
         {
-            Id = Guid.NewGuid(),
             Title = title,
             Description = description,
             ShortDescription = shortDescription,
@@ -741,7 +723,6 @@ public static class ApplicationDbContextSeed
             ThumbnailUrl = thumbnailUrl,
             Language = "Polski",
             InstructorId = instructorId,
-            CreatedAt = createdAt,
             Categories = categories,
             Technologies = technologies,
             Modules = new List<Module>()
@@ -755,11 +736,9 @@ public static class ApplicationDbContextSeed
             var (title, lessonData) = modules[i];
             var module = new Module
             {
-                Id = Guid.NewGuid(),
                 Title = title,
                 Order = i + 1,
                 CourseId = course.Id,
-                CreatedAt = course.CreatedAt,
                 Lessons = new List<Lesson>()
             };
 
@@ -768,14 +747,12 @@ public static class ApplicationDbContextSeed
                 var (lessonTitle, lessonDescription, durationSeconds) = lessonData[j];
                 module.Lessons.Add(new Lesson
                 {
-                    Id = Guid.NewGuid(),
                     Title = lessonTitle,
                     Description = lessonDescription,
                     VideoUrl = $"https://placeholder.local/videos/{course.Id:N}-{i + 1}-{j + 1}.mp4",
                     Duration = durationSeconds,
                     Order = j + 1,
                     ModuleId = module.Id,
-                    CreatedAt = course.CreatedAt
                 });
             }
 
@@ -851,11 +828,9 @@ public static class ApplicationDbContextSeed
                 if (course == null) continue;
                 context.Enrollments.Add(new Enrollment
                 {
-                    Id = Guid.NewGuid(),
                     UserId = student.Id,
                     CourseId = course.Id,
-                    EnrolledAt = now.AddDays(-(60 - i * 7L)),
-                    CreatedAt = now.AddDays(-(60 - i * 7L))
+                    EnrolledAt = now.AddDays(-(60 - i * 7L))
                 });
             }
         }
@@ -965,12 +940,10 @@ public static class ApplicationDbContextSeed
                 if (student == null) continue;
                 context.Reviews.Add(new Review
                 {
-                    Id = Guid.NewGuid(),
                     CourseId = course.Id,
                     UserId = student.Id,
                     Rating = rating,
                     Comment = comment,
-                    CreatedAt = course.CreatedAt.AddDays(14 + i * 7L)
                 });
             }
         }
@@ -988,7 +961,6 @@ public static class ApplicationDbContextSeed
 
         var backendPath = new LearningPath
         {
-            Id = Guid.NewGuid(),
             Title = "Backend Developer w .NET",
             Slug = "backend-developer-dotnet",
             ShortDescription = "Zostań backend developerem — od podstaw API do zaawansowanych wzorców w ekosystemie .NET.",
@@ -998,18 +970,16 @@ public static class ApplicationDbContextSeed
             ThumbnailUrl = "https://placeholder.local/paths/backend-dotnet.jpg",
             DisplayOrder = 1,
             IsPublished = true,
-            CreatedAt = DateTime.UtcNow,
             PathCourses = new List<LearningPathCourse>
             {
-                new() { Id = Guid.NewGuid(), CourseId = FindCourse("Zaawansowane .NET 9 Web API — Clean Architecture i CQRS").Id, Order = 1, IsOptional = false },
-                new() { Id = Guid.NewGuid(), CourseId = FindCourse("SQL od Podstaw do Zaawansowanych Zapytań").Id, Order = 2, IsOptional = false },
-                new() { Id = Guid.NewGuid(), CourseId = FindCourse("Docker i Kubernetes w Środowisku Produkcyjnym").Id, Order = 3, IsOptional = false },
+                new() { CourseId = FindCourse("Zaawansowane .NET 9 Web API — Clean Architecture i CQRS").Id, Order = 1, IsOptional = false },
+                new() { CourseId = FindCourse("SQL od Podstaw do Zaawansowanych Zapytań").Id, Order = 2, IsOptional = false },
+                new() { CourseId = FindCourse("Docker i Kubernetes w Środowisku Produkcyjnym").Id, Order = 3, IsOptional = false },
             }
         };
 
         var frontendPath = new LearningPath
         {
-            Id = Guid.NewGuid(),
             Title = "Frontend Developer — Vue i React",
             Slug = "frontend-developer-vue-react",
             ShortDescription = "Naucz się budować nowoczesne interfejsy webowe w najpopularniejszych frameworkach.",
@@ -1019,18 +989,16 @@ public static class ApplicationDbContextSeed
             ThumbnailUrl = "https://placeholder.local/paths/frontend-vue-react.jpg",
             DisplayOrder = 2,
             IsPublished = true,
-            CreatedAt = DateTime.UtcNow,
             PathCourses = new List<LearningPathCourse>
             {
-                new() { Id = Guid.NewGuid(), CourseId = FindCourse("Vue 3 Fundamentals — Composition API i TypeScript").Id, Order = 1, IsOptional = false },
-                new() { Id = Guid.NewGuid(), CourseId = FindCourse("React 18 w Praktyce — Hooks, Suspense i Server Components").Id, Order = 2, IsOptional = false },
-                new() { Id = Guid.NewGuid(), CourseId = FindCourse("Angular dla Aplikacji Enterprise").Id, Order = 3, IsOptional = true },
+                new() { CourseId = FindCourse("Vue 3 Fundamentals — Composition API i TypeScript").Id, Order = 1, IsOptional = false },
+                new() { CourseId = FindCourse("React 18 w Praktyce — Hooks, Suspense i Server Components").Id, Order = 2, IsOptional = false },
+                new() { CourseId = FindCourse("Angular dla Aplikacji Enterprise").Id, Order = 3, IsOptional = true },
             }
         };
 
         var dataSciencePath = new LearningPath
         {
-            Id = Guid.NewGuid(),
             Title = "Data Scientist — od Pythona do LLM",
             Slug = "data-scientist-python-llm",
             ShortDescription = "Kompletna ścieżka od podstaw Pythona do budowy aplikacji z dużymi modelami językowymi.",
@@ -1040,18 +1008,16 @@ public static class ApplicationDbContextSeed
             ThumbnailUrl = "https://placeholder.local/paths/data-scientist.jpg",
             DisplayOrder = 3,
             IsPublished = true,
-            CreatedAt = DateTime.UtcNow,
             PathCourses = new List<LearningPathCourse>
             {
-                new() { Id = Guid.NewGuid(), CourseId = FindCourse("Wprowadzenie do Machine Learning z scikit-learn").Id, Order = 1, IsOptional = false },
-                new() { Id = Guid.NewGuid(), CourseId = FindCourse("Python dla Data Science i Machine Learning").Id, Order = 2, IsOptional = false },
-                new() { Id = Guid.NewGuid(), CourseId = FindCourse("Aplikacje z Dużymi Modelami Językowymi (LLM)").Id, Order = 3, IsOptional = false },
+                new() { CourseId = FindCourse("Wprowadzenie do Machine Learning z scikit-learn").Id, Order = 1, IsOptional = false },
+                new() { CourseId = FindCourse("Python dla Data Science i Machine Learning").Id, Order = 2, IsOptional = false },
+                new() { CourseId = FindCourse("Aplikacje z Dużymi Modelami Językowymi (LLM)").Id, Order = 3, IsOptional = false },
             }
         };
 
         var devopsPath = new LearningPath
         {
-            Id = Guid.NewGuid(),
             Title = "DevOps Engineer — Cloud Native",
             Slug = "devops-engineer-cloud-native",
             ShortDescription = "Zostań inżynierem DevOps — konteneryzacja, orkiestracja i chmura AWS.",
@@ -1061,12 +1027,11 @@ public static class ApplicationDbContextSeed
             ThumbnailUrl = "https://placeholder.local/paths/devops-cloud.jpg",
             DisplayOrder = 4,
             IsPublished = true,
-            CreatedAt = DateTime.UtcNow,
             PathCourses = new List<LearningPathCourse>
             {
-                new() { Id = Guid.NewGuid(), CourseId = FindCourse("Docker i Kubernetes w Środowisku Produkcyjnym").Id, Order = 1, IsOptional = false },
-                new() { Id = Guid.NewGuid(), CourseId = FindCourse("AWS Solutions Architect — Kompletne Przygotowanie").Id, Order = 2, IsOptional = false },
-                new() { Id = Guid.NewGuid(), CourseId = FindCourse("Zaawansowane .NET 9 Web API — Clean Architecture i CQRS").Id, Order = 3, IsOptional = true },
+                new() { CourseId = FindCourse("Docker i Kubernetes w Środowisku Produkcyjnym").Id, Order = 1, IsOptional = false },
+                new() { CourseId = FindCourse("AWS Solutions Architect — Kompletne Przygotowanie").Id, Order = 2, IsOptional = false },
+                new() { CourseId = FindCourse("Zaawansowane .NET 9 Web API — Clean Architecture i CQRS").Id, Order = 3, IsOptional = true },
             }
         };
 
@@ -1080,7 +1045,6 @@ public static class ApplicationDbContextSeed
 
         var starter = new BusinessPlan
         {
-            Id = Guid.NewGuid(),
             Name = "Starter",
             Slug = "starter",
             ShortDescription = "Idealny na start — dostęp do biblioteki kursów dla jednego pracownika.",
@@ -1093,12 +1057,10 @@ public static class ApplicationDbContextSeed
             IsFeatured = false,
             DisplayOrder = 1,
             IsPublished = true,
-            CreatedAt = DateTime.UtcNow
         };
 
         var team = new BusinessPlan
         {
-            Id = Guid.NewGuid(),
             Name = "Team",
             Slug = "team",
             ShortDescription = "Dla małych zespołów — zarządzanie użytkownikami i raportowanie postępów.",
@@ -1111,12 +1073,10 @@ public static class ApplicationDbContextSeed
             IsFeatured = true,
             DisplayOrder = 2,
             IsPublished = true,
-            CreatedAt = DateTime.UtcNow
         };
 
         var enterprise = new BusinessPlan
         {
-            Id = Guid.NewGuid(),
             Name = "Enterprise",
             Slug = "enterprise",
             ShortDescription = "Dla dużych organizacji — indywidualne warunki, dedykowany opiekun, integracje SSO.",
@@ -1129,31 +1089,30 @@ public static class ApplicationDbContextSeed
             IsFeatured = false,
             DisplayOrder = 3,
             IsPublished = true,
-            CreatedAt = DateTime.UtcNow
         };
 
         starter.Features = new List<BusinessPlanFeature>
         {
-            new() { Id = Guid.NewGuid(), Text = "Dostęp do wybranych kursów", DisplayOrder = 1 },
-            new() { Id = Guid.NewGuid(), Text = "1 miejsce dla pracownika", DisplayOrder = 2 },
-            new() { Id = Guid.NewGuid(), Text = "Certyfikaty ukończenia", DisplayOrder = 3 }
+            new() { Text = "Dostęp do wybranych kursów", DisplayOrder = 1 },
+            new() { Text = "1 miejsce dla pracownika", DisplayOrder = 2 },
+            new() { Text = "Certyfikaty ukończenia", DisplayOrder = 3 }
         };
 
         team.Features = new List<BusinessPlanFeature>
         {
-            new() { Id = Guid.NewGuid(), Text = "Pełen dostęp do biblioteki kursów", DisplayOrder = 1 },
-            new() { Id = Guid.NewGuid(), Text = "Do 25 miejsc w zespole", DisplayOrder = 2 },
-            new() { Id = Guid.NewGuid(), Text = "Panel postępów i raportowanie", DisplayOrder = 3 },
-            new() { Id = Guid.NewGuid(), Text = "Priorytetowe wsparcie", DisplayOrder = 4 }
+            new() { Text = "Pełen dostęp do biblioteki kursów", DisplayOrder = 1 },
+            new() { Text = "Do 25 miejsc w zespole", DisplayOrder = 2 },
+            new() { Text = "Panel postępów i raportowanie", DisplayOrder = 3 },
+            new() { Text = "Priorytetowe wsparcie", DisplayOrder = 4 }
         };
 
         enterprise.Features = new List<BusinessPlanFeature>
         {
-            new() { Id = Guid.NewGuid(), Text = "Nieograniczone miejsca", DisplayOrder = 1 },
-            new() { Id = Guid.NewGuid(), Text = "SSO i integracje (SAML, SCIM)", DisplayOrder = 2 },
-            new() { Id = Guid.NewGuid(), Text = "Dedykowany opiekun klienta", DisplayOrder = 3 },
-            new() { Id = Guid.NewGuid(), Text = "Własne ścieżki szkoleniowe", DisplayOrder = 4 },
-            new() { Id = Guid.NewGuid(), Text = "SLA i umowy powierzenia danych", DisplayOrder = 5 }
+            new() { Text = "Nieograniczone miejsca", DisplayOrder = 1 },
+            new() { Text = "SSO i integracje (SAML, SCIM)", DisplayOrder = 2 },
+            new() { Text = "Dedykowany opiekun klienta", DisplayOrder = 3 },
+            new() { Text = "Własne ścieżki szkoleniowe", DisplayOrder = 4 },
+            new() { Text = "SLA i umowy powierzenia danych", DisplayOrder = 5 }
         };
 
         context.BusinessPlans.AddRange(starter, team, enterprise);

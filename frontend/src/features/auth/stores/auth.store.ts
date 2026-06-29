@@ -28,6 +28,8 @@ export const useAuthStore = defineStore('auth', () => {
   function setAuth(data: AuthResponse) {
     token.value = data.token
     user.value = toCurrentUser(data)
+    isReady.value = true
+    bootstrapPromise.value = null
     localStorage.setItem('token', data.token)
   }
 
@@ -35,15 +37,22 @@ export const useAuthStore = defineStore('auth', () => {
     user.value = toCurrentUser(data)
   }
 
-  function setReady(ready: boolean) {
-    isReady.value = ready
-  }
-
   function logout() {
     token.value = null
     user.value = null
     isReady.value = false
+    bootstrapPromise.value = null
     localStorage.removeItem('token')
+  }
+
+  async function refreshUser() {
+    if (!token.value) return
+    try {
+      const me = await getCurrentUser()
+      user.value = me
+    } catch {
+      logout()
+    }
   }
 
   async function bootstrap() {
@@ -73,12 +82,12 @@ export const useAuthStore = defineStore('auth', () => {
     user,
     isReady,
     bootstrap,
+    refreshUser,
     isAuthenticated,
     isInstructor,
     isAdmin,
     setAuth,
     setUser,
-    setReady,
     logout
   }
 })

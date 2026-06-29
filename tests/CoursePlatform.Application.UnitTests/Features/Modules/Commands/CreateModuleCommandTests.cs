@@ -20,10 +20,8 @@ public class CreateModuleCommandTests
         await using var context = new TestDbContext(options);
 
         var instructorId = Guid.NewGuid();
-        var courseId = Guid.NewGuid();
-        context.Courses.Add(new Course
+        var course = new Course
         {
-            Id = courseId,
             Title = "Test",
             Description = "D",
             ShortDescription = "S",
@@ -32,18 +30,18 @@ public class CreateModuleCommandTests
             Status = CourseStatus.Draft,
             ThumbnailUrl = "",
             Language = "pl",
-            InstructorId = instructorId,
-            CreatedAt = DateTime.UtcNow
-        });
+            InstructorId = instructorId
+        };
+        context.Courses.Add(course);
         await context.SaveChangesAsync();
 
         var currentUser = new Mock<ICurrentUserService>();
         currentUser.Setup(x => x.UserId).Returns(instructorId);
+        currentUser.Setup(x => x.IsAdmin).Returns(false);
 
-        var userManager = TestUserManagerFactory.Create();
-        var handler = new CreateModuleCommandHandler(context, currentUser.Object, userManager);
+        var handler = new CreateModuleCommandHandler(context, currentUser.Object);
 
-        var moduleId = await handler.Handle(new CreateModuleCommand(courseId, "Module 1", 0), CancellationToken.None);
+        var moduleId = await handler.Handle(new CreateModuleCommand(course.Id, "Module 1", 0), CancellationToken.None);
 
         moduleId.Should().NotBeEmpty();
         var module = await context.Modules.FindAsync(moduleId);

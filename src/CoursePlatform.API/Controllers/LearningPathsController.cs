@@ -21,17 +21,17 @@ public class LearningPathsController : ControllerBase
 
     [HttpGet]
     [AllowAnonymous]
-    public async Task<ActionResult<LearningPathsVm>> GetLearningPaths()
+    public async Task<ActionResult<LearningPathsVm>> GetLearningPaths(CancellationToken cancellationToken)
     {
-        var result = await _mediator.Send(new GetLearningPathsQuery());
+        var result = await _mediator.Send(new GetLearningPathsQuery(), cancellationToken);
         return Ok(result);
     }
 
     [HttpGet("{slug}")]
     [AllowAnonymous]
-    public async Task<ActionResult<LearningPathDetailsDto>> GetLearningPathBySlug(string slug)
+    public async Task<ActionResult<LearningPathDetailsDto>> GetLearningPathBySlug(string slug, CancellationToken cancellationToken)
     {
-        var result = await _mediator.Send(new GetLearningPathBySlugQuery(slug));
+        var result = await _mediator.Send(new GetLearningPathBySlugQuery(slug), cancellationToken);
         return Ok(result);
     }
 }

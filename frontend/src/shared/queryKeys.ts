@@ -1,3 +1,5 @@
+import type { CoursesFilter } from '@/features/courses/api/courses.api'
+
 export const queryKeys = {
   currentUser: () => ['currentUser'] as const,
   userProfile: () => ['userProfile'] as const,
@@ -9,7 +11,7 @@ export const queryKeys = {
   courses: () => ['courses'] as const,
   course: (id: string) => ['course', id] as const,
   courseSearch: (term: string) => ['course-search', term] as const,
-  coursesBrowse: (filter: unknown) => ['courses-browse', filter] as const,
+  coursesBrowse: (filter: CoursesFilter) => ['courses-browse', filter] as const,
 
   lesson: (courseId: string, lessonId: string) => ['lesson', courseId, lessonId] as const,
 
@@ -18,4 +20,3 @@ export const queryKeys = {
   adminCourses: () => ['admin-courses'] as const,
   catalogStats: () => ['catalog-stats'] as const
 }
-

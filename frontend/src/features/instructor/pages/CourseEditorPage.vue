@@ -113,7 +113,19 @@ const isSubmitting = computed(() => createMutation.isPending.value || updateMuta
 const schema = computed(() => (isNew.value ? createCourseSchema : updateCourseSchema))
 
 const { handleSubmit, defineField, errors, meta, resetForm } = useForm({
-  validationSchema: computed(() => toTypedSchema(schema.value))
+  validationSchema: computed(() => toTypedSchema(schema.value)),
+  initialValues: {
+    title: '',
+    description: '',
+    shortDescription: '',
+    price: 0,
+    level: CourseLevel.Beginner,
+    status: CourseStatus.Draft,
+    thumbnailUrl: '',
+    language: 'English',
+    categoryIds: [] as string[],
+    technologyIds: [] as string[]
+  }
 })
 
 const [title] = defineField('title')
@@ -126,17 +138,6 @@ const [thumbnailUrl] = defineField('thumbnailUrl')
 const [language] = defineField('language')
 const [categoryIds] = defineField('categoryIds')
 const [technologyIds] = defineField('technologyIds')
-
-title.value = ''
-description.value = ''
-shortDescription.value = ''
-price.value = 0
-level.value = CourseLevel.Beginner
-status.value = CourseStatus.Draft
-thumbnailUrl.value = ''
-language.value = 'English'
-categoryIds.value = []
-technologyIds.value = []
 
 const categoriesQuery = useQuery({
   queryKey: ['categories'],
@@ -160,6 +161,7 @@ watch(
   ([data, cats, techs]) => {
     if (!data) return
     if (cats.length === 0 || techs.length === 0) return
+    if (meta.value.dirty) return
     resetForm({
       values: {
         title: data.title,

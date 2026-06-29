@@ -58,7 +58,6 @@ public class CreateCourseCommandHandler : IRequestHandler<CreateCourseCommand, G
 
         var course = new Course
         {
-            Id = Guid.NewGuid(),
             Title = request.Title,
             Description = _htmlSanitizer.Sanitize(request.Description),
             ShortDescription = _htmlSanitizer.Sanitize(request.ShortDescription),
@@ -68,7 +67,6 @@ public class CreateCourseCommandHandler : IRequestHandler<CreateCourseCommand, G
             ThumbnailUrl = request.ThumbnailUrl,
             Language = request.Language,
             InstructorId = _currentUserService.UserId.Value,
-            CreatedAt = DateTime.UtcNow,
             Categories = categories,
             Technologies = technologies
         };

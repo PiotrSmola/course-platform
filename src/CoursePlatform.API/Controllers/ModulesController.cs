@@ -25,49 +25,49 @@ public class ModulesController : ControllerBase
     }
 
     [HttpPost]
-    public async Task<ActionResult<Guid>> CreateModule(Guid courseId, CreateModuleCommand command)
+    public async Task<ActionResult<Guid>> CreateModule(Guid courseId, CreateModuleCommand command, CancellationToken cancellationToken)
     {
         if (courseId != command.CourseId) return BadRequest();
-        var result = await _mediator.Send(command);
+        var result = await _mediator.Send(command, cancellationToken);
         return Ok(result);
     }
 
     [HttpPut("{moduleId:guid}")]
-    public async Task<ActionResult> UpdateModule(Guid courseId, Guid moduleId, UpdateModuleCommand command)
+    public async Task<ActionResult> UpdateModule(Guid courseId, Guid moduleId, UpdateModuleCommand command, CancellationToken cancellationToken)
     {
         if (courseId != command.CourseId || moduleId != command.ModuleId) return BadRequest();
-        await _mediator.Send(command);
+        await _mediator.Send(command, cancellationToken);
         return NoContent();
     }
 
     [HttpDelete("{moduleId:guid}")]
-    public async Task<ActionResult> DeleteModule(Guid courseId, Guid moduleId)
+    public async Task<ActionResult> DeleteModule(Guid courseId, Guid moduleId, CancellationToken cancellationToken)
     {
-        await _mediator.Send(new DeleteModuleCommand(courseId, moduleId));
+        await _mediator.Send(new DeleteModuleCommand(courseId, moduleId), cancellationToken);
         return NoContent();
     }
 
     [HttpPost("{moduleId:guid}/lessons")]
-    public async Task<ActionResult<Guid>> CreateLesson(Guid courseId, Guid moduleId, CreateLessonCommand command)
+    public async Task<ActionResult<Guid>> CreateLesson(Guid courseId, Guid moduleId, CreateLessonCommand command, CancellationToken cancellationToken)
     {
         if (courseId != command.CourseId || moduleId != command.ModuleId) return BadRequest();
-        var result = await _mediator.Send(command);
+        var result = await _mediator.Send(command, cancellationToken);
         return Ok(result);
     }
 
     [HttpPut("{moduleId:guid}/lessons/{lessonId:guid}")]
-    public async Task<ActionResult> UpdateLesson(Guid courseId, Guid moduleId, Guid lessonId, UpdateLessonCommand command)
+    public async Task<ActionResult> UpdateLesson(Guid courseId, Guid moduleId, Guid lessonId, UpdateLessonCommand command, CancellationToken cancellationToken)
     {
         if (courseId != command.CourseId || moduleId != command.ModuleId || lessonId != command.LessonId)
             return BadRequest();
-        await _mediator.Send(command);
+        await _mediator.Send(command, cancellationToken);
         return NoContent();
     }
 
     [HttpDelete("{moduleId:guid}/lessons/{lessonId:guid}")]
-    public async Task<ActionResult> DeleteLesson(Guid courseId, Guid moduleId, Guid lessonId)
+    public async Task<ActionResult> DeleteLesson(Guid courseId, Guid moduleId, Guid lessonId, CancellationToken cancellationToken)
     {
-        await _mediator.Send(new DeleteLessonCommand(courseId, moduleId, lessonId));
+        await _mediator.Send(new DeleteLessonCommand(courseId, moduleId, lessonId), cancellationToken);
         return NoContent();
     }
 }

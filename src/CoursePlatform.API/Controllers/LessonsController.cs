@@ -21,17 +21,17 @@ public class LessonsController : ControllerBase
 
     [HttpGet("{lessonId:guid}")]
     [Authorize]
-    public async Task<ActionResult<LessonDto>> GetLesson(Guid courseId, Guid lessonId)
+    public async Task<ActionResult<LessonDto>> GetLesson(Guid courseId, Guid lessonId, CancellationToken cancellationToken)
     {
-        var result = await _mediator.Send(new GetLessonQuery(courseId, lessonId));
+        var result = await _mediator.Send(new GetLessonQuery(courseId, lessonId), cancellationToken);
         return Ok(result);
     }
 
     [HttpPost("{lessonId:guid}/complete")]
     [Authorize]
-    public async Task<ActionResult> CompleteLesson(Guid courseId, Guid lessonId)
+    public async Task<ActionResult> CompleteLesson(Guid courseId, Guid lessonId, CancellationToken cancellationToken)
     {
-        await _mediator.Send(new UpdateProgressCommand(courseId, lessonId));
+        await _mediator.Send(new UpdateProgressCommand(courseId, lessonId), cancellationToken);
         return NoContent();
     }
 }

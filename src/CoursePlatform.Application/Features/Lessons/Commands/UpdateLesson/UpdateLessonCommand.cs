@@ -1,11 +1,9 @@
 using FluentValidation;
 using MediatR;
-using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using CoursePlatform.Application.Common.Exceptions;
 using CoursePlatform.Application.Common.Helpers;
 using CoursePlatform.Application.Common.Interfaces;
-using CoursePlatform.Domain.Entities;
 
 namespace CoursePlatform.Application.Features.Lessons.Commands.UpdateLesson;
 
@@ -37,22 +35,19 @@ public class UpdateLessonCommandHandler : IRequestHandler<UpdateLessonCommand>
 {
     private readonly IApplicationDbContext _context;
     private readonly ICurrentUserService _currentUserService;
-    private readonly UserManager<ApplicationUser> _userManager;
 
     public UpdateLessonCommandHandler(
         IApplicationDbContext context,
-        ICurrentUserService currentUserService,
-        UserManager<ApplicationUser> userManager)
+        ICurrentUserService currentUserService)
     {
         _context = context;
         _currentUserService = currentUserService;
-        _userManager = userManager;
     }
 
     public async Task Handle(UpdateLessonCommand request, CancellationToken cancellationToken)
     {
         await CourseAccessHelper.GetManagedModuleAsync(
-            _context, _userManager, _currentUserService, request.CourseId, request.ModuleId, cancellationToken);
+            _context, _currentUserService, request.CourseId, request.ModuleId, cancellationToken);
 
         var lesson = await _context.Lessons
             .FirstOrDefaultAsync(l => l.Id == request.LessonId && l.ModuleId == request.ModuleId, cancellationToken);
@@ -67,7 +62,7 @@ public class UpdateLessonCommandHandler : IRequestHandler<UpdateLessonCommand>
         lesson.VideoUrl = request.VideoUrl;
         lesson.Duration = request.Duration;
         lesson.Order = request.Order;
-        lesson.UpdatedAt = DateTime.UtcNow;
+        lesson.MarkUpdated();
 
         await _context.SaveChangesAsync(cancellationToken);
     }

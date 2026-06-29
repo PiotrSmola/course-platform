@@ -1,5 +1,4 @@
 using MediatR;
-using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using CoursePlatform.Application.Common.Interfaces;
 using CoursePlatform.Application.Common.Exceptions;
@@ -25,14 +24,12 @@ public class UpdateCourseCommandHandler : IRequestHandler<UpdateCourseCommand>
     private readonly IApplicationDbContext _context;
     private readonly ICurrentUserService _currentUserService;
     private readonly IHtmlSanitizer _htmlSanitizer;
-    private readonly UserManager<Domain.Entities.ApplicationUser> _userManager;
 
-    public UpdateCourseCommandHandler(IApplicationDbContext context, ICurrentUserService currentUserService, IHtmlSanitizer htmlSanitizer, UserManager<Domain.Entities.ApplicationUser> userManager)
+    public UpdateCourseCommandHandler(IApplicationDbContext context, ICurrentUserService currentUserService, IHtmlSanitizer htmlSanitizer)
     {
         _context = context;
         _currentUserService = currentUserService;
         _htmlSanitizer = htmlSanitizer;
-        _userManager = userManager;
     }
 
     public async Task Handle(UpdateCourseCommand request, CancellationToken cancellationToken)
@@ -51,10 +48,7 @@ public class UpdateCourseCommandHandler : IRequestHandler<UpdateCourseCommand>
             throw new NotFoundException($"Course {request.Id} not found.");
         }
 
-        var currentUser = await _userManager.FindByIdAsync(_currentUserService.UserId.Value.ToString());
-        var isAdmin = currentUser != null && await _userManager.IsInRoleAsync(currentUser, "Admin");
-
-        if (!isAdmin && course.InstructorId != _currentUserService.UserId.Value)
+        if (!_currentUserService.IsAdmin && course.InstructorId != _currentUserService.UserId.Value)
         {
             throw new ForbiddenAccessException("You are not the instructor of this course.");
         }
@@ -87,7 +81,7 @@ public class UpdateCourseCommandHandler : IRequestHandler<UpdateCourseCommand>
         course.Language = request.Language;
         course.Categories = categories;
         course.Technologies = technologies;
-        course.UpdatedAt = DateTime.UtcNow;
+        course.MarkUpdated();
 
         await _context.SaveChangesAsync(cancellationToken);
     }

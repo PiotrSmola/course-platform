@@ -17,9 +17,9 @@ public class GetTechnologiesQueryTests
         await using var context = new TestDbContext(options);
 
         context.Technologies.AddRange(
-            new Technology { Id = Guid.NewGuid(), Name = "React", Slug = "react", Description = "R" },
-            new Technology { Id = Guid.NewGuid(), Name = "Angular", Slug = "angular", Description = "A" },
-            new Technology { Id = Guid.NewGuid(), Name = "Vue", Slug = "vue", Description = "V" }
+            new Technology { Name = "React", Slug = "react", Description = "R" },
+            new Technology { Name = "Angular", Slug = "angular", Description = "A" },
+            new Technology { Name = "Vue", Slug = "vue", Description = "V" }
         );
         await context.SaveChangesAsync();
 

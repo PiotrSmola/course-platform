@@ -44,7 +44,7 @@ public class UpdateCourseStatusCommandHandler : IRequestHandler<UpdateCourseStat
         }
 
         course.Status = request.Status;
-        course.UpdatedAt = DateTime.UtcNow;
+        course.MarkUpdated();
         await _context.SaveChangesAsync(cancellationToken);
     }
 }

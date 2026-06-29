@@ -1,6 +1,5 @@
 using FluentValidation;
 using MediatR;
-using Microsoft.AspNetCore.Identity;
 using CoursePlatform.Application.Common.Helpers;
 using CoursePlatform.Application.Common.Interfaces;
 using CoursePlatform.Domain.Entities;
@@ -23,30 +22,25 @@ public class CreateModuleCommandHandler : IRequestHandler<CreateModuleCommand, G
 {
     private readonly IApplicationDbContext _context;
     private readonly ICurrentUserService _currentUserService;
-    private readonly UserManager<ApplicationUser> _userManager;
 
     public CreateModuleCommandHandler(
         IApplicationDbContext context,
-        ICurrentUserService currentUserService,
-        UserManager<ApplicationUser> userManager)
+        ICurrentUserService currentUserService)
     {
         _context = context;
         _currentUserService = currentUserService;
-        _userManager = userManager;
     }
 
     public async Task<Guid> Handle(CreateModuleCommand request, CancellationToken cancellationToken)
     {
         await CourseAccessHelper.GetManagedCourseAsync(
-            _context, _userManager, _currentUserService, request.CourseId, cancellationToken);
+            _context, _currentUserService, request.CourseId, cancellationToken);
 
         var module = new Module
         {
-            Id = Guid.NewGuid(),
             CourseId = request.CourseId,
             Title = request.Title,
-            Order = request.Order,
-            CreatedAt = DateTime.UtcNow
+            Order = request.Order
         };
 
         _context.Modules.Add(module);

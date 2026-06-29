@@ -48,12 +48,10 @@ public class CreateReviewCommandHandler : IRequestHandler<CreateReviewCommand, G
 
         var review = new Review
         {
-            Id = Guid.NewGuid(),
             UserId = _currentUserService.UserId.Value,
             CourseId = request.CourseId,
             Rating = request.Rating,
-            Comment = _htmlSanitizer.Sanitize(request.Comment),
-            CreatedAt = DateTime.UtcNow
+            Comment = _htmlSanitizer.Sanitize(request.Comment)
         };
 
         _context.Reviews.Add(review);

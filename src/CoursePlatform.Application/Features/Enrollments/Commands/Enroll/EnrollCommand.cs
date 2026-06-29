@@ -49,7 +49,6 @@ public class EnrollCommandHandler : IRequestHandler<EnrollCommand, Guid>
 
         var enrollment = new Enrollment
         {
-            Id = Guid.NewGuid(),
             UserId = _currentUserService.UserId.Value,
             CourseId = request.CourseId,
             EnrolledAt = DateTime.UtcNow

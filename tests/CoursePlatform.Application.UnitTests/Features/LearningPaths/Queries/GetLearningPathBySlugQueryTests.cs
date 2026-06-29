@@ -24,9 +24,11 @@ public class GetLearningPathBySlugQueryTests
     public async Task Handle_PathWithDraftCourse_ExcludesDraft()
     {
         var instructor = new ApplicationUser { Id = Guid.NewGuid(), UserName = "i@t.com", Email = "i@t.com", FirstName = "A", LastName = "B" };
+        _context.Users.Add(instructor);
+        await _context.SaveChangesAsync();
+
         var publishedCourse = new Course
         {
-            Id = Guid.NewGuid(),
             Title = "Published",
             Description = "D",
             ShortDescription = "S",
@@ -36,7 +38,6 @@ public class GetLearningPathBySlugQueryTests
             ThumbnailUrl = "",
             Language = "pl",
             InstructorId = instructor.Id,
-            CreatedAt = DateTime.UtcNow,
             Categories = new List<Category>(),
             Technologies = new List<Technology>(),
             Modules = new List<Module>(),
@@ -44,7 +45,6 @@ public class GetLearningPathBySlugQueryTests
         };
         var draftCourse = new Course
         {
-            Id = Guid.NewGuid(),
             Title = "Draft",
             Description = "D",
             ShortDescription = "S",
@@ -54,7 +54,6 @@ public class GetLearningPathBySlugQueryTests
             ThumbnailUrl = "",
             Language = "pl",
             InstructorId = instructor.Id,
-            CreatedAt = DateTime.UtcNow,
             Categories = new List<Category>(),
             Technologies = new List<Technology>(),
             Modules = new List<Module>(),
@@ -62,7 +61,6 @@ public class GetLearningPathBySlugQueryTests
         };
         var path = new LearningPath
         {
-            Id = Guid.NewGuid(),
             Title = "Path",
             Slug = "path-slug",
             ShortDescription = "S",
@@ -74,11 +72,10 @@ public class GetLearningPathBySlugQueryTests
             IsPublished = true,
             PathCourses = new List<LearningPathCourse>
             {
-                new() { Id = Guid.NewGuid(), CourseId = publishedCourse.Id, Course = publishedCourse, Order = 1, IsOptional = false },
-                new() { Id = Guid.NewGuid(), CourseId = draftCourse.Id, Course = draftCourse, Order = 2, IsOptional = false }
+                new() { CourseId = publishedCourse.Id, Course = publishedCourse, Order = 1, IsOptional = false },
+                new() { CourseId = draftCourse.Id, Course = draftCourse, Order = 2, IsOptional = false }
             }
         };
-        _context.Users.Add(instructor);
         _context.Courses.Add(publishedCourse);
         _context.Courses.Add(draftCourse);
         _context.LearningPaths.Add(path);
@@ -97,7 +94,6 @@ public class GetLearningPathBySlugQueryTests
     {
         var path = new LearningPath
         {
-            Id = Guid.NewGuid(),
             Title = "P",
             Slug = "unpublished-slug",
             ShortDescription = "S",

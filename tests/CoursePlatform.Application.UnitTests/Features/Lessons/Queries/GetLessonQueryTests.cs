@@ -28,9 +28,11 @@ public class GetLessonQueryTests
     public async Task Handle_NoEnrollment_ThrowsForbidden()
     {
         var instructor = new ApplicationUser { Id = Guid.NewGuid(), UserName = "inst", Email = "i@t.com", FirstName = "A", LastName = "B" };
+        _context.Users.Add(instructor);
+        await _context.SaveChangesAsync();
+
         var course = new Course
         {
-            Id = Guid.NewGuid(),
             Title = "C",
             Description = "D",
             ShortDescription = "S",
@@ -40,21 +42,18 @@ public class GetLessonQueryTests
             ThumbnailUrl = "",
             Language = "pl",
             InstructorId = instructor.Id,
-            CreatedAt = DateTime.UtcNow,
             Categories = new List<Category>(),
             Technologies = new List<Technology>(),
             Modules = new List<Module>
             {
                 new()
                 {
-                    Id = Guid.NewGuid(),
                     Title = "M1",
                     Order = 1,
                     Lessons = new List<Lesson>
                     {
                         new()
                         {
-                            Id = Guid.NewGuid(),
                             Title = "L1",
                             Description = "Desc",
                             Duration = 10,
@@ -66,7 +65,6 @@ public class GetLessonQueryTests
             },
             Reviews = new List<Review>()
         };
-        _context.Users.Add(instructor);
         _context.Courses.Add(course);
         await _context.SaveChangesAsync();
 

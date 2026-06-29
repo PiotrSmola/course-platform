@@ -21,17 +21,17 @@ public class EnrollmentsController : ControllerBase
 
     [HttpPost]
     [Authorize]
-    public async Task<ActionResult<Guid>> Enroll(EnrollCommand command)
+    public async Task<ActionResult<Guid>> Enroll(EnrollCommand command, CancellationToken cancellationToken)
     {
-        var result = await _mediator.Send(command);
+        var result = await _mediator.Send(command, cancellationToken);
         return Ok(result);
     }
 
     [HttpGet("my")]
     [Authorize]
-    public async Task<ActionResult<List<EnrollmentDto>>> GetMyEnrollments()
+    public async Task<ActionResult<List<EnrollmentDto>>> GetMyEnrollments(CancellationToken cancellationToken)
     {
-        var result = await _mediator.Send(new GetMyEnrollmentsQuery());
+        var result = await _mediator.Send(new GetMyEnrollmentsQuery(), cancellationToken);
         return Ok(result);
     }
 }

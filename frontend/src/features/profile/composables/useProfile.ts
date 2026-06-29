@@ -1,11 +1,13 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/vue-query'
 import { getUserProfile, updateUserProfile, deleteUserAccount } from '@/features/profile/api/profile.api'
+import { useAuthStore } from '@/features/auth/stores/auth.store'
 import { toast } from '@/shared/toast/toast'
 import { getApiErrorMessage } from '@/shared/api/apiError'
 import { queryKeys } from '@/shared/queryKeys'
 
 export function useProfile() {
   const queryClient = useQueryClient()
+  const authStore = useAuthStore()
 
   const profileQuery = useQuery({
     queryKey: queryKeys.userProfile(),
@@ -15,10 +17,10 @@ export function useProfile() {
 
   const updateMutation = useMutation({
     mutationFn: updateUserProfile,
-    onSuccess: () => {
+    onSuccess: async () => {
       toast.success('Profil został zaktualizowany')
       queryClient.invalidateQueries({ queryKey: queryKeys.userProfile() })
-      queryClient.invalidateQueries({ queryKey: queryKeys.currentUser() })
+      await authStore.refreshUser()
     },
     onError: (error) => {
       toast.error(getApiErrorMessage(error) || 'Nie udało się zaktualizować profilu')

@@ -1,6 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 using CoursePlatform.Domain.Entities;
+using CoursePlatform.Infrastructure.Persistence;
 
 namespace CoursePlatform.Infrastructure.Persistence.Configurations;
 
@@ -12,13 +13,16 @@ public class CourseConfiguration : IEntityTypeConfiguration<Course>
 
         builder.Property(c => c.Title)
             .IsRequired()
-            .HasMaxLength(200);
+            .HasMaxLength(200)
+            .UseCollation(CollationNames.CaseInsensitive);
 
         builder.Property(c => c.Description)
-            .IsRequired();
+            .IsRequired()
+            .UseCollation(CollationNames.CaseInsensitive);
 
         builder.Property(c => c.ShortDescription)
-            .HasMaxLength(500);
+            .HasMaxLength(500)
+            .UseCollation(CollationNames.CaseInsensitive);
 
         builder.Property(c => c.Price)
             .HasPrecision(18, 2);
@@ -28,7 +32,8 @@ public class CourseConfiguration : IEntityTypeConfiguration<Course>
 
         builder.Property(c => c.Language)
             .IsRequired()
-            .HasMaxLength(50);
+            .HasMaxLength(50)
+            .UseCollation(CollationNames.CaseInsensitive);
 
         builder.HasOne(c => c.Instructor)
             .WithMany(u => u.Courses)
