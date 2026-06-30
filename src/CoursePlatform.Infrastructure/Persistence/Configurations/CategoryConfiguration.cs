@@ -1,7 +1,6 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 using CoursePlatform.Domain.Entities;
-using CoursePlatform.Infrastructure.Persistence;
 
 namespace CoursePlatform.Infrastructure.Persistence.Configurations;
 
@@ -13,8 +12,7 @@ public class CategoryConfiguration : IEntityTypeConfiguration<Category>
 
         builder.Property(c => c.Name)
             .IsRequired()
-            .HasMaxLength(100)
-            .UseCollation(CollationNames.CaseInsensitive);
+            .HasMaxLength(100);
 
         builder.Property(c => c.Slug)
             .IsRequired()

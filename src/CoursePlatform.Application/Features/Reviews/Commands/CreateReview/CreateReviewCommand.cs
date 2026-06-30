@@ -55,7 +55,24 @@ public class CreateReviewCommandHandler : IRequestHandler<CreateReviewCommand, G
         };
 
         _context.Reviews.Add(review);
-        await _context.SaveChangesAsync(cancellationToken);
+
+        try
+        {
+            await _context.SaveChangesAsync(cancellationToken);
+        }
+        catch (DbUpdateException)
+        {
+            var alreadyReviewed = await _context.Reviews
+                .AnyAsync(r => r.UserId == _currentUserService.UserId.Value && r.CourseId == request.CourseId, cancellationToken);
+
+            if (!alreadyReviewed)
+            {
+                throw;
+            }
+
+            throw new ValidationException(new[] { new ValidationFailure("Comment", "Już dodałeś opinię do tego kursu.") });
+        }
+
         return review.Id;
     }
 }

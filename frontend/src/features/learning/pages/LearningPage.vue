@@ -47,8 +47,8 @@ const props = defineProps<{
   lessonId: string
 }>()
 
-const lessonQuery = useLesson(props.courseId, props.lessonId)
-const courseQuery = useCourseDetails(props.courseId)
+const lessonQuery = useLesson(() => props.courseId, () => props.lessonId)
+const courseQuery = useCourseDetails(() => props.courseId)
 const lesson = computed(() => lessonQuery.data.value)
 const course = computed(() => courseQuery.data.value)
 const completeMutation = useCompleteLesson()

@@ -152,7 +152,7 @@ const technologiesQuery = useQuery({
 const categories = computed(() => categoriesQuery.data.value ?? [])
 const technologies = computed(() => technologiesQuery.data.value ?? [])
 
-const courseQuery = useCourseDetails(props.id ?? '', !isNew.value)
+const courseQuery = useCourseDetails(() => props.id ?? '', () => !isNew.value)
 
 const course = computed(() => courseQuery.data.value)
 

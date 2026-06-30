@@ -43,6 +43,7 @@ export function useAdminMutations() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: queryKeys.adminCourses() })
       queryClient.invalidateQueries({ queryKey: queryKeys.courses() })
+      queryClient.invalidateQueries({ queryKey: queryKeys.coursesBrowseAll() })
       toast.success('Status kursu został zmieniony')
     },
     onError: (error) => toast.error(getApiErrorMessage(error) || 'Nie udało się zmienić statusu')
@@ -52,6 +53,7 @@ export function useAdminMutations() {
     mutationFn: (reviewId: string) => deleteReview(reviewId),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: queryKeys.courses() })
+      queryClient.invalidateQueries({ queryKey: queryKeys.coursesBrowseAll() })
       toast.success('Recenzja została usunięta')
     },
     onError: (error) => toast.error(getApiErrorMessage(error) || 'Nie udało się usunąć recenzji')

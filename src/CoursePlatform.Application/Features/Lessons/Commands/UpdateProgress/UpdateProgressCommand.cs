@@ -2,6 +2,7 @@ using MediatR;
 using Microsoft.EntityFrameworkCore;
 using CoursePlatform.Application.Common.Interfaces;
 using CoursePlatform.Application.Common.Exceptions;
+using CoursePlatform.Application.Common.Helpers;
 using CoursePlatform.Domain.Entities;
 
 namespace CoursePlatform.Application.Features.Lessons.Commands.UpdateProgress;
@@ -26,10 +27,10 @@ public class UpdateProgressCommandHandler : IRequestHandler<UpdateProgressComman
             throw new ForbiddenAccessException("User not authenticated.");
         }
 
-        var enrollment = await _context.Enrollments
-            .FirstOrDefaultAsync(e => e.UserId == _currentUserService.UserId.Value && e.CourseId == request.CourseId, cancellationToken);
+        var hasAccess = await CourseAccessHelper.CanAccessCourseContentAsync(
+            _context, _currentUserService, request.CourseId, cancellationToken);
 
-        if (enrollment == null)
+        if (!hasAccess)
         {
             throw new ForbiddenAccessException("You are not enrolled in this course.");
         }
@@ -63,6 +64,19 @@ public class UpdateProgressCommandHandler : IRequestHandler<UpdateProgressComman
             progress.CompletedAt = DateTime.UtcNow;
         }
 
-        await _context.SaveChangesAsync(cancellationToken);
+        try
+        {
+            await _context.SaveChangesAsync(cancellationToken);
+        }
+        catch (DbUpdateException)
+        {
+            var alreadyCompleted = await _context.LessonProgresses
+                .AnyAsync(lp => lp.UserId == _currentUserService.UserId.Value && lp.LessonId == request.LessonId, cancellationToken);
+
+            if (!alreadyCompleted)
+            {
+                throw;
+            }
+        }
     }
 }

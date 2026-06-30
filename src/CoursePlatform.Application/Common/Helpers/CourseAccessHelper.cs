@@ -34,6 +34,36 @@ public static class CourseAccessHelper
         return course;
     }
 
+    public static async Task<bool> CanAccessCourseContentAsync(
+        IApplicationDbContext context,
+        ICurrentUserService currentUser,
+        Guid courseId,
+        CancellationToken cancellationToken)
+    {
+        if (currentUser.UserId == null)
+        {
+            return false;
+        }
+
+        if (currentUser.IsAdmin)
+        {
+            return true;
+        }
+
+        var userId = currentUser.UserId.Value;
+
+        var isOwner = await context.Courses
+            .AnyAsync(c => c.Id == courseId && c.InstructorId == userId, cancellationToken);
+
+        if (isOwner)
+        {
+            return true;
+        }
+
+        return await context.Enrollments
+            .AnyAsync(e => e.CourseId == courseId && e.UserId == userId, cancellationToken);
+    }
+
     public static async Task<Module> GetManagedModuleAsync(
         IApplicationDbContext context,
         ICurrentUserService currentUser,

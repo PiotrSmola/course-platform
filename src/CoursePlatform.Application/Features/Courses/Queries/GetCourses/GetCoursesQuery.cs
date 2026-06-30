@@ -38,13 +38,13 @@ public class GetCoursesQueryHandler : IRequestHandler<GetCoursesQuery, CoursesVm
 
         if (!string.IsNullOrWhiteSpace(request.SearchTerm))
         {
-            var search = $"%{request.SearchTerm.Trim()}%";
+            var search = $"%{request.SearchTerm.Trim().ToLower()}%";
             query = query.Where(c =>
-                EF.Functions.Like(c.Title, search) ||
-                EF.Functions.Like(c.ShortDescription, search) ||
-                EF.Functions.Like(c.Description, search) ||
-                c.Categories.Any(cat => EF.Functions.Like(cat.Name, search)) ||
-                c.Technologies.Any(tech => EF.Functions.Like(tech.Name, search)));
+                EF.Functions.Like(c.Title.ToLower(), search) ||
+                EF.Functions.Like(c.ShortDescription.ToLower(), search) ||
+                EF.Functions.Like(c.Description.ToLower(), search) ||
+                c.Categories.Any(cat => EF.Functions.Like(cat.Name.ToLower(), search)) ||
+                c.Technologies.Any(tech => EF.Functions.Like(tech.Name.ToLower(), search)));
         }
 
         if (request.Level.HasValue)
@@ -52,27 +52,16 @@ public class GetCoursesQueryHandler : IRequestHandler<GetCoursesQuery, CoursesVm
             query = query.Where(c => c.Level == request.Level.Value);
         }
 
-        if (request.Status.HasValue)
+        if (_currentUserService.IsAdmin)
         {
-            if (_currentUserService.IsAdmin)
+            if (request.Status.HasValue)
             {
                 query = query.Where(c => c.Status == request.Status.Value);
-            }
-            else if (_currentUserService.UserId.HasValue)
-            {
-                query = query.Where(c => c.Status == request.Status.Value && c.InstructorId == _currentUserService.UserId.Value);
-            }
-            else
-            {
-                query = query.Where(c => c.Status == CourseStatus.Published);
             }
         }
         else
         {
-            if (!_currentUserService.IsAdmin)
-            {
-                query = query.Where(c => c.Status == CourseStatus.Published);
-            }
+            query = query.Where(c => c.Status == CourseStatus.Published);
         }
 
         if (request.MinPrice.HasValue)
@@ -87,8 +76,8 @@ public class GetCoursesQueryHandler : IRequestHandler<GetCoursesQuery, CoursesVm
 
         if (!string.IsNullOrWhiteSpace(request.Language))
         {
-            var language = request.Language.Trim();
-            query = query.Where(c => EF.Functions.Like(c.Language, language));
+            var language = request.Language.Trim().ToLower();
+            query = query.Where(c => c.Language.ToLower() == language);
         }
 
         if (request.CategoryIds != null && request.CategoryIds.Any())

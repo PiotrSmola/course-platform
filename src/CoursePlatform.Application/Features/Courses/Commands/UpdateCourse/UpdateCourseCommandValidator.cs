@@ -11,6 +11,8 @@ public class UpdateCourseCommandValidator : AbstractValidator<UpdateCourseComman
         RuleFor(x => x.Title).ValidCourseTitle();
         RuleFor(x => x.Description).ValidCourseDescription();
         RuleFor(x => x.ShortDescription).ValidShortDescription();
+        RuleFor(x => x.Level).IsInEnum().WithMessage("Nieprawidłowy poziom kursu.");
+        RuleFor(x => x.Status).IsInEnum().WithMessage("Nieprawidłowy status kursu.");
         RuleFor(x => x.Price).ValidPrice();
         RuleFor(x => x.ThumbnailUrl).ValidThumbnailUrl();
         RuleFor(x => x.Language).ValidLanguage();

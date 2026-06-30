@@ -1,4 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/vue-query'
+import { computed, toValue, type MaybeRefOrGetter } from 'vue'
 import { useRouter } from 'vue-router'
 import { getCourses, getCourseDetails, createCourse, updateCourse } from '@/features/courses/api/courses.api'
 import { toast } from '@/shared/toast/toast'
@@ -14,11 +15,14 @@ export function useCourses() {
   return { isLoading, isError, error, data }
 }
 
-export function useCourseDetails(courseId: string, enabled: boolean = true) {
+export function useCourseDetails(
+  courseId: MaybeRefOrGetter<string>,
+  enabled: MaybeRefOrGetter<boolean> = true
+) {
   return useQuery({
-    queryKey: queryKeys.course(courseId),
-    queryFn: () => getCourseDetails(courseId),
-    enabled: !!courseId && enabled
+    queryKey: computed(() => queryKeys.course(toValue(courseId))),
+    queryFn: () => getCourseDetails(toValue(courseId)),
+    enabled: computed(() => !!toValue(courseId) && toValue(enabled))
   })
 }
 
@@ -30,6 +34,7 @@ export function useCreateCourse() {
     mutationFn: createCourse,
     onSuccess: (courseId) => {
       queryClient.invalidateQueries({ queryKey: queryKeys.courses() })
+      queryClient.invalidateQueries({ queryKey: queryKeys.coursesBrowseAll() })
       queryClient.invalidateQueries({ queryKey: queryKeys.instructorCourses() })
       toast.success('Kurs został utworzony')
       router.push({ name: 'EditCourse', params: { id: courseId } })
@@ -47,7 +52,9 @@ export function useUpdateCourse() {
     mutationFn: updateCourse,
     onSuccess: (_data, variables) => {
       queryClient.invalidateQueries({ queryKey: queryKeys.courses() })
+      queryClient.invalidateQueries({ queryKey: queryKeys.coursesBrowseAll() })
       queryClient.invalidateQueries({ queryKey: queryKeys.course(variables.id) })
+      queryClient.invalidateQueries({ queryKey: queryKeys.instructorCourses() })
       toast.success('Kurs został zaktualizowany')
     },
     onError: (error) => {

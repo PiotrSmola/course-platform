@@ -40,7 +40,12 @@ public class RegisterCommandHandler : IRequestHandler<RegisterCommand, AuthRespo
             throw new ValidationException(result.Errors.Select(e => new ValidationFailure(e.Code, e.Description)));
         }
 
-        await _userManager.AddToRoleAsync(user, "Student");
+        var roleResult = await _userManager.AddToRoleAsync(user, "Student");
+        if (!roleResult.Succeeded)
+        {
+            throw new ValidationException(roleResult.Errors.Select(e => new ValidationFailure(e.Code, e.Description)));
+        }
+
         var roles = await _userManager.GetRolesAsync(user);
         var token = _jwtTokenGenerator.GenerateToken(user, roles);
 

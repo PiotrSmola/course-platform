@@ -35,6 +35,14 @@ public class CreateCourseCommandValidatorTests
     }
 
     [Fact]
+    public void InvalidLevel_HasError()
+    {
+        var cmd = new CreateCourseCommand("Title", "Description", "Short", 10, (CourseLevel)999, "", "pl", new List<Guid>(), new List<Guid>());
+        var result = _validator.TestValidate(cmd);
+        result.ShouldHaveValidationErrorFor(x => x.Level);
+    }
+
+    [Fact]
     public void ValidCommand_NoErrors()
     {
         var cmd = new CreateCourseCommand("Title", "Description", "Short", 10, CourseLevel.Beginner, "", "pl", new List<Guid>(), new List<Guid>());

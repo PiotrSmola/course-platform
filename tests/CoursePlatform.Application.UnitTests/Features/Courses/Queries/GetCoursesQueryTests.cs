@@ -77,6 +77,43 @@ public class GetCoursesQueryTests
     }
 
     [Fact]
+    public async Task Handle_LoggedInNonAdminWithPublishedStatus_SeesPublishedCoursesOfOtherInstructors()
+    {
+        var instructor = new ApplicationUser { Id = Guid.NewGuid(), UserName = "inst", Email = "i@t.com", FirstName = "A", LastName = "B" };
+        _context.Users.Add(instructor);
+        await _context.SaveChangesAsync();
+
+        var published = new Course
+        {
+            Title = "Published",
+            Description = "D",
+            ShortDescription = "S",
+            Price = 10,
+            Level = CourseLevel.Beginner,
+            Status = CourseStatus.Published,
+            ThumbnailUrl = "",
+            Language = "pl",
+            InstructorId = instructor.Id,
+            Categories = new List<Category>(),
+            Technologies = new List<Technology>(),
+            Modules = new List<Module>(),
+            Reviews = new List<Review>()
+        };
+        _context.Courses.Add(published);
+        await _context.SaveChangesAsync();
+
+        _currentUserServiceMock.Setup(x => x.UserId).Returns(Guid.NewGuid());
+        _currentUserServiceMock.Setup(x => x.IsAdmin).Returns(false);
+
+        var handler = new GetCoursesQueryHandler(_context, _currentUserServiceMock.Object);
+        var result = await handler.Handle(
+            new GetCoursesQuery(null, null, CourseStatus.Published, null, null, null, null, null, null, null),
+            CancellationToken.None);
+
+        result.Items.Should().ContainSingle(c => c.Title == "Published");
+    }
+
+    [Fact]
     public async Task Handle_SearchTerm_FiltersPublishedCourses()
     {
         var instructor = new ApplicationUser { Id = Guid.NewGuid(), UserName = "inst", Email = "i@t.com", FirstName = "A", LastName = "B" };

@@ -1,12 +1,13 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/vue-query'
+import { computed, toValue, type MaybeRefOrGetter } from 'vue'
 import { getLesson, completeLesson } from '@/features/learning/api/learning.api'
 import { queryKeys } from '@/shared/queryKeys'
 
-export function useLesson(courseId: string, lessonId: string) {
+export function useLesson(courseId: MaybeRefOrGetter<string>, lessonId: MaybeRefOrGetter<string>) {
   return useQuery({
-    queryKey: queryKeys.lesson(courseId, lessonId),
-    queryFn: () => getLesson(courseId, lessonId),
-    enabled: !!courseId && !!lessonId
+    queryKey: computed(() => queryKeys.lesson(toValue(courseId), toValue(lessonId))),
+    queryFn: () => getLesson(toValue(courseId), toValue(lessonId)),
+    enabled: computed(() => !!toValue(courseId) && !!toValue(lessonId))
   })
 }
 

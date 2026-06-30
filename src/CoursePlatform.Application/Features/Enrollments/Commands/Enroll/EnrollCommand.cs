@@ -55,7 +55,24 @@ public class EnrollCommandHandler : IRequestHandler<EnrollCommand, Guid>
         };
 
         _context.Enrollments.Add(enrollment);
-        await _context.SaveChangesAsync(cancellationToken);
+
+        try
+        {
+            await _context.SaveChangesAsync(cancellationToken);
+        }
+        catch (DbUpdateException)
+        {
+            var alreadyEnrolled = await _context.Enrollments
+                .AnyAsync(e => e.UserId == _currentUserService.UserId.Value && e.CourseId == request.CourseId, cancellationToken);
+
+            if (!alreadyEnrolled)
+            {
+                throw;
+            }
+
+            throw new ValidationException(new[] { new ValidationFailure("CourseId", "Jesteś już zapisany na ten kurs.") });
+        }
+
         return enrollment.Id;
     }
 }

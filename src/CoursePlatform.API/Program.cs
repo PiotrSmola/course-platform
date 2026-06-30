@@ -158,12 +158,13 @@ using (var scope = app.Services.CreateScope())
     {
         await context.Database.MigrateAsync();
 
-        var userManager = scope.ServiceProvider.GetRequiredService<UserManager<ApplicationUser>>();
         var roleManager = scope.ServiceProvider.GetRequiredService<RoleManager<IdentityRole<Guid>>>();
+        await ApplicationDbContextSeed.SeedRolesAsync(roleManager);
 
         var seedEnabled = builder.Configuration.GetValue("Dev:Seed", false);
         if (app.Environment.IsDevelopment() && seedEnabled)
         {
+            var userManager = scope.ServiceProvider.GetRequiredService<UserManager<ApplicationUser>>();
             await ApplicationDbContextSeed.SeedAsync(context, userManager, roleManager);
         }
     }

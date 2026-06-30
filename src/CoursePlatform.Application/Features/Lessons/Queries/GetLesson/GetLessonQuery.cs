@@ -2,6 +2,7 @@ using MediatR;
 using Microsoft.EntityFrameworkCore;
 using CoursePlatform.Application.Common.Interfaces;
 using CoursePlatform.Application.Common.Exceptions;
+using CoursePlatform.Application.Common.Helpers;
 
 namespace CoursePlatform.Application.Features.Lessons.Queries.GetLesson;
 
@@ -38,10 +39,10 @@ public class GetLessonQueryHandler : IRequestHandler<GetLessonQuery, LessonDto>
             throw new ForbiddenAccessException("User not authenticated.");
         }
 
-        var enrollment = await _context.Enrollments
-            .FirstOrDefaultAsync(e => e.UserId == _currentUserService.UserId.Value && e.CourseId == request.CourseId, cancellationToken);
+        var hasAccess = await CourseAccessHelper.CanAccessCourseContentAsync(
+            _context, _currentUserService, request.CourseId, cancellationToken);
 
-        if (enrollment == null)
+        if (!hasAccess)
         {
             throw new ForbiddenAccessException("You are not enrolled in this course.");
         }

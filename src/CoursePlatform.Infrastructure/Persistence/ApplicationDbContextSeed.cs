@@ -22,7 +22,7 @@ public static class ApplicationDbContextSeed
         await SeedBusinessPlansAsync(context);
     }
 
-    private static async Task SeedRolesAsync(RoleManager<IdentityRole<Guid>> roleManager)
+    public static async Task SeedRolesAsync(RoleManager<IdentityRole<Guid>> roleManager)
     {
         var roles = new[] { "Student", "Instructor", "Admin" };
         foreach (var role in roles)
