@@ -50,13 +50,31 @@
             <label :for="`lesson-video-file-${lesson.id}`">Wideo</label>
             <input
               :id="`lesson-video-file-${lesson.id}`"
+              :ref="(el) => setVideoInputRef(el as HTMLInputElement, lesson.id)"
               type="file"
               accept="video/*"
-              @change="onSelectVideoFile(module.id, lesson.id, $event)"
+              class="sr-only"
+              @change="onVideoInputChange(module.id, lesson.id, $event)"
             />
-            <span v-if="uploadState[lesson.id]?.status" class="helper">
-              {{ uploadState[lesson.id]?.status }}
-            </span>
+            <button
+              type="button"
+              class="file-upload-btn"
+              @click="videoInputRefs[lesson.id]?.click()"
+            >
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                <polyline points="17 8 12 3 7 8" />
+                <line x1="12" y1="3" x2="12" y2="15" />
+              </svg>
+              <span>Wybierz wideo</span>
+            </button>
+            <div class="video-meta">
+              <span v-if="selectedVideoFiles[lesson.id]" class="file-name">{{ selectedVideoFiles[lesson.id].name }}</span>
+              <span v-else-if="lesson.videoObjectKey" class="file-hint">Wideo wgrane</span>
+              <span v-if="uploadState[lesson.id]?.status" class="helper">
+                {{ uploadState[lesson.id]?.status }}
+              </span>
+            </div>
           </div>
           <div class="form-group form-group--narrow">
             <label :for="`lesson-duration-${lesson.id}`">Czas (min)</label>
@@ -179,12 +197,22 @@ function removeLesson(moduleId: string, lessonId: string) {
 }
 
 const uploadState = ref<Record<string, { status?: string }>>({})
+const videoInputRefs = ref<Record<string, HTMLInputElement | null>>({})
+const selectedVideoFiles = ref<Record<string, File>>({})
 
-async function onSelectVideoFile(moduleId: string, lessonId: string, event: Event) {
+function setVideoInputRef(el: HTMLInputElement | null, lessonId: string) {
+  videoInputRefs.value[lessonId] = el
+}
+
+function onVideoInputChange(moduleId: string, lessonId: string, event: Event) {
   const input = event.target as HTMLInputElement
   const file = input.files?.[0]
   if (!file) return
+  selectedVideoFiles.value[lessonId] = file
+  void onSelectVideoFile(moduleId, lessonId, file)
+}
 
+async function onSelectVideoFile(moduleId: string, lessonId: string, file: File) {
   uploadState.value[lessonId] = { status: 'Inicjalizacja uploadu...' }
 
   const init = await initiateLessonVideoUpload(props.courseId, lessonId, file.type || 'application/octet-stream')
@@ -213,9 +241,11 @@ async function onSelectVideoFile(moduleId: string, lessonId: string, event: Even
 
 <style lang="scss" scoped>
 @use "@/assets/styles/abstracts/variables" as *;
+@use "@/assets/styles/abstracts/mixins" as *;
 
 .structure-editor {
   margin-top: 48px;
+  margin-inline: auto;
   max-width: 960px;
 }
 
@@ -284,6 +314,36 @@ async function onSelectVideoFile(moduleId: string, lessonId: string, event: Even
     flex-shrink: 0;
     align-self: end;
   }
+
+  .helper {
+    min-height: 1.1em;
+    color: $color-faint;
+    font-size: 0.75rem;
+    font-weight: 500;
+    line-height: 1.2;
+  }
+}
+
+.video-meta {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-height: 2.4em;
+}
+
+.file-name {
+  color: $color-muted;
+  font-size: 0.8rem;
+  font-weight: 500;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.file-hint {
+  color: $color-faint;
+  font-size: 0.8rem;
+  font-weight: 500;
 }
 
 .label-spacer {
@@ -322,8 +382,8 @@ async function onSelectVideoFile(moduleId: string, lessonId: string, event: Even
   display: grid;
   grid-template-columns: 1fr 1.2fr 110px 110px auto;
   gap: 16px;
-  align-items: end;
-  margin-bottom: 16px;
+  align-items: start;
+  margin-bottom: 28px;
 
   @media (max-width: 900px) {
     grid-template-columns: 1fr 1fr;
@@ -348,5 +408,64 @@ async function onSelectVideoFile(moduleId: string, lessonId: string, event: Even
   padding: 0;
   font-size: 1.25rem;
   line-height: 1;
+}
+
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+.file-upload-btn {
+  @include liquid-glass;
+  --lg-r: 14px;
+  --lg-blur: 0px;
+  --lg-tint: rgba(255, 255, 255, 0.04);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  height: 48px;
+  padding: 0 20px;
+  border: none;
+  font: inherit;
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: $color-ink;
+  cursor: pointer;
+  background: none;
+  box-shadow:
+    0 10px 30px rgba(3, 6, 24, 0.35),
+    0 2px 8px rgba(3, 6, 24, 0.22),
+    0 18px 30px -22px rgba(170, 200, 255, 0.35),
+    inset 0 1px 1px rgba(255, 255, 255, 0.3),
+    inset 0 0 0 1px rgba(255, 255, 255, 0.1);
+  transition: --lg-tint 0.35s, box-shadow 0.35s, transform 0.2s;
+
+  &:hover {
+    --lg-tint: rgba(245, 158, 11, 0.08);
+    transform: translateY(-2px);
+    box-shadow:
+      0 10px 30px rgba(3, 6, 24, 0.4),
+      0 2px 8px rgba(3, 6, 24, 0.25),
+      0 18px 30px -22px rgba(245, 158, 11, 0.4),
+      inset 0 1px 1px rgba(255, 255, 255, 0.35),
+      inset 0 0 0 1px rgba(245, 158, 11, 0.3);
+  }
+
+  &:focus-visible {
+    outline: none;
+  }
+
+  svg {
+    color: $color-gold;
+    flex-shrink: 0;
+  }
 }
 </style>

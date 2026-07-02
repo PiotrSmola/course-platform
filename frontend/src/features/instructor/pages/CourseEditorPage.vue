@@ -32,20 +32,12 @@
         <div class="form-row">
           <div class="form-group">
             <label>Poziom</label>
-            <select v-model="level">
-              <option :value="CourseLevel.Beginner">Początkujący</option>
-              <option :value="CourseLevel.Intermediate">Średni</option>
-              <option :value="CourseLevel.Advanced">Zaawansowany</option>
-            </select>
+            <SelectDropdown v-model="level" :options="levelOptions" />
             <span v-if="errors.level" class="error">{{ errors.level }}</span>
           </div>
           <div v-if="!isNew" class="form-group">
             <label>Status</label>
-            <select v-model="status">
-              <option :value="CourseStatus.Draft">Szkic</option>
-              <option :value="CourseStatus.Published">Opublikowany</option>
-              <option :value="CourseStatus.Hidden">Ukryty</option>
-            </select>
+            <SelectDropdown v-model="status" :options="statusOptions" />
             <span v-if="errors.status" class="error">{{ errors.status }}</span>
           </div>
         </div>
@@ -65,7 +57,51 @@
         </div>
         <div class="form-group">
           <label>Miniaturka kursu</label>
-          <input type="file" accept="image/*" @change="onSelectThumbnail" />
+          <input
+            ref="thumbnailInputRef"
+            type="file"
+            accept="image/*"
+            class="sr-only"
+            @change="onThumbnailInputChange"
+          />
+          <button
+            type="button"
+            class="file-upload-btn"
+            @click="thumbnailInputRef?.click()"
+          >
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+              <polyline points="17 8 12 3 7 8" />
+              <line x1="12" y1="3" x2="12" y2="15" />
+            </svg>
+            <span>Wybierz plik</span>
+          </button>
+          <div v-if="currentThumbnailUrl || newThumbnailPreviewUrl" class="thumbnail-preview-row">
+            <div v-if="currentThumbnailUrl" class="thumb-preview">
+              <img :src="currentThumbnailUrl" alt="Obecna miniaturka" />
+              <span>Obecna</span>
+            </div>
+            <svg
+              v-if="currentThumbnailUrl && newThumbnailPreviewUrl"
+              class="thumb-arrow"
+              width="24"
+              height="24"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+            >
+              <line x1="5" y1="12" x2="19" y2="12" />
+              <polyline points="12 5 19 12 12 19" />
+            </svg>
+            <div v-if="newThumbnailPreviewUrl" class="thumb-preview">
+              <img :src="newThumbnailPreviewUrl" alt="Nowa miniaturka" />
+              <span>Nowa</span>
+            </div>
+          </div>
+          <span v-if="selectedThumbnailFile" class="file-name">{{ selectedThumbnailFile.name }}</span>
           <span v-if="thumbnailStatus" class="helper">{{ thumbnailStatus }}</span>
           <span v-if="errors.thumbnailObjectKey" class="error">{{ errors.thumbnailObjectKey }}</span>
         </div>
@@ -94,10 +130,24 @@ import { useForm } from 'vee-validate'
 import { toTypedSchema } from '@vee-validate/zod'
 import { useQuery } from '@tanstack/vue-query'
 import { useCreateCourse, useUpdateCourse, useCourseDetails } from '@/features/courses/composables/useCourses'
+import { useCourseThumbnailUrl } from '@/features/courses/composables/useCourseAssets'
 import { getCategories, getTechnologies, presignCourseThumbnailUpload, confirmCourseThumbnailUpload } from '@/features/courses/api/courses.api'
 import { CourseLevel, CourseStatus } from '@/features/courses/types/course.types'
 import { createCourseSchema, updateCourseSchema } from '@/features/courses/schemas/course.schema'
 import CourseStructureEditor from '@/features/instructor/components/CourseStructureEditor.vue'
+import SelectDropdown from '@/shared/components/forms/SelectDropdown.vue'
+
+const levelOptions = [
+  { value: CourseLevel.Beginner, label: 'Początkujący' },
+  { value: CourseLevel.Intermediate, label: 'Średni' },
+  { value: CourseLevel.Advanced, label: 'Zaawansowany' }
+]
+
+const statusOptions = [
+  { value: CourseStatus.Draft, label: 'Szkic' },
+  { value: CourseStatus.Published, label: 'Opublikowany' },
+  { value: CourseStatus.Hidden, label: 'Ukryty' }
+]
 
 const props = defineProps<{
   id?: string
@@ -141,6 +191,19 @@ const [categoryIds] = defineField('categoryIds')
 const [technologyIds] = defineField('technologyIds')
 
 const thumbnailStatus = ref<string>('')
+const thumbnailInputRef = ref<HTMLInputElement | null>(null)
+const selectedThumbnailFile = ref<File | null>(null)
+const newThumbnailPreviewUrl = ref<string>('')
+
+const thumbnailUrlQuery = useCourseThumbnailUrl(computed(() => props.id ?? ''))
+const currentThumbnailUrl = computed(() => thumbnailUrlQuery.data.value ?? '')
+
+watch(selectedThumbnailFile, (file) => {
+  if (newThumbnailPreviewUrl.value) {
+    URL.revokeObjectURL(newThumbnailPreviewUrl.value)
+  }
+  newThumbnailPreviewUrl.value = file ? URL.createObjectURL(file) : ''
+})
 
 const categoriesQuery = useQuery({
   queryKey: ['categories'],
@@ -218,11 +281,16 @@ const onSubmit = handleSubmit(async (values) => {
   })
 })
 
-async function onSelectThumbnail(event: Event) {
-  if (!props.id) return
+function onThumbnailInputChange(event: Event) {
   const input = event.target as HTMLInputElement
   const file = input.files?.[0]
   if (!file) return
+  selectedThumbnailFile.value = file
+  void uploadThumbnail(file)
+}
+
+async function uploadThumbnail(file: File) {
+  if (!props.id) return
 
   thumbnailStatus.value = 'Generowanie URL do uploadu...'
   const presign = await presignCourseThumbnailUpload(props.id, file.type || 'application/octet-stream')
@@ -249,7 +317,8 @@ async function onSelectThumbnail(event: Event) {
 .editor-form {
   --lg-r: 28px;
   --lg-blur: 0px;
-  max-width: 700px;
+  max-width: 960px;
+  margin-inline: auto;
   padding: 40px;
 }
 
@@ -331,5 +400,103 @@ async function onSelectThumbnail(event: Event) {
 .btn {
   height: 48px;
   margin-top: 8px;
+}
+
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+.file-upload-btn {
+  @include liquid-glass;
+  --lg-r: 14px;
+  --lg-blur: 0px;
+  --lg-tint: rgba(255, 255, 255, 0.04);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  height: 48px;
+  padding: 0 20px;
+  border: none;
+  font: inherit;
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: $color-ink;
+  cursor: pointer;
+  background: none;
+  box-shadow:
+    0 10px 30px rgba(3, 6, 24, 0.35),
+    0 2px 8px rgba(3, 6, 24, 0.22),
+    0 18px 30px -22px rgba(170, 200, 255, 0.35),
+    inset 0 1px 1px rgba(255, 255, 255, 0.3),
+    inset 0 0 0 1px rgba(255, 255, 255, 0.1);
+  transition: --lg-tint 0.35s, box-shadow 0.35s, transform 0.2s;
+
+  &:hover {
+    --lg-tint: rgba(245, 158, 11, 0.08);
+    transform: translateY(-2px);
+    box-shadow:
+      0 10px 30px rgba(3, 6, 24, 0.4),
+      0 2px 8px rgba(3, 6, 24, 0.25),
+      0 18px 30px -22px rgba(245, 158, 11, 0.4),
+      inset 0 1px 1px rgba(255, 255, 255, 0.35),
+      inset 0 0 0 1px rgba(245, 158, 11, 0.3);
+  }
+
+  &:focus-visible {
+    outline: none;
+  }
+
+  svg {
+    color: $color-gold;
+    flex-shrink: 0;
+  }
+}
+
+.thumbnail-preview-row {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin-top: 8px;
+}
+
+.thumb-preview {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  width: 120px;
+
+  img {
+    width: 100%;
+    aspect-ratio: 16 / 10;
+    object-fit: cover;
+    border-radius: 12px;
+    box-shadow: 0 4px 12px rgba(3, 6, 24, 0.35);
+  }
+
+  span {
+    font-size: 0.75rem;
+    color: $color-faint;
+    text-align: center;
+  }
+}
+
+.thumb-arrow {
+  color: $color-gold;
+  flex-shrink: 0;
+}
+
+.file-name {
+  color: $color-muted;
+  font-size: 0.82rem;
+  font-weight: 500;
 }
 </style>
