@@ -83,7 +83,7 @@ public class GetCourseDetailsQueryHandler : IRequestHandler<GetCourseDetailsQuer
                 l.Duration,
                 l.Order,
                 completedLessonIds.Contains(l.Id),
-                canManage ? l.VideoUrl : null)).ToList())).ToList();
+                canManage ? l.VideoObjectKey : null)).ToList())).ToList();
 
         var reviews = course.Reviews.OrderByDescending(r => r.CreatedAt).Select(r => new ReviewDto(
             r.Id,
@@ -102,7 +102,7 @@ public class GetCourseDetailsQueryHandler : IRequestHandler<GetCourseDetailsQuer
             course.Price,
             course.Level,
             course.Status,
-            course.ThumbnailUrl,
+            course.ThumbnailObjectKey,
             course.Language,
             course.InstructorId,
             $"{course.Instructor.FirstName} {course.Instructor.LastName}",

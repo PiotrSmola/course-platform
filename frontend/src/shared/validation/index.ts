@@ -67,13 +67,9 @@ export const sharedSchemas = {
     .min(0, sharedMessages.priceNegative)
     .max(100000, sharedMessages.priceMax),
 
-  thumbnailUrl: z
+  thumbnailObjectKey: z
     .string()
-    .max(500, sharedMessages.maxLength('URL', 500))
-    .refine(
-      (val) => !val || val.trim() === '' || /^https?:\/\/.+/.test(val),
-      { message: sharedMessages.urlInvalid }
-    )
+    .max(1024, sharedMessages.maxLength('Thumbnail key', 1024))
     .optional(),
 
   language: z

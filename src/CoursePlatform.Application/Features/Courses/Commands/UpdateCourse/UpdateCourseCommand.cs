@@ -14,7 +14,7 @@ public record UpdateCourseCommand(
     decimal Price,
     CourseLevel Level,
     CourseStatus Status,
-    string ThumbnailUrl,
+    string ThumbnailObjectKey,
     string Language,
     List<Guid> CategoryIds,
     List<Guid> TechnologyIds) : IRequest;
@@ -77,7 +77,7 @@ public class UpdateCourseCommandHandler : IRequestHandler<UpdateCourseCommand>
         course.Price = request.Price;
         course.Level = request.Level;
         course.Status = request.Status;
-        course.ThumbnailUrl = request.ThumbnailUrl;
+        course.ThumbnailObjectKey = request.ThumbnailObjectKey;
         course.Language = request.Language;
         course.Categories = categories;
         course.Technologies = technologies;

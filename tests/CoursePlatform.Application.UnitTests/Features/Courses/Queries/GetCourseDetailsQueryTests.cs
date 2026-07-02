@@ -39,7 +39,7 @@ public class GetCourseDetailsQueryTests
             Price = 10,
             Level = CourseLevel.Beginner,
             Status = CourseStatus.Published,
-            ThumbnailUrl = "",
+            ThumbnailObjectKey = "",
             Language = "pl",
             InstructorId = instructor.Id,
             Categories = new List<Category>(),
@@ -58,7 +58,7 @@ public class GetCourseDetailsQueryTests
                             Description = "Desc",
                             Duration = 10,
                             Order = 1,
-                            VideoUrl = "https://secret.com/video.mp4"
+                            VideoObjectKey = "secret/video.mp4"
                         }
                     }
                 }
@@ -77,7 +77,7 @@ public class GetCourseDetailsQueryTests
         result.Should().NotBeNull();
         result.Modules.Should().HaveCount(1);
         result.Modules[0].Lessons.Should().HaveCount(1);
-        result.Modules[0].Lessons[0].VideoUrl.Should().BeNull();
+        result.Modules[0].Lessons[0].VideoObjectKey.Should().BeNull();
     }
 
     [Fact]
@@ -95,7 +95,7 @@ public class GetCourseDetailsQueryTests
             Price = 10,
             Level = CourseLevel.Beginner,
             Status = CourseStatus.Draft,
-            ThumbnailUrl = "",
+            ThumbnailObjectKey = "",
             Language = "pl",
             InstructorId = instructor.Id,
             Categories = new List<Category>(),

@@ -37,7 +37,7 @@ public class GetLessonQueryTests
             Price = 0,
             Level = CourseLevel.Beginner,
             Status = CourseStatus.Published,
-            ThumbnailUrl = "",
+            ThumbnailObjectKey = "",
             Language = "pl",
             InstructorId = instructorId,
             Categories = new List<Category>(),
@@ -56,7 +56,7 @@ public class GetLessonQueryTests
                             Description = "Desc",
                             Duration = 10,
                             Order = 1,
-                            VideoUrl = "https://video.com/v.mp4"
+                            VideoObjectKey = "videos/v.mp4"
                         }
                     }
                 }

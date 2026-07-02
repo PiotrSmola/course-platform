@@ -18,10 +18,7 @@
       </div>
       <div v-else class="courses-grid">
         <article v-for="course in courses" :key="course.id" class="course-card glass-card">
-          <div
-            class="course-thumb"
-            :style="course.thumbnailUrl ? { backgroundImage: `url(${course.thumbnailUrl})` } : undefined"
-          />
+          <CourseThumbnail class="course-thumb" :course-id="course.id" />
           <div class="course-info">
             <h3>{{ course.title }}</h3>
             <div class="course-stats">
@@ -43,6 +40,7 @@
 import { computed } from 'vue'
 import { useInstructorCourses } from '@/features/instructor/composables/useInstructor'
 import { CourseStatus } from '@/features/courses/types/course.types'
+import CourseThumbnail from '@/shared/components/media/CourseThumbnail.vue'
 
 const { data, isLoading } = useInstructorCourses()
 const courses = computed(() => data.value ?? [])

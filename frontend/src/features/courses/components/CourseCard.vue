@@ -1,7 +1,7 @@
 <template>
   <article class="product-card glass-card" ref="cardRef">
     <div class="p-visual">
-      <div class="p-image" :style="{ backgroundImage: `url(${course.thumbnailUrl})` }"></div>
+      <div class="p-image" :style="thumbnailStyle"></div>
     </div>
     <div class="p-info">
       <span class="p-brand">{{ course.instructorName }}</span>
@@ -22,14 +22,22 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
 import type { CourseListDto } from '@/features/courses/types/course.types'
+import { computed } from 'vue'
+import { useCourseThumbnailUrl } from '@/features/courses/composables/useCourseAssets'
 
 interface Props {
   course: CourseListDto
 }
 
-defineProps<Props>()
+const props = defineProps<Props>()
 
 const cardRef = ref<HTMLElement>()
+
+const thumbnailQuery = useCourseThumbnailUrl(computed(() => props.course.id))
+const thumbnailStyle = computed(() => {
+  const url = thumbnailQuery.data.value
+  return url ? { backgroundImage: `url(${url})` } : {}
+})
 
 onMounted(() => {
   if (!cardRef.value) return

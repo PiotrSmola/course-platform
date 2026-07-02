@@ -64,9 +64,10 @@
           <span v-if="errors.technologyIds" class="error">{{ errors.technologyIds }}</span>
         </div>
         <div class="form-group">
-          <label>URL miniaturki</label>
-          <input v-model="thumbnailUrl" placeholder="https://..." />
-          <span v-if="errors.thumbnailUrl" class="error">{{ errors.thumbnailUrl }}</span>
+          <label>Miniaturka kursu</label>
+          <input type="file" accept="image/*" @change="onSelectThumbnail" />
+          <span v-if="thumbnailStatus" class="helper">{{ thumbnailStatus }}</span>
+          <span v-if="errors.thumbnailObjectKey" class="error">{{ errors.thumbnailObjectKey }}</span>
         </div>
         <div class="form-group">
           <label>Język</label>
@@ -93,7 +94,7 @@ import { useForm } from 'vee-validate'
 import { toTypedSchema } from '@vee-validate/zod'
 import { useQuery } from '@tanstack/vue-query'
 import { useCreateCourse, useUpdateCourse, useCourseDetails } from '@/features/courses/composables/useCourses'
-import { getCategories, getTechnologies } from '@/features/courses/api/courses.api'
+import { getCategories, getTechnologies, presignCourseThumbnailUpload, confirmCourseThumbnailUpload } from '@/features/courses/api/courses.api'
 import { CourseLevel, CourseStatus } from '@/features/courses/types/course.types'
 import { createCourseSchema, updateCourseSchema } from '@/features/courses/schemas/course.schema'
 import CourseStructureEditor from '@/features/instructor/components/CourseStructureEditor.vue'
@@ -121,7 +122,7 @@ const { handleSubmit, defineField, errors, meta, resetForm } = useForm({
     price: 0,
     level: CourseLevel.Beginner,
     status: CourseStatus.Draft,
-    thumbnailUrl: '',
+    thumbnailObjectKey: '',
     language: 'English',
     categoryIds: [] as string[],
     technologyIds: [] as string[]
@@ -134,10 +135,12 @@ const [shortDescription] = defineField('shortDescription')
 const [price] = defineField('price')
 const [level] = defineField('level')
 const [status] = defineField('status')
-const [thumbnailUrl] = defineField('thumbnailUrl')
+const [thumbnailObjectKey] = defineField('thumbnailObjectKey')
 const [language] = defineField('language')
 const [categoryIds] = defineField('categoryIds')
 const [technologyIds] = defineField('technologyIds')
+
+const thumbnailStatus = ref<string>('')
 
 const categoriesQuery = useQuery({
   queryKey: ['categories'],
@@ -170,7 +173,7 @@ watch(
         price: data.price,
         level: data.level,
         status: data.status,
-        thumbnailUrl: data.thumbnailUrl,
+        thumbnailObjectKey: data.thumbnailObjectKey,
         language: data.language,
         categoryIds: data.categoryNames.map(name => {
           const cat = cats.find(c => c.name === name)
@@ -193,7 +196,7 @@ const onSubmit = handleSubmit(async (values) => {
     shortDescription: values.shortDescription ?? '',
     price: values.price,
     level: values.level,
-    thumbnailUrl: values.thumbnailUrl ?? '',
+    thumbnailObjectKey: values.thumbnailObjectKey ?? '',
     language: values.language,
     categoryIds: values.categoryIds ?? [],
     technologyIds: values.technologyIds ?? []
@@ -214,6 +217,25 @@ const onSubmit = handleSubmit(async (values) => {
     ...basePayload
   })
 })
+
+async function onSelectThumbnail(event: Event) {
+  if (!props.id) return
+  const input = event.target as HTMLInputElement
+  const file = input.files?.[0]
+  if (!file) return
+
+  thumbnailStatus.value = 'Generowanie URL do uploadu...'
+  const presign = await presignCourseThumbnailUpload(props.id, file.type || 'application/octet-stream')
+
+  thumbnailStatus.value = 'Upload miniaturki...'
+  const res = await fetch(presign.url, { method: 'PUT', body: file, headers: { 'Content-Type': file.type } })
+  if (!res.ok) throw new Error(`Thumbnail upload failed: ${res.status}`)
+
+  thumbnailStatus.value = 'Zapis miniaturki...'
+  await confirmCourseThumbnailUpload(props.id, presign.objectKey)
+  thumbnailObjectKey.value = presign.objectKey
+  thumbnailStatus.value = 'Gotowe'
+}
 </script>
 
 <style lang="scss" scoped>
@@ -274,6 +296,12 @@ const onSubmit = handleSubmit(async (values) => {
 
   .error {
     color: #f87171;
+    font-size: 0.82rem;
+    font-weight: 500;
+  }
+
+  .helper {
+    color: $color-faint;
     font-size: 0.82rem;
     font-weight: 500;
   }

@@ -9,7 +9,7 @@ export const courseSchema = z.object({
   price: sharedSchemas.price,
   level: z.nativeEnum(CourseLevel),
   status: z.nativeEnum(CourseStatus).optional(),
-  thumbnailUrl: sharedSchemas.thumbnailUrl,
+  thumbnailObjectKey: sharedSchemas.thumbnailObjectKey,
   language: sharedSchemas.language,
   categoryIds: z.array(z.string()).default([]),
   technologyIds: z.array(z.string()).default([])

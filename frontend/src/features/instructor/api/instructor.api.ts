@@ -24,7 +24,7 @@ export interface CreateLessonRequest {
   moduleId: string
   title: string
   description?: string
-  videoUrl: string
+  videoObjectKey: string
   duration: number
   order: number
 }
@@ -35,7 +35,7 @@ export interface UpdateLessonRequest {
   lessonId: string
   title: string
   description?: string
-  videoUrl: string
+  videoObjectKey: string
   duration: number
   order: number
 }
@@ -60,6 +60,40 @@ export async function createLesson(data: CreateLessonRequest): Promise<string> {
 
 export async function updateLesson(data: UpdateLessonRequest): Promise<void> {
   await client.put(`/courses/${data.courseId}/modules/${data.moduleId}/lessons/${data.lessonId}`, data)
+}
+
+export interface InitiateLessonVideoUploadResponse {
+  objectKey: string
+  uploadId: string
+  partSizeBytes: number
+  maxParts: number
+}
+
+export async function initiateLessonVideoUpload(courseId: string, lessonId: string, contentType: string): Promise<InitiateLessonVideoUploadResponse> {
+  const response = await client.post(`/courses/${courseId}/lessons/${lessonId}/video/uploads`, {
+    courseId,
+    lessonId,
+    contentType
+  })
+  return response.data
+}
+
+export async function presignLessonVideoPart(courseId: string, lessonId: string, uploadId: string, partNumber: number): Promise<{ url: string }> {
+  const response = await client.post(`/courses/${courseId}/lessons/${lessonId}/video/uploads/${uploadId}/parts/presign`, { partNumber })
+  return response.data
+}
+
+export async function completeLessonVideoUpload(
+  courseId: string,
+  lessonId: string,
+  uploadId: string,
+  parts: { partNumber: number; eTag: string }[]
+): Promise<void> {
+  await client.post(`/courses/${courseId}/lessons/${lessonId}/video/uploads/${uploadId}/complete`, { parts })
+}
+
+export async function abortLessonVideoUpload(courseId: string, lessonId: string, uploadId: string): Promise<void> {
+  await client.delete(`/courses/${courseId}/lessons/${lessonId}/video/uploads/${uploadId}`)
 }
 
 export async function deleteLesson(courseId: string, moduleId: string, lessonId: string): Promise<void> {

@@ -11,7 +11,7 @@ public record CreateLessonCommand(
     Guid ModuleId,
     string Title,
     string? Description,
-    string VideoUrl,
+    string VideoObjectKey,
     int Duration,
     int Order) : IRequest<Guid>;
 
@@ -22,7 +22,7 @@ public class CreateLessonCommandValidator : AbstractValidator<CreateLessonComman
         RuleFor(x => x.CourseId).NotEmpty();
         RuleFor(x => x.ModuleId).NotEmpty();
         RuleFor(x => x.Title).NotEmpty().MaximumLength(200);
-        RuleFor(x => x.VideoUrl).NotEmpty().MaximumLength(500);
+        RuleFor(x => x.VideoObjectKey).MaximumLength(1024);
         RuleFor(x => x.Duration).GreaterThan(0);
         RuleFor(x => x.Order).GreaterThanOrEqualTo(0);
     }
@@ -51,7 +51,7 @@ public class CreateLessonCommandHandler : IRequestHandler<CreateLessonCommand, G
             ModuleId = request.ModuleId,
             Title = request.Title,
             Description = request.Description,
-            VideoUrl = request.VideoUrl,
+            VideoObjectKey = request.VideoObjectKey,
             Duration = request.Duration,
             Order = request.Order
         };

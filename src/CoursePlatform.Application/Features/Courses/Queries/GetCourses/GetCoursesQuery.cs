@@ -118,7 +118,7 @@ public class GetCoursesQueryHandler : IRequestHandler<GetCoursesQuery, CoursesVm
                 c.Price,
                 c.Level,
                 c.Status,
-                c.ThumbnailUrl,
+                c.ThumbnailObjectKey,
                 $"{c.Instructor.FirstName} {c.Instructor.LastName}",
                 c.Language,
                 c.Categories.Select(cat => cat.Name).ToList(),

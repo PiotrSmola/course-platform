@@ -11,7 +11,7 @@ public record LearningPathCourseItemDto(
     string CourseShortDescription,
     decimal CoursePrice,
     CourseLevel CourseLevel,
-    string CourseThumbnailUrl,
+    string CourseThumbnailObjectKey,
     string CourseLanguage,
     string InstructorName);
 

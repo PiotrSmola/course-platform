@@ -14,9 +14,9 @@ public class LessonConfiguration : IEntityTypeConfiguration<Lesson>
             .IsRequired()
             .HasMaxLength(200);
 
-        builder.Property(l => l.VideoUrl)
+        builder.Property(l => l.VideoObjectKey)
             .IsRequired()
-            .HasMaxLength(500);
+            .HasMaxLength(1024);
 
         builder.HasOne(l => l.Module)
             .WithMany(m => m.Lessons)

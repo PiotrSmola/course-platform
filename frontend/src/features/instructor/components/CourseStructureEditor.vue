@@ -47,13 +47,16 @@
             />
           </div>
           <div class="form-group">
-            <label :for="`lesson-video-${lesson.id}`">URL wideo</label>
+            <label :for="`lesson-video-file-${lesson.id}`">Wideo</label>
             <input
-              :id="`lesson-video-${lesson.id}`"
-              v-model="lesson.videoUrl"
-              placeholder="https://placeholder.local/video.mp4"
-              @blur="saveLesson(module.id, lesson, lIndex)"
+              :id="`lesson-video-file-${lesson.id}`"
+              type="file"
+              accept="video/*"
+              @change="onSelectVideoFile(module.id, lesson.id, $event)"
             />
+            <span v-if="uploadState[lesson.id]?.status" class="helper">
+              {{ uploadState[lesson.id]?.status }}
+            </span>
           </div>
           <div class="form-group form-group--narrow">
             <label :for="`lesson-duration-${lesson.id}`">Czas (min)</label>
@@ -90,6 +93,7 @@
 import { computed, ref, watch } from 'vue'
 import type { ModuleDto } from '@/features/courses/types/course.types'
 import { useModuleMutations } from '@/features/instructor/composables/useInstructor'
+import { initiateLessonVideoUpload, presignLessonVideoPart, completeLessonVideoUpload } from '@/features/instructor/api/instructor.api'
 
 const props = defineProps<{
   courseId: string
@@ -114,7 +118,7 @@ watch(
       ...m,
       lessons: m.lessons.map((l) => ({
         ...l,
-        videoUrl: l.videoUrl ?? ''
+        videoObjectKey: l.videoObjectKey ?? ''
       }))
     }))
   },
@@ -151,7 +155,7 @@ function addLesson(moduleId: string, lessonCount: number) {
     moduleId,
     title: `Lekcja ${lessonCount + 1}`,
     description: '',
-    videoUrl: 'https://placeholder.local/videos/lesson.mp4',
+    videoObjectKey: '',
     duration: 10,
     order: lessonCount
   })
@@ -163,7 +167,7 @@ function saveLesson(moduleId: string, lesson: ModuleDto['lessons'][number], inde
     lessonId: lesson.id,
     title: lesson.title,
     description: lesson.description ?? '',
-    videoUrl: lesson.videoUrl || 'https://placeholder.local/videos/lesson.mp4',
+    videoObjectKey: lesson.videoObjectKey || '',
     duration: lesson.duration || 1,
     order: lesson.order ?? index
   })
@@ -172,6 +176,38 @@ function saveLesson(moduleId: string, lesson: ModuleDto['lessons'][number], inde
 function removeLesson(moduleId: string, lessonId: string) {
   if (!confirm('Usunąć lekcję?')) return
   deleteLesson.mutate({ moduleId, lessonId })
+}
+
+const uploadState = ref<Record<string, { status?: string }>>({})
+
+async function onSelectVideoFile(moduleId: string, lessonId: string, event: Event) {
+  const input = event.target as HTMLInputElement
+  const file = input.files?.[0]
+  if (!file) return
+
+  uploadState.value[lessonId] = { status: 'Inicjalizacja uploadu...' }
+
+  const init = await initiateLessonVideoUpload(props.courseId, lessonId, file.type || 'application/octet-stream')
+  const partSize = init.partSizeBytes
+  const parts: { partNumber: number; eTag: string }[] = []
+
+  const totalParts = Math.ceil(file.size / partSize)
+  for (let partNumber = 1; partNumber <= totalParts; partNumber++) {
+    uploadState.value[lessonId] = { status: `Upload part ${partNumber}/${totalParts}...` }
+    const start = (partNumber - 1) * partSize
+    const end = Math.min(start + partSize, file.size)
+    const chunk = file.slice(start, end)
+
+    const presign = await presignLessonVideoPart(props.courseId, lessonId, init.uploadId, partNumber)
+    const res = await fetch(presign.url, { method: 'PUT', body: chunk })
+    if (!res.ok) throw new Error(`Upload part failed: ${res.status}`)
+    const eTag = res.headers.get('etag') ?? ''
+    parts.push({ partNumber, eTag })
+  }
+
+  uploadState.value[lessonId] = { status: 'Finalizacja uploadu...' }
+  await completeLessonVideoUpload(props.courseId, lessonId, init.uploadId, parts)
+  uploadState.value[lessonId] = { status: 'Gotowe' }
 }
 </script>
 

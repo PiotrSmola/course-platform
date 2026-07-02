@@ -43,7 +43,7 @@ public class GetLearningPathBySlugQueryHandler : IRequestHandler<GetLearningPath
                 pc.Course.ShortDescription,
                 pc.Course.Price,
                 pc.Course.Level,
-                pc.Course.ThumbnailUrl,
+                pc.Course.ThumbnailObjectKey,
                 pc.Course.Language,
                 $"{pc.Course.Instructor.FirstName} {pc.Course.Instructor.LastName}"))
             .ToList();

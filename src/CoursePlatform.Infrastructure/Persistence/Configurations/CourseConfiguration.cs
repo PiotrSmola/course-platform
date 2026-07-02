@@ -23,8 +23,8 @@ public class CourseConfiguration : IEntityTypeConfiguration<Course>
         builder.Property(c => c.Price)
             .HasPrecision(18, 2);
 
-        builder.Property(c => c.ThumbnailUrl)
-            .HasMaxLength(500);
+        builder.Property(c => c.ThumbnailObjectKey)
+            .HasMaxLength(1024);
 
         builder.Property(c => c.Language)
             .IsRequired()

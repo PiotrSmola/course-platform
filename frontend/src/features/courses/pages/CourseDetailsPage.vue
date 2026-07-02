@@ -18,7 +18,7 @@
           </div>
         </div>
         <div class="hero-visual">
-          <div class="glass-card course-thumb" :style="{ backgroundImage: `url(${course.thumbnailUrl})` }"></div>
+          <CourseThumbnail class="glass-card course-thumb" :course-id="course.id" />
         </div>
       </div>
 
@@ -103,6 +103,7 @@ import { useCourseDetails } from '@/features/courses/composables/useCourses'
 import { useEnroll } from '@/features/enrollment/composables/useEnrollment'
 import { useCreateReview } from '@/features/reviews/composables/useReviews'
 import { CourseLevel } from '@/features/courses/types/course.types'
+import CourseThumbnail from '@/shared/components/media/CourseThumbnail.vue'
 
 const route = useRoute()
 const authStore = useAuthStore()
@@ -223,8 +224,6 @@ function submitReview() {
   max-width: 420px;
   aspect-ratio: 16/10;
   border-radius: 28px;
-  background-size: cover;
-  background-position: center;
   box-shadow: 0 40px 90px rgba(3, 6, 24, 0.6), 0 4px 14px rgba(3, 6, 24, 0.35);
 }
 

@@ -1,6 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/vue-query'
 import { computed, toValue, type MaybeRefOrGetter } from 'vue'
-import { getLesson, completeLesson } from '@/features/learning/api/learning.api'
+import { getLesson, completeLesson, getLessonVideoUrl } from '@/features/learning/api/learning.api'
 import { queryKeys } from '@/shared/queryKeys'
 
 export function useLesson(courseId: MaybeRefOrGetter<string>, lessonId: MaybeRefOrGetter<string>) {
@@ -21,5 +21,13 @@ export function useCompleteLesson() {
       queryClient.invalidateQueries({ queryKey: queryKeys.enrollments() })
       queryClient.invalidateQueries({ queryKey: queryKeys.course(variables.courseId) })
     }
+  })
+}
+
+export function useLessonVideoUrl(courseId: MaybeRefOrGetter<string>, lessonId: MaybeRefOrGetter<string>) {
+  return useQuery({
+    queryKey: computed(() => [...queryKeys.lesson(toValue(courseId), toValue(lessonId)), 'videoUrl']),
+    queryFn: () => getLessonVideoUrl(toValue(courseId), toValue(lessonId)),
+    enabled: computed(() => !!toValue(courseId) && !!toValue(lessonId))
   })
 }

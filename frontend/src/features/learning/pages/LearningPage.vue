@@ -8,7 +8,7 @@
       />
       <div class="video-section">
         <div class="video-container glass">
-          <video :key="lesson.videoUrl" :src="lesson.videoUrl" controls crossorigin="anonymous"></video>
+          <video :key="videoUrl ?? lesson.id" :src="videoUrl ?? undefined" controls crossorigin="anonymous"></video>
         </div>
         <div class="lesson-info glass">
           <h1>{{ lesson.title }}</h1>
@@ -38,7 +38,7 @@
 
 <script setup lang="ts">
 import { computed } from 'vue'
-import { useLesson, useCompleteLesson } from '@/features/learning/composables/useLearning'
+import { useLesson, useCompleteLesson, useLessonVideoUrl } from '@/features/learning/composables/useLearning'
 import { useCourseDetails } from '@/features/courses/composables/useCourses'
 import CourseSidebar from '@/features/learning/components/CourseSidebar.vue'
 
@@ -49,8 +49,10 @@ const props = defineProps<{
 
 const lessonQuery = useLesson(() => props.courseId, () => props.lessonId)
 const courseQuery = useCourseDetails(() => props.courseId)
+const videoUrlQuery = useLessonVideoUrl(() => props.courseId, () => props.lessonId)
 const lesson = computed(() => lessonQuery.data.value)
 const course = computed(() => courseQuery.data.value)
+const videoUrl = computed(() => videoUrlQuery.data.value?.url)
 const completeMutation = useCompleteLesson()
 
 const isSubmitting = computed(() => completeMutation.isPending.value)

@@ -8,7 +8,9 @@ using CoursePlatform.Application.Features.Courses.Queries.GetCategories;
 using CoursePlatform.Application.Features.Courses.Queries.GetTechnologies;
 using CoursePlatform.Application.Features.Courses.Commands.CreateCourse;
 using CoursePlatform.Application.Features.Courses.Commands.UpdateCourse;
+using CoursePlatform.Application.Features.Courses.Commands.ThumbnailUploads;
 using CoursePlatform.Application.Features.Courses.Queries.GetInstructorCourses;
+using CoursePlatform.Application.Features.Courses.Queries.GetCourseThumbnailUrl;
 using CoursePlatform.Domain.Enums;
 
 namespace CoursePlatform.API.Controllers;
@@ -96,4 +98,48 @@ public class CoursesController : ControllerBase
         await _mediator.Send(command, cancellationToken);
         return NoContent();
     }
+
+    [HttpPost("{courseId:guid}/thumbnail/presign")]
+    [Authorize(Roles = "Instructor,Admin")]
+    public async Task<ActionResult<PresignCourseThumbnailUploadResult>> PresignThumbnail(
+        Guid courseId,
+        [FromBody] PresignCourseThumbnailUploadBody? body,
+        CancellationToken cancellationToken)
+    {
+        if (body == null || string.IsNullOrWhiteSpace(body.ContentType))
+        {
+            return BadRequest(new { error = "ContentType is required.", statusCode = 400 });
+        }
+
+        var result = await _mediator.Send(new PresignCourseThumbnailUploadCommand(courseId, body.ContentType), cancellationToken);
+        return Ok(result);
+    }
+
+    [HttpPost("{courseId:guid}/thumbnail/confirm")]
+    [Authorize(Roles = "Instructor,Admin")]
+    public async Task<ActionResult> ConfirmThumbnail(
+        Guid courseId,
+        [FromBody] ConfirmCourseThumbnailUploadBody? body,
+        CancellationToken cancellationToken)
+    {
+        if (body == null || string.IsNullOrWhiteSpace(body.ObjectKey))
+        {
+            return BadRequest(new { error = "ObjectKey is required.", statusCode = 400 });
+        }
+
+        await _mediator.Send(new ConfirmCourseThumbnailUploadCommand(courseId, body.ObjectKey), cancellationToken);
+        return NoContent();
+    }
+
+    [HttpGet("{courseId:guid}/thumbnail")]
+    [AllowAnonymous]
+    public async Task<ActionResult<CourseThumbnailUrlDto>> GetThumbnailUrl(Guid courseId, CancellationToken cancellationToken)
+    {
+        var result = await _mediator.Send(new GetCourseThumbnailUrlQuery(courseId), cancellationToken);
+        return Ok(result);
+    }
+
+    public sealed record PresignCourseThumbnailUploadBody(string ContentType);
+
+    public sealed record ConfirmCourseThumbnailUploadBody(string ObjectKey);
 }

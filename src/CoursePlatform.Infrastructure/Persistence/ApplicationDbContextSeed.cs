@@ -720,7 +720,7 @@ public static class ApplicationDbContextSeed
             Price = price,
             Level = level,
             Status = CourseStatus.Published,
-            ThumbnailUrl = thumbnailUrl,
+            ThumbnailObjectKey = thumbnailUrl,
             Language = "Polski",
             InstructorId = instructorId,
             Categories = categories,
@@ -749,7 +749,7 @@ public static class ApplicationDbContextSeed
                 {
                     Title = lessonTitle,
                     Description = lessonDescription,
-                    VideoUrl = $"https://placeholder.local/videos/{course.Id:N}-{i + 1}-{j + 1}.mp4",
+                    VideoObjectKey = $"placeholder/videos/{course.Id:N}-{i + 1}-{j + 1}.mp4",
                     Duration = durationSeconds,
                     Order = j + 1,
                     ModuleId = module.Id,

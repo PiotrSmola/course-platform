@@ -1,8 +1,7 @@
 <template>
   <article class="course-card glass-card">
-    <div class="course-thumb" :style="{ backgroundImage: `url(${course.thumbnailUrl})` }">
+    <CourseThumbnail class="course-thumb" :course-id="course.id" />
       <span v-if="levelLabel" class="course-badge">{{ levelLabel }}</span>
-    </div>
     <div class="course-body">
       <h3 class="course-title">{{ course.title }}</h3>
       <p class="course-instructor">{{ course.instructorName }}</p>
@@ -42,6 +41,7 @@
 import { computed } from 'vue'
 import type { CourseListDto } from '@/features/courses/types/course.types'
 import { CourseLevel } from '@/features/courses/types/course.types'
+import CourseThumbnail from '@/shared/components/media/CourseThumbnail.vue'
 
 interface Props {
   course: CourseListDto
@@ -87,8 +87,6 @@ const levelLabel = computed(() => {
   position: relative;
   width: 100%;
   aspect-ratio: 16 / 9;
-  background-size: cover;
-  background-position: center;
   border-radius: 20px;
   margin: 20px 20px 0;
   width: calc(100% - 40px);

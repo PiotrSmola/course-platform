@@ -11,7 +11,7 @@ public class Course : BaseEntity
     public decimal Price { get; set; }
     public CourseLevel Level { get; set; }
     public CourseStatus Status { get; set; } = CourseStatus.Draft;
-    public string ThumbnailUrl { get; set; } = string.Empty;
+    public string ThumbnailObjectKey { get; set; } = string.Empty;
     public string Language { get; set; } = string.Empty;
 
     public Guid InstructorId { get; set; }

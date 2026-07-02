@@ -10,7 +10,7 @@ public record CourseDetailsDto(
     decimal Price,
     CourseLevel Level,
     CourseStatus Status,
-    string ThumbnailUrl,
+    string ThumbnailObjectKey,
     string Language,
     Guid InstructorId,
     string InstructorName,
@@ -26,5 +26,5 @@ public record CourseDetailsDto(
     bool CanReview);
 
 public record ModuleDto(Guid Id, string Title, int Order, List<LessonListDto> Lessons);
-public record LessonListDto(Guid Id, string Title, string? Description, int Duration, int Order, bool IsCompleted = false, string? VideoUrl = null);
+public record LessonListDto(Guid Id, string Title, string? Description, int Duration, int Order, bool IsCompleted = false, string? VideoObjectKey = null);
 public record ReviewDto(Guid Id, int Rating, string Comment, string AuthorName, DateTime CreatedAt);

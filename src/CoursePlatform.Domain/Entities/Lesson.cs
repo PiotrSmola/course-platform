@@ -6,7 +6,7 @@ public class Lesson : BaseEntity
 {
     public string Title { get; set; } = string.Empty;
     public string? Description { get; set; }
-    public string VideoUrl { get; set; } = string.Empty;
+    public string VideoObjectKey { get; set; } = string.Empty;
     public int Duration { get; set; }
     public int Order { get; set; }
 

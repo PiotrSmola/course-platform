@@ -13,13 +13,49 @@ services:
     volumes:
       - pgdata:/var/lib/postgresql/data
 
+  minio:
+    image: minio/minio:latest
+    container_name: cp_minio
+    command: server /data --console-address ":9001"
+    environment:
+      MINIO_ROOT_USER: ${MINIO_ROOT_USER:-minio}
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD:-minio12345}
+      MINIO_API_CORS_ALLOW_ORIGIN: http://localhost:5173
+    ports:
+      - "9000:9000"
+      - "9001:9001"
+    volumes:
+      - miniodata:/data
+
+  minio_init:
+    image: minio/mc:latest
+    container_name: cp_minio_init
+    depends_on:
+      - minio
+    entrypoint: >
+      /bin/sh -c "
+      set -e;
+      until mc alias set local http://minio:9000 $$MINIO_ROOT_USER $$MINIO_ROOT_PASSWORD; do
+        echo 'Waiting for MinIO...';
+        sleep 1;
+      done;
+      mc mb -p local/course-platform || true;
+      mc anonymous set none local/course-platform || true;
+      echo 'MinIO init done.';
+      "
+    environment:
+      MINIO_ROOT_USER: ${MINIO_ROOT_USER:-minio}
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD:-minio12345}
+    volumes:
+      - ./docker/minio/cors.json:/cors.xml:ro
+
   api:
     build:
       context: .
       dockerfile: Dockerfile.api.dev
     container_name: cp_api
     working_dir: /src/src/CoursePlatform.API
-    command: dotnet watch run --urls http://0.0.0.0:8080
+    command: dotnet run --urls http://0.0.0.0:8080
     env_file:
       - .env
     environment:
@@ -28,12 +64,19 @@ services:
       Jwt__Issuer: CoursePlatform
       Jwt__Audience: CoursePlatform
       Jwt__ExpiryMinutes: ${JWT_EXPIRY_MINUTES:-120}
+      Minio__InternalEndpoint: http://minio:9000
+      Minio__PublicEndpoint: ${MINIO_PUBLIC_ENDPOINT:-http://localhost:9000}
+      Minio__AccessKey: ${MINIO_ROOT_USER:-minio}
+      Minio__SecretKey: ${MINIO_ROOT_PASSWORD:-minio12345}
+      Minio__Bucket: ${MINIO_BUCKET:-course-platform}
+      Minio__Region: us-east-1
     ports:
       - "8080:8080"
     volumes:
       - .:/src
     depends_on:
       - db
+      - minio
     mem_limit: 2g
 
   frontend:
@@ -51,3 +94,4 @@ services:
 
 volumes:
   pgdata:
+  miniodata:

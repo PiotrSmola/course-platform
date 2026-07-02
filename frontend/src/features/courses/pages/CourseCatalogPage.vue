@@ -252,7 +252,7 @@
           class="featured-card glass-card"
           :to="{ name: 'CourseDetails', params: { id: course.id } }"
         >
-          <div class="thumb" :style="{ backgroundImage: `url(${course.thumbnailUrl})` }" />
+          <CourseThumbnail class="thumb" :course-id="course.id" />
           <div class="info">
             <h3>{{ course.title }}</h3>
             <p>{{ course.instructorName }} · {{ course.averageRating.toFixed(1) }} ★</p>
@@ -284,6 +284,7 @@ import { useQuery } from '@tanstack/vue-query'
 import { useAuthStore } from '@/features/auth/stores/auth.store'
 import { getCourses } from '@/features/courses/api/courses.api'
 import { queryKeys } from '@/shared/queryKeys'
+import CourseThumbnail from '@/shared/components/media/CourseThumbnail.vue'
 
 const authStore = useAuthStore()
 

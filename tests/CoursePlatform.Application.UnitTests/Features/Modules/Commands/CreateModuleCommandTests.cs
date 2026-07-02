@@ -28,7 +28,7 @@ public class CreateModuleCommandTests
             Price = 10,
             Level = CourseLevel.Beginner,
             Status = CourseStatus.Draft,
-            ThumbnailUrl = "",
+            ThumbnailObjectKey = "",
             Language = "pl",
             InstructorId = instructorId
         };

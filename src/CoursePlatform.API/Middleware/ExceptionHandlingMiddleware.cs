@@ -9,11 +9,16 @@ public class ExceptionHandlingMiddleware
 {
     private readonly RequestDelegate _next;
     private readonly ILogger<ExceptionHandlingMiddleware> _logger;
+    private readonly IWebHostEnvironment _environment;
 
-    public ExceptionHandlingMiddleware(RequestDelegate next, ILogger<ExceptionHandlingMiddleware> logger)
+    public ExceptionHandlingMiddleware(
+        RequestDelegate next,
+        ILogger<ExceptionHandlingMiddleware> logger,
+        IWebHostEnvironment environment)
     {
         _next = next;
         _logger = logger;
+        _environment = environment;
     }
 
     public async Task InvokeAsync(HttpContext context)
@@ -43,7 +48,7 @@ public class ExceptionHandlingMiddleware
         catch (Exception ex)
         {
             _logger.LogError(ex, "Unhandled exception");
-            await HandleExceptionAsync(context, HttpStatusCode.InternalServerError, "An unexpected error occurred.");
+            await HandleUnhandledExceptionAsync(context, _environment, ex);
         }
     }
 
@@ -54,6 +59,41 @@ public class ExceptionHandlingMiddleware
 
         var result = JsonSerializer.Serialize(new { error = message, statusCode = (int)statusCode });
         return context.Response.WriteAsync(result);
+    }
+
+    private static Task HandleUnhandledExceptionAsync(
+        HttpContext context,
+        IWebHostEnvironment environment,
+        Exception exception)
+    {
+        context.Response.ContentType = "application/json";
+        context.Response.StatusCode = (int)HttpStatusCode.InternalServerError;
+
+        var traceId = context.TraceIdentifier;
+
+        if (environment.IsDevelopment())
+        {
+            var result = JsonSerializer.Serialize(new
+            {
+                error = "UnhandledException",
+                message = exception.Message,
+                exception = exception.GetType().FullName,
+                stackTrace = exception.ToString(),
+                traceId,
+                statusCode = (int)HttpStatusCode.InternalServerError
+            });
+
+            return context.Response.WriteAsync(result);
+        }
+
+        var generic = JsonSerializer.Serialize(new
+        {
+            error = "An unexpected error occurred.",
+            traceId,
+            statusCode = (int)HttpStatusCode.InternalServerError
+        });
+
+        return context.Response.WriteAsync(generic);
     }
 
     private static Task HandleValidationExceptionAsync(HttpContext context, Dictionary<string, List<string>> errors)
