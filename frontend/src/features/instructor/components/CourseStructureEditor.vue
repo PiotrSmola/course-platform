@@ -385,6 +385,10 @@ async function onSelectVideoFile(moduleId: string, lessonId: string, file: File)
   align-items: start;
   margin-bottom: 28px;
 
+  .form-group--action {
+    align-self: start;
+  }
+
   @media (max-width: 900px) {
     grid-template-columns: 1fr 1fr;
   }
