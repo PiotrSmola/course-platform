@@ -13,6 +13,7 @@ public class GetCoursesQueryTests
 {
     private readonly TestDbContext _context;
     private readonly Mock<ICurrentUserService> _currentUserServiceMock;
+    private readonly Mock<IFileStorageService> _fileStorageMock;
 
     public GetCoursesQueryTests()
     {
@@ -21,6 +22,7 @@ public class GetCoursesQueryTests
             .Options;
         _context = new TestDbContext(options);
         _currentUserServiceMock = new Mock<ICurrentUserService>();
+        _fileStorageMock = new Mock<IFileStorageService>();
     }
 
     [Fact]
@@ -69,7 +71,7 @@ public class GetCoursesQueryTests
         _currentUserServiceMock.Setup(x => x.UserId).Returns((Guid?)null);
         _currentUserServiceMock.Setup(x => x.IsAdmin).Returns(false);
 
-        var handler = new GetCoursesQueryHandler(_context, _currentUserServiceMock.Object);
+        var handler = new GetCoursesQueryHandler(_context, _currentUserServiceMock.Object, _fileStorageMock.Object);
         var result = await handler.Handle(new GetCoursesQuery(null, null, CourseStatus.Draft, null, null, null, null, null, null, null), CancellationToken.None);
 
         result.Items.Should().ContainSingle(c => c.Title == "Published");
@@ -105,7 +107,7 @@ public class GetCoursesQueryTests
         _currentUserServiceMock.Setup(x => x.UserId).Returns(Guid.NewGuid());
         _currentUserServiceMock.Setup(x => x.IsAdmin).Returns(false);
 
-        var handler = new GetCoursesQueryHandler(_context, _currentUserServiceMock.Object);
+        var handler = new GetCoursesQueryHandler(_context, _currentUserServiceMock.Object, _fileStorageMock.Object);
         var result = await handler.Handle(
             new GetCoursesQuery(null, null, CourseStatus.Published, null, null, null, null, null, null, null),
             CancellationToken.None);
@@ -159,7 +161,7 @@ public class GetCoursesQueryTests
         _currentUserServiceMock.Setup(x => x.UserId).Returns((Guid?)null);
         _currentUserServiceMock.Setup(x => x.IsAdmin).Returns(false);
 
-        var handler = new GetCoursesQueryHandler(_context, _currentUserServiceMock.Object);
+        var handler = new GetCoursesQueryHandler(_context, _currentUserServiceMock.Object, _fileStorageMock.Object);
         var result = await handler.Handle(
             new GetCoursesQuery("Vue", null, null, null, null, null, null, null, null, null),
             CancellationToken.None);

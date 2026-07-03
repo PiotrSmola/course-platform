@@ -252,7 +252,7 @@
           class="featured-card glass-card"
           :to="{ name: 'CourseDetails', params: { id: course.id } }"
         >
-          <CourseThumbnail class="thumb" :course-id="course.id" />
+          <CourseThumbnail class="thumb" :url="course.thumbnailUrl" />
           <div class="info">
             <h3>{{ course.title }}</h3>
             <p>{{ course.instructorName }} · {{ course.averageRating.toFixed(1) }} ★</p>

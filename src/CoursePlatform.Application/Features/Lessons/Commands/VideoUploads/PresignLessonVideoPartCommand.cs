@@ -22,7 +22,7 @@ public class PresignLessonVideoPartCommandValidator : AbstractValidator<PresignL
         RuleFor(x => x.CourseId).NotEmpty();
         RuleFor(x => x.LessonId).NotEmpty();
         RuleFor(x => x.UploadId).NotEmpty().MaximumLength(2000);
-        RuleFor(x => x.PartNumber).GreaterThan(0);
+        RuleFor(x => x.PartNumber).InclusiveBetween(1, UploadLimits.MaxVideoParts);
     }
 }
 

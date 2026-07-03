@@ -1,5 +1,5 @@
 import client from '@/shared/api/client'
-import type { CoursesVm, CourseDetailsDto, CourseLevel, CourseStatus, PresignedUrlDto } from '@/features/courses/types/course.types'
+import type { CoursesVm, CourseDetailsDto, CourseLevel, CourseStatus } from '@/features/courses/types/course.types'
 
 export interface CoursesFilter {
   searchTerm?: string
@@ -44,11 +44,6 @@ export async function getCourseDetails(id: string): Promise<CourseDetailsDto> {
   return response.data
 }
 
-export async function getCourseThumbnailUrl(courseId: string): Promise<PresignedUrlDto> {
-  const response = await client.get(`/courses/${courseId}/thumbnail`)
-  return response.data
-}
-
 export interface PresignCourseThumbnailUploadResponse {
   objectKey: string
   url: string
@@ -69,7 +64,6 @@ export interface CreateCourseRequest {
   shortDescription: string
   price: number
   level: CourseLevel
-  thumbnailObjectKey: string
   language: string
   categoryIds: string[]
   technologyIds: string[]
@@ -88,7 +82,6 @@ export interface UpdateCourseRequest {
   price: number
   level: CourseLevel
   status: CourseStatus
-  thumbnailObjectKey: string
   language: string
   categoryIds: string[]
   technologyIds: string[]

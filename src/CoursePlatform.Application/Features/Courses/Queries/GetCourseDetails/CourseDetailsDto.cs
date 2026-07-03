@@ -10,7 +10,7 @@ public record CourseDetailsDto(
     decimal Price,
     CourseLevel Level,
     CourseStatus Status,
-    string ThumbnailObjectKey,
+    string? ThumbnailUrl,
     string Language,
     Guid InstructorId,
     string InstructorName,

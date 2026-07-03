@@ -9,7 +9,7 @@ public class UpdateCourseCommandValidatorTests
     private readonly UpdateCourseCommandValidator _validator = new();
 
     private static UpdateCourseCommand ValidCommand(CourseLevel level = CourseLevel.Beginner, CourseStatus status = CourseStatus.Draft) =>
-        new(Guid.NewGuid(), "Title", "Description", "Short", 10, level, status, "", "pl", new List<Guid>(), new List<Guid>());
+        new(Guid.NewGuid(), "Title", "Description", "Short", 10, level, status, "pl", new List<Guid>(), new List<Guid>());
 
     [Fact]
     public void InvalidLevel_HasError()

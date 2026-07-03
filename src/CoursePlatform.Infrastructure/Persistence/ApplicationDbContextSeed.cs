@@ -195,8 +195,7 @@ public static class ApplicationDbContextSeed
             CourseLevel.Beginner,
             john.Id,
             new List<Category> { Cat("frontend") },
-            new List<Technology> { Tech("vue") },
-            "https://placeholder.local/courses/vue3-fundamentals.jpg");
+            new List<Technology> { Tech("vue") });
         AddModules(vueCourse,
             ("Wprowadzenie do Vue 3", new[]
             {
@@ -233,8 +232,7 @@ public static class ApplicationDbContextSeed
             CourseLevel.Advanced,
             john.Id,
             new List<Category> { Cat("backend") },
-            new List<Technology> { Tech("dotnet") },
-            "https://placeholder.local/courses/dotnet9-advanced.jpg");
+            new List<Technology> { Tech("dotnet") });
         AddModules(dotnetCourse,
             ("Architektura i podstawy", new[]
             {
@@ -271,8 +269,7 @@ public static class ApplicationDbContextSeed
             CourseLevel.Intermediate,
             anna.Id,
             new List<Category> { Cat("frontend") },
-            new List<Technology> { Tech("react") },
-            "https://placeholder.local/courses/react18-practice.jpg");
+            new List<Technology> { Tech("react") });
         AddModules(reactCourse,
             ("Fundamenty React 18", new[]
             {
@@ -309,8 +306,7 @@ public static class ApplicationDbContextSeed
             CourseLevel.Intermediate,
             anna.Id,
             new List<Category> { Cat("ai") },
-            new List<Technology> { Tech("python") },
-            "https://placeholder.local/courses/python-data-science.jpg");
+            new List<Technology> { Tech("python") });
         AddModules(pythonCourse,
             ("Python dla analityka", new[]
             {
@@ -353,8 +349,7 @@ public static class ApplicationDbContextSeed
             CourseLevel.Beginner,
             marcin.Id,
             new List<Category> { Cat("databases") },
-            new List<Technology> { Tech("sql") },
-            "https://placeholder.local/courses/sql-complete.jpg");
+            new List<Technology> { Tech("sql") });
         AddModules(sqlCourse,
             ("Relacyjny model danych", new[]
             {
@@ -397,8 +392,7 @@ public static class ApplicationDbContextSeed
             CourseLevel.Intermediate,
             marcin.Id,
             new List<Category> { Cat("devops") },
-            new List<Technology> { Tech("docker") },
-            "https://placeholder.local/courses/docker-kubernetes.jpg");
+            new List<Technology> { Tech("docker") });
         AddModules(dockerCourse,
             ("Docker od podstaw", new[]
             {
@@ -441,8 +435,7 @@ public static class ApplicationDbContextSeed
             CourseLevel.Intermediate,
             marcin.Id,
             new List<Category> { Cat("devops") },
-            new List<Technology> { Tech("aws") },
-            "https://placeholder.local/courses/aws-solutions-architect.jpg");
+            new List<Technology> { Tech("aws") });
         AddModules(awsCourse,
             ("Fundamenty AWS", new[]
             {
@@ -491,8 +484,7 @@ public static class ApplicationDbContextSeed
             CourseLevel.Intermediate,
             anna.Id,
             new List<Category> { Cat("databases") },
-            new List<Technology> { Tech("mongodb") },
-            "https://placeholder.local/courses/mongodb-aggregations.jpg");
+            new List<Technology> { Tech("mongodb") });
         AddModules(mongoCourse,
             ("Modelowanie danych w MongoDB", new[]
             {
@@ -529,8 +521,7 @@ public static class ApplicationDbContextSeed
             CourseLevel.Advanced,
             john.Id,
             new List<Category> { Cat("ai") },
-            new List<Technology> { Tech("python") },
-            "https://placeholder.local/courses/llm-applications.jpg");
+            new List<Technology> { Tech("python") });
         AddModules(llmCourse,
             ("Podstawy LLM", new[]
             {
@@ -573,8 +564,7 @@ public static class ApplicationDbContextSeed
             CourseLevel.Intermediate,
             john.Id,
             new List<Category> { Cat("backend") },
-            new List<Technology> { Tech("laravel") },
-            "https://placeholder.local/courses/laravel11-api.jpg");
+            new List<Technology> { Tech("laravel") });
         AddModules(laravelCourse,
             ("Fundamenty Laravel 11", new[]
             {
@@ -617,8 +607,7 @@ public static class ApplicationDbContextSeed
             CourseLevel.Advanced,
             anna.Id,
             new List<Category> { Cat("frontend") },
-            new List<Technology> { Tech("angular") },
-            "https://placeholder.local/courses/angular-enterprise.jpg");
+            new List<Technology> { Tech("angular") });
         AddModules(angularCourse,
             ("Architektura Angular", new[]
             {
@@ -661,8 +650,7 @@ public static class ApplicationDbContextSeed
             CourseLevel.Beginner,
             anna.Id,
             new List<Category> { Cat("ai") },
-            new List<Technology> { Tech("python") },
-            "https://placeholder.local/courses/ml-intro.jpg");
+            new List<Technology> { Tech("python") });
         AddModules(mlIntroCourse,
             ("Czym jest uczenie maszynowe", new[]
             {
@@ -709,8 +697,7 @@ public static class ApplicationDbContextSeed
         CourseLevel level,
         Guid instructorId,
         List<Category> categories,
-        List<Technology> technologies,
-        string thumbnailUrl)
+        List<Technology> technologies)
     {
         return new Course
         {
@@ -720,7 +707,7 @@ public static class ApplicationDbContextSeed
             Price = price,
             Level = level,
             Status = CourseStatus.Published,
-            ThumbnailObjectKey = thumbnailUrl,
+            ThumbnailObjectKey = string.Empty,
             Language = "Polski",
             InstructorId = instructorId,
             Categories = categories,

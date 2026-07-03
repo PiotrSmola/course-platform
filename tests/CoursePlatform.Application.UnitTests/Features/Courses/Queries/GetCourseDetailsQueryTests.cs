@@ -14,6 +14,7 @@ public class GetCourseDetailsQueryTests
 {
     private readonly TestDbContext _context;
     private readonly Mock<ICurrentUserService> _currentUserServiceMock;
+    private readonly Mock<IFileStorageService> _fileStorageMock;
 
     public GetCourseDetailsQueryTests()
     {
@@ -22,6 +23,7 @@ public class GetCourseDetailsQueryTests
             .Options;
         _context = new TestDbContext(options);
         _currentUserServiceMock = new Mock<ICurrentUserService>();
+        _fileStorageMock = new Mock<IFileStorageService>();
     }
 
     [Fact]
@@ -71,7 +73,7 @@ public class GetCourseDetailsQueryTests
         _currentUserServiceMock.Setup(x => x.UserId).Returns((Guid?)null);
         _currentUserServiceMock.Setup(x => x.IsAdmin).Returns(false);
 
-        var handler = new GetCourseDetailsQueryHandler(_context, _currentUserServiceMock.Object);
+        var handler = new GetCourseDetailsQueryHandler(_context, _currentUserServiceMock.Object, _fileStorageMock.Object);
         var result = await handler.Handle(new GetCourseDetailsQuery(course.Id), CancellationToken.None);
 
         result.Should().NotBeNull();
@@ -109,7 +111,7 @@ public class GetCourseDetailsQueryTests
         _currentUserServiceMock.Setup(x => x.UserId).Returns((Guid?)null);
         _currentUserServiceMock.Setup(x => x.IsAdmin).Returns(false);
 
-        var handler = new GetCourseDetailsQueryHandler(_context, _currentUserServiceMock.Object);
+        var handler = new GetCourseDetailsQueryHandler(_context, _currentUserServiceMock.Object, _fileStorageMock.Object);
         var act = async () => await handler.Handle(new GetCourseDetailsQuery(course.Id), CancellationToken.None);
 
         await act.Should().ThrowAsync<NotFoundException>();

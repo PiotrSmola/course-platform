@@ -10,7 +10,6 @@ using CoursePlatform.Application.Features.Courses.Commands.CreateCourse;
 using CoursePlatform.Application.Features.Courses.Commands.UpdateCourse;
 using CoursePlatform.Application.Features.Courses.Commands.ThumbnailUploads;
 using CoursePlatform.Application.Features.Courses.Queries.GetInstructorCourses;
-using CoursePlatform.Application.Features.Courses.Queries.GetCourseThumbnailUrl;
 using CoursePlatform.Domain.Enums;
 
 namespace CoursePlatform.API.Controllers;
@@ -129,14 +128,6 @@ public class CoursesController : ControllerBase
 
         await _mediator.Send(new ConfirmCourseThumbnailUploadCommand(courseId, body.ObjectKey), cancellationToken);
         return NoContent();
-    }
-
-    [HttpGet("{courseId:guid}/thumbnail")]
-    [AllowAnonymous]
-    public async Task<ActionResult<CourseThumbnailUrlDto>> GetThumbnailUrl(Guid courseId, CancellationToken cancellationToken)
-    {
-        var result = await _mediator.Send(new GetCourseThumbnailUrlQuery(courseId), cancellationToken);
-        return Ok(result);
     }
 
     public sealed record PresignCourseThumbnailUploadBody(string ContentType);

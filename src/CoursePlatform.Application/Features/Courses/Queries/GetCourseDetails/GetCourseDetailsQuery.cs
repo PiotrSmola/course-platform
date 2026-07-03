@@ -1,5 +1,6 @@
 using MediatR;
 using Microsoft.EntityFrameworkCore;
+using CoursePlatform.Application.Common.Helpers;
 using CoursePlatform.Application.Common.Interfaces;
 using CoursePlatform.Application.Common.Exceptions;
 
@@ -11,11 +12,13 @@ public class GetCourseDetailsQueryHandler : IRequestHandler<GetCourseDetailsQuer
 {
     private readonly IApplicationDbContext _context;
     private readonly ICurrentUserService _currentUserService;
+    private readonly IFileStorageService _fileStorage;
 
-    public GetCourseDetailsQueryHandler(IApplicationDbContext context, ICurrentUserService currentUserService)
+    public GetCourseDetailsQueryHandler(IApplicationDbContext context, ICurrentUserService currentUserService, IFileStorageService fileStorage)
     {
         _context = context;
         _currentUserService = currentUserService;
+        _fileStorage = fileStorage;
     }
 
     public async Task<CourseDetailsDto> Handle(GetCourseDetailsQuery request, CancellationToken cancellationToken)
@@ -102,7 +105,7 @@ public class GetCourseDetailsQueryHandler : IRequestHandler<GetCourseDetailsQuer
             course.Price,
             course.Level,
             course.Status,
-            course.ThumbnailObjectKey,
+            await _fileStorage.GetThumbnailUrlOrNullAsync(course.ThumbnailObjectKey, cancellationToken),
             course.Language,
             course.InstructorId,
             $"{course.Instructor.FirstName} {course.Instructor.LastName}",

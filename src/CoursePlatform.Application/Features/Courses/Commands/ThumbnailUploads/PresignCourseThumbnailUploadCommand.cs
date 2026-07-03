@@ -16,7 +16,10 @@ public class PresignCourseThumbnailUploadCommandValidator : AbstractValidator<Pr
     public PresignCourseThumbnailUploadCommandValidator()
     {
         RuleFor(x => x.CourseId).NotEmpty();
-        RuleFor(x => x.ContentType).NotEmpty().MaximumLength(200);
+        RuleFor(x => x.ContentType)
+            .NotEmpty()
+            .Must(ct => UploadLimits.AllowedThumbnailContentTypes.Contains(ct))
+            .WithMessage("Unsupported thumbnail content type. Allowed: image/jpeg, image/png, image/webp.");
     }
 }
 

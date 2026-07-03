@@ -1,5 +1,6 @@
 using MediatR;
 using Microsoft.EntityFrameworkCore;
+using CoursePlatform.Application.Common.Helpers;
 using CoursePlatform.Application.Common.Interfaces;
 using CoursePlatform.Domain.Enums;
 
@@ -9,7 +10,7 @@ public record EnrollmentDto(
     Guid Id,
     Guid CourseId,
     string CourseTitle,
-    string CourseThumbnailObjectKey,
+    string? CourseThumbnailUrl,
     CourseLevel CourseLevel,
     DateTime EnrolledAt,
     int CompletedLessons,
@@ -23,11 +24,13 @@ public class GetMyEnrollmentsQueryHandler : IRequestHandler<GetMyEnrollmentsQuer
 {
     private readonly IApplicationDbContext _context;
     private readonly ICurrentUserService _currentUserService;
+    private readonly IFileStorageService _fileStorage;
 
-    public GetMyEnrollmentsQueryHandler(IApplicationDbContext context, ICurrentUserService currentUserService)
+    public GetMyEnrollmentsQueryHandler(IApplicationDbContext context, ICurrentUserService currentUserService, IFileStorageService fileStorage)
     {
         _context = context;
         _currentUserService = currentUserService;
+        _fileStorage = fileStorage;
     }
 
     public async Task<List<EnrollmentDto>> Handle(GetMyEnrollmentsQuery request, CancellationToken cancellationToken)
@@ -48,7 +51,8 @@ public class GetMyEnrollmentsQueryHandler : IRequestHandler<GetMyEnrollmentsQuer
             .Where(lp => lp.UserId == _currentUserService.UserId.Value && lessonIds.Contains(lp.LessonId))
             .ToListAsync(cancellationToken);
 
-        var result = enrollments.Select(e =>
+        var result = new List<EnrollmentDto>(enrollments.Count);
+        foreach (var e in enrollments)
         {
             var orderedLessons = e.Course.Modules
                 .OrderBy(m => m.Order)
@@ -57,18 +61,18 @@ public class GetMyEnrollmentsQueryHandler : IRequestHandler<GetMyEnrollmentsQuer
             var totalLessons = orderedLessons.Count;
             var completedLessons = progress.Count(p => orderedLessons.Any(l => l.Id == p.LessonId) && p.IsCompleted);
             var firstLessonId = orderedLessons.FirstOrDefault()?.Id;
-            return new EnrollmentDto(
+            result.Add(new EnrollmentDto(
                 e.Id,
                 e.CourseId,
                 e.Course.Title,
-                e.Course.ThumbnailObjectKey,
+                await _fileStorage.GetThumbnailUrlOrNullAsync(e.Course.ThumbnailObjectKey, cancellationToken),
                 e.Course.Level,
                 e.EnrolledAt,
                 completedLessons,
                 totalLessons,
                 totalLessons > 0 ? (double)completedLessons / totalLessons * 100 : 0,
-                firstLessonId);
-        }).ToList();
+                firstLessonId));
+        }
 
         return result;
     }

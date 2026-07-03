@@ -21,8 +21,6 @@ public class ConfirmCourseThumbnailUploadCommandValidator : AbstractValidator<Co
 
 public class ConfirmCourseThumbnailUploadCommandHandler : IRequestHandler<ConfirmCourseThumbnailUploadCommand>
 {
-    private const long MaxThumbnailBytes = 5L * 1024 * 1024;
-
     private readonly IApplicationDbContext _context;
     private readonly ICurrentUserService _currentUserService;
     private readonly IFileStorageService _fileStorage;
@@ -52,8 +50,9 @@ public class ConfirmCourseThumbnailUploadCommandHandler : IRequestHandler<Confir
             throw new NotFoundException("Thumbnail object not found.");
         }
 
-        if (stat.SizeBytes > MaxThumbnailBytes)
+        if (stat.SizeBytes > UploadLimits.MaxThumbnailBytes)
         {
+            await _fileStorage.DeleteObjectAsync(request.ObjectKey, cancellationToken);
             throw new FluentValidation.ValidationException(new[]
             {
                 new FluentValidation.Results.ValidationFailure("Thumbnail", "Thumbnail exceeds max size (5MB).")

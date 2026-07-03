@@ -67,11 +67,6 @@ export const sharedSchemas = {
     .min(0, sharedMessages.priceNegative)
     .max(100000, sharedMessages.priceMax),
 
-  thumbnailObjectKey: z
-    .string()
-    .max(1024, sharedMessages.maxLength('Thumbnail key', 1024))
-    .optional(),
-
   language: z
     .string({ required_error: 'Język jest wymagany' })
     .min(1, 'Język jest wymagany')

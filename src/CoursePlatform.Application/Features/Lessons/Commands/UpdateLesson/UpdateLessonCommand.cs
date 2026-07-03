@@ -13,7 +13,6 @@ public record UpdateLessonCommand(
     Guid LessonId,
     string Title,
     string? Description,
-    string VideoObjectKey,
     int Duration,
     int Order) : IRequest;
 
@@ -25,7 +24,6 @@ public class UpdateLessonCommandValidator : AbstractValidator<UpdateLessonComman
         RuleFor(x => x.ModuleId).NotEmpty();
         RuleFor(x => x.LessonId).NotEmpty();
         RuleFor(x => x.Title).NotEmpty().MaximumLength(200);
-        RuleFor(x => x.VideoObjectKey).MaximumLength(1024);
         RuleFor(x => x.Duration).GreaterThan(0);
         RuleFor(x => x.Order).GreaterThanOrEqualTo(0);
     }
@@ -59,7 +57,6 @@ public class UpdateLessonCommandHandler : IRequestHandler<UpdateLessonCommand>
 
         lesson.Title = request.Title;
         lesson.Description = request.Description;
-        lesson.VideoObjectKey = request.VideoObjectKey;
         lesson.Duration = request.Duration;
         lesson.Order = request.Order;
         lesson.MarkUpdated();

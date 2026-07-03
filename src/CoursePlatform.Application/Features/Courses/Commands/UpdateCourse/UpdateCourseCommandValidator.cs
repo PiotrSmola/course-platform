@@ -14,7 +14,6 @@ public class UpdateCourseCommandValidator : AbstractValidator<UpdateCourseComman
         RuleFor(x => x.Level).IsInEnum().WithMessage("Nieprawidłowy poziom kursu.");
         RuleFor(x => x.Status).IsInEnum().WithMessage("Nieprawidłowy status kursu.");
         RuleFor(x => x.Price).ValidPrice();
-        RuleFor(x => x.ThumbnailObjectKey).MaximumLength(1024);
         RuleFor(x => x.Language).ValidLanguage();
         RuleFor(x => x.CategoryIds).NotNull().WithMessage("Kategorie nie mogą być null");
         RuleFor(x => x.TechnologyIds).NotNull().WithMessage("Technologie nie mogą być null");

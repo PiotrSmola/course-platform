@@ -24,7 +24,6 @@ export interface CreateLessonRequest {
   moduleId: string
   title: string
   description?: string
-  videoObjectKey: string
   duration: number
   order: number
 }
@@ -35,7 +34,6 @@ export interface UpdateLessonRequest {
   lessonId: string
   title: string
   description?: string
-  videoObjectKey: string
   duration: number
   order: number
 }

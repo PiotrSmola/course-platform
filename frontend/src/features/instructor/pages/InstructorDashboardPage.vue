@@ -18,7 +18,7 @@
       </div>
       <div v-else class="courses-grid">
         <article v-for="course in courses" :key="course.id" class="course-card glass-card">
-          <CourseThumbnail class="course-thumb" :course-id="course.id" />
+          <CourseThumbnail class="course-thumb" :url="course.thumbnailUrl" />
           <div class="course-info">
             <h3>{{ course.title }}</h3>
             <div class="course-stats">

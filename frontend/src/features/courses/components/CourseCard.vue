@@ -20,10 +20,8 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, computed } from 'vue'
 import type { CourseListDto } from '@/features/courses/types/course.types'
-import { computed } from 'vue'
-import { useCourseThumbnailUrl } from '@/features/courses/composables/useCourseAssets'
 
 interface Props {
   course: CourseListDto
@@ -33,9 +31,8 @@ const props = defineProps<Props>()
 
 const cardRef = ref<HTMLElement>()
 
-const thumbnailQuery = useCourseThumbnailUrl(computed(() => props.course.id))
 const thumbnailStyle = computed(() => {
-  const url = thumbnailQuery.data.value
+  const url = props.course.thumbnailUrl
   return url ? { backgroundImage: `url(${url})` } : {}
 })
 

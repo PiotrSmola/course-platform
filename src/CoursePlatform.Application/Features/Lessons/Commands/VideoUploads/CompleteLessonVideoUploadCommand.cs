@@ -22,6 +22,9 @@ public class CompleteLessonVideoUploadCommandValidator : AbstractValidator<Compl
         RuleFor(x => x.LessonId).NotEmpty();
         RuleFor(x => x.UploadId).NotEmpty().MaximumLength(2000);
         RuleFor(x => x.Parts).NotNull().NotEmpty();
+        RuleFor(x => x.Parts)
+            .Must(parts => parts == null || parts.Count <= UploadLimits.MaxVideoParts)
+            .WithMessage($"Too many parts (max {UploadLimits.MaxVideoParts}).");
         RuleForEach(x => x.Parts).SetValidator(new CompletedPartValidator());
     }
 
@@ -29,7 +32,7 @@ public class CompleteLessonVideoUploadCommandValidator : AbstractValidator<Compl
     {
         public CompletedPartValidator()
         {
-            RuleFor(p => p.PartNumber).GreaterThan(0);
+            RuleFor(p => p.PartNumber).InclusiveBetween(1, UploadLimits.MaxVideoParts);
             RuleFor(p => p.ETag).NotEmpty().MaximumLength(200);
         }
     }
@@ -37,8 +40,6 @@ public class CompleteLessonVideoUploadCommandValidator : AbstractValidator<Compl
 
 public class CompleteLessonVideoUploadCommandHandler : IRequestHandler<CompleteLessonVideoUploadCommand>
 {
-    private const long MaxVideoBytes = 200L * 1024 * 1024;
-
     private readonly IApplicationDbContext _context;
     private readonly ICurrentUserService _currentUserService;
     private readonly IFileStorageService _fileStorage;
@@ -75,9 +76,9 @@ public class CompleteLessonVideoUploadCommandHandler : IRequestHandler<CompleteL
             throw new NotFoundException("Uploaded object not found after completion.");
         }
 
-        if (stat.SizeBytes > MaxVideoBytes)
+        if (stat.SizeBytes > UploadLimits.MaxVideoBytes)
         {
-            await _fileStorage.AbortMultipartUploadAsync(objectKey, request.UploadId, cancellationToken);
+            await _fileStorage.DeleteObjectAsync(objectKey, cancellationToken);
             throw new FluentValidation.ValidationException(new[]
             {
                 new FluentValidation.Results.ValidationFailure("Video", "Video exceeds max size (200MB).")

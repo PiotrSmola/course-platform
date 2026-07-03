@@ -2,7 +2,7 @@ export interface EnrollmentDto {
   id: string
   courseId: string
   courseTitle: string
-  courseThumbnailUrl: string
+  courseThumbnailUrl: string | null
   courseLevel: number
   enrolledAt: string
   completedLessons: number

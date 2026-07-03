@@ -41,12 +41,52 @@ ASP.NET Core configuration provider chain: environment variables override appset
 
 ### Database seed
 
-Seed runs only when **both** conditions are true:
+Seed runs automatically on API startup when **both** conditions are true:
 
 - `ASPNETCORE_ENVIRONMENT=Development`
 - `Dev:Seed=true` in `appsettings.Development.json`
 
 Production never seeds, even if `Dev:Seed` is set accidentally.
+
+How it works (`ApplicationDbContextSeed`, invoked from `Program.cs`):
+
+1. Every startup runs EF Core migrations (`Database.MigrateAsync()`) and seeds the three roles (`Student`, `Instructor`, `Admin`) — regardless of `Dev:Seed`.
+2. With seeding enabled, `SeedAsync` fills: users, categories, technologies, courses (with modules and lessons), enrollments, reviews, lesson progress, user statistics, learning paths and business plans.
+3. Every step is idempotent — it skips when data already exists (e.g. courses seed only into an empty `Courses` table), so restarting the API never duplicates data. It also means the seed **won't refresh existing rows** — to get fresh seed data you must wipe the database first.
+
+Test accounts created by the seed:
+
+| Role | Email | Password |
+| ---- | ----- | -------- |
+| Admin | `admin@courseplatform.com` | `Admin123!` |
+| Instructor | `instructor@courseplatform.com` | `Instructor123!` |
+| Instructor | `anna.kowalska@courseplatform.com` | `Instructor123!` |
+| Instructor | `marcin.wisniewski@courseplatform.com` | `Instructor123!` |
+| Student | `piotr.nowak@courseplatform.com` | `Student123!` |
+| Student | `karolina.zielinska@courseplatform.com` | `Student123!` |
+| Student | `tomasz.wojcik@courseplatform.com` | `Student123!` |
+| Student | `monika.kaminska@courseplatform.com` | `Student123!` |
+| Student | `jakub.lewandowski@courseplatform.com` | `Student123!` |
+
+#### Re-running the seed manually
+
+Recreate the database and restart the API — migrations and seed run on startup:
+
+```bash
+docker compose exec db psql -U postgres -c "DROP DATABASE courseplatform WITH (FORCE);"
+docker compose exec db psql -U postgres -c "CREATE DATABASE courseplatform;"
+docker compose restart api
+```
+
+Full reset including the Docker volume (also wipes pgAdmin-style local state):
+
+```bash
+docker compose down
+docker volume rm course-platform_pgdata
+docker compose up -d
+```
+
+Seeded courses have empty `ThumbnailObjectKey` — the frontend shows a gradient fallback until an instructor uploads a real thumbnail (files live in MinIO, not in the seed).
 
 ## Security
 
@@ -55,7 +95,7 @@ Production never seeds, even if `Dev:Seed` is set accidentally.
 `SecurityHeadersMiddleware` sets CSP per environment from config:
 
 - **Development** — allows `localhost:8080`, `localhost:5173`, Swagger inline scripts
-- **Production** — strict whitelist (`placeholder.local` for seed thumbnails; no blanket `https:`)
+- **Production** — strict whitelist (`placeholder.local` for seeded learning-path thumbnails; no blanket `https:`)
 
 Additional directives: `frame-ancestors 'none'`, `object-src 'none'`, `base-uri 'self'`, `form-action 'self'`.
 
@@ -65,9 +105,39 @@ CSP on API responses is defence-in-depth (Swagger, error pages, iframe protectio
 
 `Program.cs` fails fast if `Jwt:Key` is missing, too short (< 32 bytes), still set to the `.env.example` placeholder, or if `Jwt:Issuer` / `Jwt:Audience` are missing.
 
-### Future — MinIO (Etap 2)
+## File storage — MinIO (Etap 2)
 
-When object storage is added, extend Production CSP `connect-src` and `img-src` with the MinIO/public CDN origin.
+Course thumbnails and lesson videos are stored in MinIO (S3-compatible object storage), never in the database. The bucket is private (`mc anonymous set none`) — every read and write goes through **presigned URLs** issued by the API after authorization checks.
+
+### Services
+
+| Service | Purpose | Port |
+| ------- | ------- | ---- |
+| `minio` | S3 API used by backend and browser | 9000 |
+| `minio` (console) | Web UI, login with `MINIO_ROOT_USER` / `MINIO_ROOT_PASSWORD` | 9001 |
+| `minio_init` | One-shot init: creates the bucket, disables anonymous access | — |
+
+Configuration lives in `.env` (`MINIO_ROOT_USER`, `MINIO_ROOT_PASSWORD`, `MINIO_BUCKET`, `MINIO_PUBLIC_ENDPOINT`). The API talks to MinIO internally via `http://minio:9000` and presigns URLs against the public endpoint (`http://localhost:9000` in dev) so the browser can use them directly.
+
+### Upload flows (instructor/admin only)
+
+- **Thumbnail** — `POST /api/courses/{id}/thumbnail/presign` → browser `PUT`s the file straight to MinIO → `POST .../thumbnail/confirm` verifies the object (max 5 MB) and stores the object key.
+- **Video (multipart)** — initiate upload → presign each 15 MB part → `PUT` parts to MinIO → complete (max 200 MB; oversized objects are deleted server-side). On failure the frontend aborts the multipart upload.
+- Allowed content types: `image/jpeg`, `image/png`, `image/webp` for thumbnails; `video/mp4`, `video/webm`, `video/quicktime` for videos.
+- Object keys are deterministic (`courses/{courseId}/thumbnail/source`, `courses/{courseId}/lessons/{lessonId}/video/source`) and are **never accepted from the client**.
+
+### Read access
+
+- **Thumbnails** — course DTOs return a presigned `thumbnailUrl` (15 min expiry); `null` when no thumbnail was uploaded.
+- **Videos** — `GET /api/courses/{courseId}/lessons/{lessonId}/video` returns a presigned URL (6 h expiry) only for enrolled students, the course owner or an admin (resource-based authorization).
+
+### Incomplete upload cleanup
+
+`MINIO_API_STALE_UPLOADS_EXPIRY: 72h` on the `minio` service — multipart uploads abandoned mid-way (e.g. closed browser tab) are purged automatically after 3 days.
+
+### CSP note
+
+Production CSP must include the MinIO/public CDN origin in `img-src`, `media-src` and `connect-src` (browser `PUT`s uploads via `fetch`).
 
 ## Development commands
 

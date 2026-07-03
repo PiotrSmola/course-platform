@@ -4,16 +4,13 @@
 
 <script setup lang="ts">
 import { computed } from 'vue'
-import { useCourseThumbnailUrl } from '@/features/courses/composables/useCourseAssets'
 
 const props = defineProps<{
-  courseId: string
+  url?: string | null
 }>()
 
-const query = useCourseThumbnailUrl(computed(() => props.courseId))
 const style = computed(() => {
-  const url = query.data.value
-  return url ? { backgroundImage: `url(${url})` } : undefined
+  return props.url ? { backgroundImage: `url(${props.url})` } : undefined
 })
 </script>
 
@@ -24,4 +21,3 @@ const style = computed(() => {
   background-position: center;
 }
 </style>
-

@@ -1,5 +1,6 @@
 using MediatR;
 using Microsoft.EntityFrameworkCore;
+using CoursePlatform.Application.Common.Helpers;
 using CoursePlatform.Application.Common.Interfaces;
 using CoursePlatform.Application.Common.Exceptions;
 using CoursePlatform.Domain.Enums;
@@ -13,7 +14,7 @@ public record InstructorCourseDto(
     string Title,
     CourseStatus Status,
     decimal Price,
-    string ThumbnailObjectKey,
+    string? ThumbnailUrl,
     int EnrollmentCount,
     int ModuleCount,
     int LessonCount,
@@ -23,11 +24,13 @@ public class GetInstructorCoursesQueryHandler : IRequestHandler<GetInstructorCou
 {
     private readonly IApplicationDbContext _context;
     private readonly ICurrentUserService _currentUserService;
+    private readonly IFileStorageService _fileStorage;
 
-    public GetInstructorCoursesQueryHandler(IApplicationDbContext context, ICurrentUserService currentUserService)
+    public GetInstructorCoursesQueryHandler(IApplicationDbContext context, ICurrentUserService currentUserService, IFileStorageService fileStorage)
     {
         _context = context;
         _currentUserService = currentUserService;
+        _fileStorage = fileStorage;
     }
 
     public async Task<List<InstructorCourseDto>> Handle(GetInstructorCoursesQuery request, CancellationToken cancellationToken)
@@ -39,20 +42,39 @@ public class GetInstructorCoursesQueryHandler : IRequestHandler<GetInstructorCou
 
         var instructorId = _currentUserService.UserId.Value;
 
-        return await _context.Courses
+        var rows = await _context.Courses
             .AsNoTracking()
             .Where(c => c.InstructorId == instructorId)
             .OrderByDescending(c => c.CreatedAt)
-            .Select(c => new InstructorCourseDto(
+            .Select(c => new
+            {
                 c.Id,
                 c.Title,
                 c.Status,
                 c.Price,
                 c.ThumbnailObjectKey,
-                c.Enrollments.Count,
-                c.Modules.Count,
-                c.Modules.SelectMany(m => m.Lessons).Count(),
-                c.CreatedAt))
+                EnrollmentCount = c.Enrollments.Count,
+                ModuleCount = c.Modules.Count,
+                LessonCount = c.Modules.SelectMany(m => m.Lessons).Count(),
+                c.CreatedAt
+            })
             .ToListAsync(cancellationToken);
+
+        var result = new List<InstructorCourseDto>(rows.Count);
+        foreach (var row in rows)
+        {
+            result.Add(new InstructorCourseDto(
+                row.Id,
+                row.Title,
+                row.Status,
+                row.Price,
+                await _fileStorage.GetThumbnailUrlOrNullAsync(row.ThumbnailObjectKey, cancellationToken),
+                row.EnrollmentCount,
+                row.ModuleCount,
+                row.LessonCount,
+                row.CreatedAt));
+        }
+
+        return result;
     }
 }

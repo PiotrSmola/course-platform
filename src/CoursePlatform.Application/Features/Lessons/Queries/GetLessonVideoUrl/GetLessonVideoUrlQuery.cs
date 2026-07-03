@@ -68,7 +68,7 @@ public class GetLessonVideoUrlQueryHandler : IRequestHandler<GetLessonVideoUrlQu
 
         var url = await _fileStorage.GetPresignedDownloadUrlAsync(
             lesson.VideoObjectKey,
-            TimeSpan.FromMinutes(10),
+            TimeSpan.FromHours(6),
             cancellationToken);
 
         return new LessonVideoUrlDto(url);

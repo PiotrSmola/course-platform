@@ -27,7 +27,7 @@ export interface LearningPathCourseItem {
   courseShortDescription: string
   coursePrice: number
   courseLevel: CourseLevel
-  courseThumbnailUrl: string
+  courseThumbnailUrl: string | null
   courseLanguage: string
   instructorName: string
 }

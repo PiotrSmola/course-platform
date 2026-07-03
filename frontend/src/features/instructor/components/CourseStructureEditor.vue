@@ -52,7 +52,7 @@
               :id="`lesson-video-file-${lesson.id}`"
               :ref="(el) => setVideoInputRef(el as HTMLInputElement, lesson.id)"
               type="file"
-              accept="video/*"
+              accept="video/mp4,video/webm,video/quicktime"
               class="sr-only"
               @change="onVideoInputChange(module.id, lesson.id, $event)"
             />
@@ -110,8 +110,7 @@
 <script setup lang="ts">
 import { computed, ref, watch } from 'vue'
 import type { ModuleDto } from '@/features/courses/types/course.types'
-import { useModuleMutations } from '@/features/instructor/composables/useInstructor'
-import { initiateLessonVideoUpload, presignLessonVideoPart, completeLessonVideoUpload } from '@/features/instructor/api/instructor.api'
+import { useModuleMutations, useLessonVideoUpload } from '@/features/instructor/composables/useInstructor'
 
 const props = defineProps<{
   courseId: string
@@ -173,7 +172,6 @@ function addLesson(moduleId: string, lessonCount: number) {
     moduleId,
     title: `Lekcja ${lessonCount + 1}`,
     description: '',
-    videoObjectKey: '',
     duration: 10,
     order: lessonCount
   })
@@ -185,7 +183,6 @@ function saveLesson(moduleId: string, lesson: ModuleDto['lessons'][number], inde
     lessonId: lesson.id,
     title: lesson.title,
     description: lesson.description ?? '',
-    videoObjectKey: lesson.videoObjectKey || '',
     duration: lesson.duration || 1,
     order: lesson.order ?? index
   })
@@ -200,6 +197,8 @@ const uploadState = ref<Record<string, { status?: string }>>({})
 const videoInputRefs = ref<Record<string, HTMLInputElement | null>>({})
 const selectedVideoFiles = ref<Record<string, File>>({})
 
+const videoUpload = useLessonVideoUpload(props.courseId)
+
 function setVideoInputRef(el: HTMLInputElement | null, lessonId: string) {
   videoInputRefs.value[lessonId] = el
 }
@@ -207,35 +206,21 @@ function setVideoInputRef(el: HTMLInputElement | null, lessonId: string) {
 function onVideoInputChange(moduleId: string, lessonId: string, event: Event) {
   const input = event.target as HTMLInputElement
   const file = input.files?.[0]
+  input.value = ''
   if (!file) return
   selectedVideoFiles.value[lessonId] = file
-  void onSelectVideoFile(moduleId, lessonId, file)
-}
-
-async function onSelectVideoFile(moduleId: string, lessonId: string, file: File) {
-  uploadState.value[lessonId] = { status: 'Inicjalizacja uploadu...' }
-
-  const init = await initiateLessonVideoUpload(props.courseId, lessonId, file.type || 'application/octet-stream')
-  const partSize = init.partSizeBytes
-  const parts: { partNumber: number; eTag: string }[] = []
-
-  const totalParts = Math.ceil(file.size / partSize)
-  for (let partNumber = 1; partNumber <= totalParts; partNumber++) {
-    uploadState.value[lessonId] = { status: `Upload part ${partNumber}/${totalParts}...` }
-    const start = (partNumber - 1) * partSize
-    const end = Math.min(start + partSize, file.size)
-    const chunk = file.slice(start, end)
-
-    const presign = await presignLessonVideoPart(props.courseId, lessonId, init.uploadId, partNumber)
-    const res = await fetch(presign.url, { method: 'PUT', body: chunk })
-    if (!res.ok) throw new Error(`Upload part failed: ${res.status}`)
-    const eTag = res.headers.get('etag') ?? ''
-    parts.push({ partNumber, eTag })
-  }
-
-  uploadState.value[lessonId] = { status: 'Finalizacja uploadu...' }
-  await completeLessonVideoUpload(props.courseId, lessonId, init.uploadId, parts)
-  uploadState.value[lessonId] = { status: 'Gotowe' }
+  videoUpload.mutate(
+    { lessonId, file, onStatus: (status) => { uploadState.value[lessonId] = { status } } },
+    {
+      onSuccess: () => {
+        uploadState.value[lessonId] = { status: 'Gotowe' }
+      },
+      onError: () => {
+        uploadState.value[lessonId] = {}
+        delete selectedVideoFiles.value[lessonId]
+      }
+    }
+  )
 }
 </script>
 

@@ -18,7 +18,7 @@
           </div>
         </div>
         <div class="hero-visual">
-          <CourseThumbnail class="glass-card course-thumb" :course-id="course.id" />
+          <CourseThumbnail class="glass-card course-thumb" :url="course.thumbnailUrl" />
         </div>
       </div>
 

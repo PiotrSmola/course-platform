@@ -41,4 +41,8 @@ public interface IFileStorageService
     Task<StoredObjectStat?> StatObjectAsync(
         string objectKey,
         CancellationToken cancellationToken = default);
+
+    Task DeleteObjectAsync(
+        string objectKey,
+        CancellationToken cancellationToken = default);
 }

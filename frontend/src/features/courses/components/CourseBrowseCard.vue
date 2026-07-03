@@ -1,6 +1,6 @@
 <template>
   <article class="course-card glass-card">
-    <CourseThumbnail class="course-thumb" :course-id="course.id" />
+    <CourseThumbnail class="course-thumb" :url="course.thumbnailUrl" />
       <span v-if="levelLabel" class="course-badge">{{ levelLabel }}</span>
     <div class="course-body">
       <h3 class="course-title">{{ course.title }}</h3>

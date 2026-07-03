@@ -60,7 +60,7 @@
           <input
             ref="thumbnailInputRef"
             type="file"
-            accept="image/*"
+            accept="image/jpeg,image/png,image/webp"
             class="sr-only"
             @change="onThumbnailInputChange"
           />
@@ -103,7 +103,6 @@
           </div>
           <span v-if="selectedThumbnailFile" class="file-name">{{ selectedThumbnailFile.name }}</span>
           <span v-if="thumbnailStatus" class="helper">{{ thumbnailStatus }}</span>
-          <span v-if="errors.thumbnailObjectKey" class="error">{{ errors.thumbnailObjectKey }}</span>
         </div>
         <div class="form-group">
           <label>Język</label>
@@ -130,8 +129,8 @@ import { useForm } from 'vee-validate'
 import { toTypedSchema } from '@vee-validate/zod'
 import { useQuery } from '@tanstack/vue-query'
 import { useCreateCourse, useUpdateCourse, useCourseDetails } from '@/features/courses/composables/useCourses'
-import { useCourseThumbnailUrl } from '@/features/courses/composables/useCourseAssets'
-import { getCategories, getTechnologies, presignCourseThumbnailUpload, confirmCourseThumbnailUpload } from '@/features/courses/api/courses.api'
+import { useCourseThumbnailUpload } from '@/features/instructor/composables/useInstructor'
+import { getCategories, getTechnologies } from '@/features/courses/api/courses.api'
 import { CourseLevel, CourseStatus } from '@/features/courses/types/course.types'
 import { createCourseSchema, updateCourseSchema } from '@/features/courses/schemas/course.schema'
 import CourseStructureEditor from '@/features/instructor/components/CourseStructureEditor.vue'
@@ -172,7 +171,6 @@ const { handleSubmit, defineField, errors, meta, resetForm } = useForm({
     price: 0,
     level: CourseLevel.Beginner,
     status: CourseStatus.Draft,
-    thumbnailObjectKey: '',
     language: 'English',
     categoryIds: [] as string[],
     technologyIds: [] as string[]
@@ -185,7 +183,6 @@ const [shortDescription] = defineField('shortDescription')
 const [price] = defineField('price')
 const [level] = defineField('level')
 const [status] = defineField('status')
-const [thumbnailObjectKey] = defineField('thumbnailObjectKey')
 const [language] = defineField('language')
 const [categoryIds] = defineField('categoryIds')
 const [technologyIds] = defineField('technologyIds')
@@ -194,9 +191,6 @@ const thumbnailStatus = ref<string>('')
 const thumbnailInputRef = ref<HTMLInputElement | null>(null)
 const selectedThumbnailFile = ref<File | null>(null)
 const newThumbnailPreviewUrl = ref<string>('')
-
-const thumbnailUrlQuery = useCourseThumbnailUrl(computed(() => props.id ?? ''))
-const currentThumbnailUrl = computed(() => thumbnailUrlQuery.data.value ?? '')
 
 watch(selectedThumbnailFile, (file) => {
   if (newThumbnailPreviewUrl.value) {
@@ -221,6 +215,7 @@ const technologies = computed(() => technologiesQuery.data.value ?? [])
 const courseQuery = useCourseDetails(() => props.id ?? '', () => !isNew.value)
 
 const course = computed(() => courseQuery.data.value)
+const currentThumbnailUrl = computed(() => course.value?.thumbnailUrl ?? '')
 
 watch(
   () => [courseQuery.data.value, categories.value, technologies.value] as const,
@@ -236,7 +231,6 @@ watch(
         price: data.price,
         level: data.level,
         status: data.status,
-        thumbnailObjectKey: data.thumbnailObjectKey,
         language: data.language,
         categoryIds: data.categoryNames.map(name => {
           const cat = cats.find(c => c.name === name)
@@ -259,7 +253,6 @@ const onSubmit = handleSubmit(async (values) => {
     shortDescription: values.shortDescription ?? '',
     price: values.price,
     level: values.level,
-    thumbnailObjectKey: values.thumbnailObjectKey ?? '',
     language: values.language,
     categoryIds: values.categoryIds ?? [],
     technologyIds: values.technologyIds ?? []
@@ -281,28 +274,27 @@ const onSubmit = handleSubmit(async (values) => {
   })
 })
 
+const thumbnailUpload = useCourseThumbnailUpload(props.id ?? '')
+
 function onThumbnailInputChange(event: Event) {
   const input = event.target as HTMLInputElement
   const file = input.files?.[0]
-  if (!file) return
+  input.value = ''
+  if (!file || !props.id) return
   selectedThumbnailFile.value = file
-  void uploadThumbnail(file)
-}
-
-async function uploadThumbnail(file: File) {
-  if (!props.id) return
-
-  thumbnailStatus.value = 'Generowanie URL do uploadu...'
-  const presign = await presignCourseThumbnailUpload(props.id, file.type || 'application/octet-stream')
-
-  thumbnailStatus.value = 'Upload miniaturki...'
-  const res = await fetch(presign.url, { method: 'PUT', body: file, headers: { 'Content-Type': file.type } })
-  if (!res.ok) throw new Error(`Thumbnail upload failed: ${res.status}`)
-
-  thumbnailStatus.value = 'Zapis miniaturki...'
-  await confirmCourseThumbnailUpload(props.id, presign.objectKey)
-  thumbnailObjectKey.value = presign.objectKey
-  thumbnailStatus.value = 'Gotowe'
+  thumbnailUpload.mutate(
+    { file, onStatus: (status) => { thumbnailStatus.value = status } },
+    {
+      onSuccess: () => {
+        thumbnailStatus.value = 'Gotowe'
+        selectedThumbnailFile.value = null
+      },
+      onError: () => {
+        thumbnailStatus.value = ''
+        selectedThumbnailFile.value = null
+      }
+    }
+  )
 }
 </script>
 

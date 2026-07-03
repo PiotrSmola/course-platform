@@ -1,4 +1,6 @@
 using FluentAssertions;
+using Moq;
+using CoursePlatform.Application.Common.Interfaces;
 using CoursePlatform.Application.Features.LearningPaths.Queries.GetLearningPathBySlug;
 using CoursePlatform.Domain.Entities;
 using CoursePlatform.Domain.Enums;
@@ -11,6 +13,7 @@ namespace CoursePlatform.Application.UnitTests.Features.LearningPaths.Queries;
 public class GetLearningPathBySlugQueryTests
 {
     private readonly TestDbContext _context;
+    private readonly Mock<IFileStorageService> _fileStorageMock;
 
     public GetLearningPathBySlugQueryTests()
     {
@@ -18,6 +21,7 @@ public class GetLearningPathBySlugQueryTests
             .UseInMemoryDatabase(Guid.NewGuid().ToString())
             .Options;
         _context = new TestDbContext(options);
+        _fileStorageMock = new Mock<IFileStorageService>();
     }
 
     [Fact]
@@ -81,7 +85,7 @@ public class GetLearningPathBySlugQueryTests
         _context.LearningPaths.Add(path);
         await _context.SaveChangesAsync();
 
-        var handler = new GetLearningPathBySlugQueryHandler(_context);
+        var handler = new GetLearningPathBySlugQueryHandler(_context, _fileStorageMock.Object);
         var result = await handler.Handle(new GetLearningPathBySlugQuery("path-slug"), CancellationToken.None);
 
         result.Courses.Should().HaveCount(1);
@@ -108,7 +112,7 @@ public class GetLearningPathBySlugQueryTests
         _context.LearningPaths.Add(path);
         await _context.SaveChangesAsync();
 
-        var handler = new GetLearningPathBySlugQueryHandler(_context);
+        var handler = new GetLearningPathBySlugQueryHandler(_context, _fileStorageMock.Object);
         var act = async () => await handler.Handle(new GetLearningPathBySlugQuery("unpublished-slug"), CancellationToken.None);
 
         await act.Should().ThrowAsync<NotFoundException>();

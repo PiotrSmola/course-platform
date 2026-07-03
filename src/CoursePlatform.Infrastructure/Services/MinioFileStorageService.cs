@@ -13,14 +13,16 @@ public class MinioFileStorageService : IFileStorageService
     private readonly IAmazonS3 _s3;
     private readonly MinioOptions _options;
     private readonly IAmazonS3 _presignS3;
-    private readonly Uri _publicEndpoint;
+    private readonly Protocol _presignProtocol;
 
     public MinioFileStorageService(IAmazonS3 s3, IOptions<MinioOptions> options)
     {
         _s3 = s3;
         _options = options.Value;
-        _publicEndpoint = NormalizePublicEndpoint(_options.PublicEndpoint);
         _presignS3 = CreatePresignClient(_options);
+        _presignProtocol = new Uri(_options.PublicEndpoint).Scheme.Equals(Uri.UriSchemeHttp, StringComparison.OrdinalIgnoreCase)
+            ? Protocol.HTTP
+            : Protocol.HTTPS;
     }
 
     public Task<string> GetPresignedDownloadUrlAsync(
@@ -33,9 +35,10 @@ public class MinioFileStorageService : IFileStorageService
             BucketName = _options.Bucket,
             Key = objectKey,
             Verb = HttpVerb.GET,
-            Expires = DateTime.UtcNow.Add(expiration)
+            Expires = DateTime.UtcNow.Add(expiration),
+            Protocol = _presignProtocol
         });
-        return Task.FromResult(NormalizeScheme(url));
+        return Task.FromResult(url);
     }
 
     public Task<string> GetPresignedPutUrlAsync(
@@ -50,9 +53,10 @@ public class MinioFileStorageService : IFileStorageService
             Key = objectKey,
             Verb = HttpVerb.PUT,
             Expires = DateTime.UtcNow.Add(expiration),
-            ContentType = contentType
+            ContentType = contentType,
+            Protocol = _presignProtocol
         });
-        return Task.FromResult(NormalizeScheme(url));
+        return Task.FromResult(url);
     }
 
     public async Task<string> CreateMultipartUploadAsync(
@@ -84,10 +88,11 @@ public class MinioFileStorageService : IFileStorageService
             Verb = HttpVerb.PUT,
             Expires = DateTime.UtcNow.Add(expiration),
             UploadId = uploadId,
-            PartNumber = partNumber
+            PartNumber = partNumber,
+            Protocol = _presignProtocol
         });
 
-        return Task.FromResult(NormalizeScheme(url));
+        return Task.FromResult(url);
     }
 
     public async Task CompleteMultipartUploadAsync(
@@ -141,9 +146,18 @@ public class MinioFileStorageService : IFileStorageService
         }
     }
 
+    public async Task DeleteObjectAsync(string objectKey, CancellationToken cancellationToken = default)
+    {
+        await _s3.DeleteObjectAsync(new DeleteObjectRequest
+        {
+            BucketName = _options.Bucket,
+            Key = objectKey
+        }, cancellationToken);
+    }
+
     private static IAmazonS3 CreatePresignClient(MinioOptions options)
     {
-        var publicEndpoint = NormalizePublicEndpoint(options.PublicEndpoint);
+        var publicEndpoint = new Uri(options.PublicEndpoint);
 
         var credentials = new BasicAWSCredentials(options.AccessKey, options.SecretKey);
 
@@ -156,27 +170,5 @@ public class MinioFileStorageService : IFileStorageService
         };
 
         return new AmazonS3Client(credentials, config);
-    }
-
-    private static Uri NormalizePublicEndpoint(string publicEndpoint)
-    {
-        var uri = new Uri(publicEndpoint);
-        if (uri.Scheme.Equals(Uri.UriSchemeHttps, StringComparison.OrdinalIgnoreCase) && uri.Port == 9000)
-        {
-            return new UriBuilder(uri) { Scheme = Uri.UriSchemeHttp, Port = 9000 }.Uri;
-        }
-
-        return uri;
-    }
-
-    private string NormalizeScheme(string presignedUrl)
-    {
-        if (_publicEndpoint.Scheme.Equals(Uri.UriSchemeHttp, StringComparison.OrdinalIgnoreCase)
-            && presignedUrl.StartsWith("https://", StringComparison.OrdinalIgnoreCase))
-        {
-            return "http://" + presignedUrl["https://".Length..];
-        }
-
-        return presignedUrl;
     }
 }

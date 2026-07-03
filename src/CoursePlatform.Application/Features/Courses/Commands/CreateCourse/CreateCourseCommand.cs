@@ -13,7 +13,6 @@ public record CreateCourseCommand(
     string ShortDescription,
     decimal Price,
     CourseLevel Level,
-    string ThumbnailObjectKey,
     string Language,
     List<Guid> CategoryIds,
     List<Guid> TechnologyIds) : IRequest<Guid>;
@@ -64,7 +63,6 @@ public class CreateCourseCommandHandler : IRequestHandler<CreateCourseCommand, G
             Price = request.Price,
             Level = request.Level,
             Status = CourseStatus.Draft,
-            ThumbnailObjectKey = request.ThumbnailObjectKey,
             Language = request.Language,
             InstructorId = _currentUserService.UserId.Value,
             Categories = categories,

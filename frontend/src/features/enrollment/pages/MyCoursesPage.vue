@@ -15,7 +15,7 @@
       </div>
       <div v-else class="courses-grid">
         <div v-for="e in enrollments" :key="e.id" class="course-card glass-card">
-          <div class="course-thumb" :style="{ backgroundImage: `url(${e.courseThumbnailUrl})` }"></div>
+          <div class="course-thumb" :style="e.courseThumbnailUrl ? { backgroundImage: `url(${e.courseThumbnailUrl})` } : undefined"></div>
           <div class="course-info">
             <h3>{{ e.courseTitle }}</h3>
             <div class="progress-bar">

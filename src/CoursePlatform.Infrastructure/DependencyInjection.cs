@@ -8,7 +8,6 @@ using CoursePlatform.Infrastructure.Services;
 using CoursePlatform.Infrastructure.Identity;
 using CoursePlatform.Infrastructure.Options;
 using Amazon.S3;
-using Amazon.S3.Model;
 using Amazon.Runtime;
 
 namespace CoursePlatform.Infrastructure;
@@ -54,7 +53,7 @@ public static class DependencyInjection
 
         services.AddScoped<IApplicationDbContext>(provider => provider.GetRequiredService<ApplicationDbContext>());
         services.AddScoped<ICurrentUserService, CurrentUserService>();
-        services.AddScoped<IFileStorageService, MinioFileStorageService>();
+        services.AddSingleton<IFileStorageService, MinioFileStorageService>();
         services.AddScoped<IJwtTokenGenerator, JwtTokenGenerator>();
         services.AddSingleton<IDateTimeService, DateTimeService>();
         services.AddSingleton<IHtmlSanitizer, HtmlSanitizerWrapper>();

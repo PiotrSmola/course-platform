@@ -17,7 +17,7 @@ export interface CourseListDto {
   price: number
   level: CourseLevel
   status: CourseStatus
-  thumbnailObjectKey: string
+  thumbnailUrl: string | null
   instructorName: string
   language: string
   categoryNames: string[]
@@ -80,7 +80,7 @@ export interface CourseDetailsDto {
   price: number
   level: CourseLevel
   status: CourseStatus
-  thumbnailObjectKey: string
+  thumbnailUrl: string | null
   language: string
   instructorId: string
   instructorName: string
@@ -101,13 +101,9 @@ export interface InstructorCourseDto {
   title: string
   status: CourseStatus
   price: number
-  thumbnailObjectKey: string
+  thumbnailUrl: string | null
   enrollmentCount: number
   moduleCount: number
   lessonCount: number
   createdAt: string
-}
-
-export interface PresignedUrlDto {
-  url: string
 }

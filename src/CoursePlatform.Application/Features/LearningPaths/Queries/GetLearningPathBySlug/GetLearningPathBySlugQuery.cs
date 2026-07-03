@@ -1,5 +1,6 @@
 using MediatR;
 using Microsoft.EntityFrameworkCore;
+using CoursePlatform.Application.Common.Helpers;
 using CoursePlatform.Application.Common.Interfaces;
 using CoursePlatform.Application.Common.Exceptions;
 using CoursePlatform.Domain.Enums;
@@ -11,10 +12,12 @@ public record GetLearningPathBySlugQuery(string Slug) : IRequest<LearningPathDet
 public class GetLearningPathBySlugQueryHandler : IRequestHandler<GetLearningPathBySlugQuery, LearningPathDetailsDto>
 {
     private readonly IApplicationDbContext _context;
+    private readonly IFileStorageService _fileStorage;
 
-    public GetLearningPathBySlugQueryHandler(IApplicationDbContext context)
+    public GetLearningPathBySlugQueryHandler(IApplicationDbContext context, IFileStorageService fileStorage)
     {
         _context = context;
+        _fileStorage = fileStorage;
     }
 
     public async Task<LearningPathDetailsDto> Handle(GetLearningPathBySlugQuery request, CancellationToken cancellationToken)
@@ -31,10 +34,15 @@ public class GetLearningPathBySlugQueryHandler : IRequestHandler<GetLearningPath
             throw new NotFoundException($"Learning path '{request.Slug}' not found.");
         }
 
-        var courses = path.PathCourses
+        var pathCourses = path.PathCourses
             .Where(pc => pc.Course.Status == CourseStatus.Published)
             .OrderBy(pc => pc.Order)
-            .Select(pc => new LearningPathCourseItemDto(
+            .ToList();
+
+        var courses = new List<LearningPathCourseItemDto>(pathCourses.Count);
+        foreach (var pc in pathCourses)
+        {
+            courses.Add(new LearningPathCourseItemDto(
                 pc.Id,
                 pc.Order,
                 pc.IsOptional,
@@ -43,10 +51,10 @@ public class GetLearningPathBySlugQueryHandler : IRequestHandler<GetLearningPath
                 pc.Course.ShortDescription,
                 pc.Course.Price,
                 pc.Course.Level,
-                pc.Course.ThumbnailObjectKey,
+                await _fileStorage.GetThumbnailUrlOrNullAsync(pc.Course.ThumbnailObjectKey, cancellationToken),
                 pc.Course.Language,
-                $"{pc.Course.Instructor.FirstName} {pc.Course.Instructor.LastName}"))
-            .ToList();
+                $"{pc.Course.Instructor.FirstName} {pc.Course.Instructor.LastName}"));
+        }
 
         return new LearningPathDetailsDto(
             path.Id,

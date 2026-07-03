@@ -1,5 +1,6 @@
 using MediatR;
 using Microsoft.EntityFrameworkCore;
+using CoursePlatform.Application.Common.Helpers;
 using CoursePlatform.Application.Common.Interfaces;
 using CoursePlatform.Domain.Enums;
 
@@ -23,11 +24,13 @@ public class GetCoursesQueryHandler : IRequestHandler<GetCoursesQuery, CoursesVm
 {
     private readonly IApplicationDbContext _context;
     private readonly ICurrentUserService _currentUserService;
+    private readonly IFileStorageService _fileStorage;
 
-    public GetCoursesQueryHandler(IApplicationDbContext context, ICurrentUserService currentUserService)
+    public GetCoursesQueryHandler(IApplicationDbContext context, ICurrentUserService currentUserService, IFileStorageService fileStorage)
     {
         _context = context;
         _currentUserService = currentUserService;
+        _fileStorage = fileStorage;
     }
 
     public async Task<CoursesVm> Handle(GetCoursesQuery request, CancellationToken cancellationToken)
@@ -108,10 +111,11 @@ public class GetCoursesQueryHandler : IRequestHandler<GetCoursesQuery, CoursesVm
             _ => query.OrderByDescending(c => c.CreatedAt)
         };
 
-        var items = await query
+        var rows = await query
             .Skip((request.PageNumber - 1) * request.PageSize)
             .Take(request.PageSize)
-            .Select(c => new CourseListDto(
+            .Select(c => new
+            {
                 c.Id,
                 c.Title,
                 c.ShortDescription,
@@ -119,15 +123,37 @@ public class GetCoursesQueryHandler : IRequestHandler<GetCoursesQuery, CoursesVm
                 c.Level,
                 c.Status,
                 c.ThumbnailObjectKey,
-                $"{c.Instructor.FirstName} {c.Instructor.LastName}",
+                InstructorName = $"{c.Instructor.FirstName} {c.Instructor.LastName}",
                 c.Language,
-                c.Categories.Select(cat => cat.Name).ToList(),
-                c.Technologies.Select(tech => tech.Name).ToList(),
-                c.Modules.Count,
-                c.Modules.SelectMany(m => m.Lessons).Count(),
-                c.Reviews.Any() ? c.Reviews.Average(r => r.Rating) : 0,
-                c.Reviews.Count))
+                CategoryNames = c.Categories.Select(cat => cat.Name).ToList(),
+                TechnologyNames = c.Technologies.Select(tech => tech.Name).ToList(),
+                ModuleCount = c.Modules.Count,
+                LessonCount = c.Modules.SelectMany(m => m.Lessons).Count(),
+                AverageRating = c.Reviews.Any() ? c.Reviews.Average(r => r.Rating) : 0,
+                ReviewCount = c.Reviews.Count
+            })
             .ToListAsync(cancellationToken);
+
+        var items = new List<CourseListDto>(rows.Count);
+        foreach (var row in rows)
+        {
+            items.Add(new CourseListDto(
+                row.Id,
+                row.Title,
+                row.ShortDescription,
+                row.Price,
+                row.Level,
+                row.Status,
+                await _fileStorage.GetThumbnailUrlOrNullAsync(row.ThumbnailObjectKey, cancellationToken),
+                row.InstructorName,
+                row.Language,
+                row.CategoryNames,
+                row.TechnologyNames,
+                row.ModuleCount,
+                row.LessonCount,
+                row.AverageRating,
+                row.ReviewCount));
+        }
 
         return new CoursesVm(items, totalCount);
     }

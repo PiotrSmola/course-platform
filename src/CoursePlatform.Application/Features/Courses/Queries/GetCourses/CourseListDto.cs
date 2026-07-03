@@ -9,7 +9,7 @@ public record CourseListDto(
     decimal Price,
     CourseLevel Level,
     CourseStatus Status,
-    string ThumbnailObjectKey,
+    string? ThumbnailUrl,
     string InstructorName,
     string Language,
     IReadOnlyCollection<string> CategoryNames,

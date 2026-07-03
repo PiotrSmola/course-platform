@@ -24,16 +24,16 @@ public class InitiateLessonVideoUploadCommandValidator : AbstractValidator<Initi
     {
         RuleFor(x => x.CourseId).NotEmpty();
         RuleFor(x => x.LessonId).NotEmpty();
-        RuleFor(x => x.ContentType).NotEmpty().MaximumLength(200);
+        RuleFor(x => x.ContentType)
+            .NotEmpty()
+            .Must(ct => UploadLimits.AllowedVideoContentTypes.Contains(ct))
+            .WithMessage("Unsupported video content type. Allowed: video/mp4, video/webm, video/quicktime.");
     }
 }
 
 public class InitiateLessonVideoUploadCommandHandler
     : IRequestHandler<InitiateLessonVideoUploadCommand, InitiateLessonVideoUploadResult>
 {
-    private const int PartSizeBytes = 15 * 1024 * 1024;
-    private const int MaxParts = 10000;
-
     private readonly IApplicationDbContext _context;
     private readonly ICurrentUserService _currentUserService;
     private readonly IFileStorageService _fileStorage;
@@ -67,7 +67,7 @@ public class InitiateLessonVideoUploadCommandHandler
         var objectKey = ObjectKeyBuilder.LessonVideoObjectKey(request.CourseId, request.LessonId);
         var uploadId = await _fileStorage.CreateMultipartUploadAsync(objectKey, request.ContentType, cancellationToken);
 
-        return new InitiateLessonVideoUploadResult(objectKey, uploadId, PartSizeBytes, MaxParts);
+        return new InitiateLessonVideoUploadResult(objectKey, uploadId, UploadLimits.VideoPartSizeBytes, UploadLimits.MaxVideoParts);
     }
 }
 
