@@ -6,6 +6,7 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.EntityFrameworkCore;
 using CoursePlatform.Domain.Entities;
+using CoursePlatform.Application.Common.Interfaces;
 using Serilog;
 using System.Threading.RateLimiting;
 
@@ -166,6 +167,16 @@ using (var scope = app.Services.CreateScope())
         {
             var userManager = scope.ServiceProvider.GetRequiredService<UserManager<ApplicationUser>>();
             await ApplicationDbContextSeed.SeedAsync(context, userManager, roleManager);
+
+            var elasticEnabled = builder.Configuration.GetValue("Elastic:Enabled", false);
+            if (elasticEnabled)
+            {
+                var indexing = scope.ServiceProvider.GetService<ICourseIndexingService>();
+                if (indexing != null)
+                {
+                    await indexing.ReindexCoursesAsync(CancellationToken.None);
+                }
+            }
         }
     }
 }

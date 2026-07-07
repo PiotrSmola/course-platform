@@ -17,6 +17,7 @@ public record CourseListDto(
     int ModuleCount,
     int LessonCount,
     double AverageRating,
-    int ReviewCount);
+    int ReviewCount,
+    IReadOnlyCollection<string> MatchedBy);
 
 public record CoursesVm(IReadOnlyCollection<CourseListDto> Items, int TotalCount);

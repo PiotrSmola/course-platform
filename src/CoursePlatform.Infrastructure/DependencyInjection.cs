@@ -7,8 +7,10 @@ using CoursePlatform.Infrastructure.Persistence;
 using CoursePlatform.Infrastructure.Services;
 using CoursePlatform.Infrastructure.Identity;
 using CoursePlatform.Infrastructure.Options;
+using CoursePlatform.Infrastructure.Search;
 using Amazon.S3;
 using Amazon.Runtime;
+using Elastic.Clients.Elasticsearch;
 
 namespace CoursePlatform.Infrastructure;
 
@@ -33,6 +35,7 @@ public static class DependencyInjection
         });
 
         services.Configure<MinioOptions>(configuration.GetSection("Minio"));
+        services.Configure<ElasticOptions>(configuration.GetSection("Elastic"));
 
         services.AddSingleton<IAmazonS3>(sp =>
         {
@@ -57,6 +60,23 @@ public static class DependencyInjection
         services.AddScoped<IJwtTokenGenerator, JwtTokenGenerator>();
         services.AddSingleton<IDateTimeService, DateTimeService>();
         services.AddSingleton<IHtmlSanitizer, HtmlSanitizerWrapper>();
+
+        var elasticOptions = configuration.GetSection("Elastic").Get<ElasticOptions>() ?? new ElasticOptions();
+        if (elasticOptions.Enabled && !environment.IsEnvironment("Testing"))
+        {
+            services.AddSingleton(sp =>
+            {
+                var opts = sp.GetRequiredService<Microsoft.Extensions.Options.IOptions<ElasticOptions>>().Value;
+                var settings = new ElasticsearchClientSettings(new Uri(opts.Uri));
+                return new ElasticsearchClient(settings);
+            });
+            services.AddScoped<ICourseSearchService, ElasticCourseSearchService>();
+            services.AddScoped<ICourseIndexingService, ElasticCourseIndexingService>();
+        }
+        else
+        {
+            services.AddScoped<ICourseSearchService, EfCourseSearchService>();
+        }
 
         return services;
     }

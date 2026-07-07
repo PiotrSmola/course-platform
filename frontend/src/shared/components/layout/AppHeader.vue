@@ -125,8 +125,13 @@
                   :to="{ name: 'CourseDetails', params: { id: course.id } }"
                   @click="searchOpen = false"
                 >
-                  <span class="search-result-title">{{ course.title }}</span>
-                  <span class="search-result-meta">{{ course.instructorName }} · {{ course.averageRating.toFixed(1) }} ★</span>
+                  <div class="search-result-info">
+                    <span class="search-result-title">{{ course.title }}</span>
+                    <span class="search-result-meta">{{ course.instructorName }} · {{ course.averageRating.toFixed(1) }} ★</span>
+                  </div>
+                  <span v-if="course.matchedBy.length" class="search-result-matched-by">
+                    {{ formatMatchedBy(course.matchedBy) }}
+                  </span>
                 </router-link>
               </div>
             </div>
@@ -254,6 +259,18 @@ function itemLink(item: { slug: string }) {
     name: isTech ? 'TechnologyDetails' : 'CategoryDetails',
     params: { slug: item.slug }
   }
+}
+
+const matchedByLabels: Record<string, string> = {
+  title: 'Tytuł',
+  instructor: 'Autor',
+  tags: 'Tagi'
+}
+
+function formatMatchedBy(matchedBy: string[]): string {
+  return matchedBy
+    .map((key) => matchedByLabels[key] || key)
+    .join(' · ')
 }
 
 function toggleSearch() {
@@ -830,8 +847,10 @@ onUnmounted(() => {
 
 .search-result-item {
   display: flex;
-  flex-direction: column;
-  gap: 2px;
+  flex-direction: row;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
   padding: 10px 12px;
   border-radius: 10px;
   text-decoration: none;
@@ -840,6 +859,13 @@ onUnmounted(() => {
   &:hover {
     background: rgba(255, 255, 255, 0.06);
   }
+}
+
+.search-result-info {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
 }
 
 .search-result-title {
@@ -851,5 +877,14 @@ onUnmounted(() => {
 .search-result-meta {
   font-size: 0.78rem;
   color: $color-muted;
+}
+
+.search-result-matched-by {
+  flex-shrink: 0;
+  font-size: 0.7rem;
+  font-weight: 500;
+  color: $color-gold;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
 }
 </style>

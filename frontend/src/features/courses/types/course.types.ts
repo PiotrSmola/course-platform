@@ -26,6 +26,7 @@ export interface CourseListDto {
   lessonCount: number
   averageRating: number
   reviewCount: number
+  matchedBy: string[]
 }
 
 export interface CoursesVm {

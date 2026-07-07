@@ -13,6 +13,19 @@ services:
     volumes:
       - pgdata:/var/lib/postgresql/data
 
+  elasticsearch:
+    image: docker.elastic.co/elasticsearch/elasticsearch:8.19.0
+    container_name: cp_elasticsearch
+    environment:
+      discovery.type: single-node
+      xpack.security.enabled: "false"
+      xpack.security.http.ssl.enabled: "false"
+      ES_JAVA_OPTS: -Xms512m -Xmx512m
+    ports:
+      - "9200:9200"
+    volumes:
+      - esdata:/usr/share/elasticsearch/data
+
   minio:
     image: minio/minio:latest
     container_name: cp_minio
@@ -69,6 +82,9 @@ services:
       Minio__SecretKey: ${MINIO_ROOT_PASSWORD:-minio12345}
       Minio__Bucket: ${MINIO_BUCKET:-course-platform}
       Minio__Region: us-east-1
+      Elastic__Enabled: ${ELASTIC_ENABLED:-true}
+      Elastic__Uri: http://elasticsearch:9200
+      Elastic__CourseIndexName: ${ELASTIC_COURSE_INDEX_NAME:-courseplatform-courses}
     ports:
       - "8080:8080"
     volumes:
@@ -76,7 +92,7 @@ services:
     depends_on:
       - db
       - minio
-    mem_limit: 2g
+      - elasticsearch
 
   frontend:
     build:
@@ -94,3 +110,4 @@ services:
 volumes:
   pgdata:
   miniodata:
+  esdata:

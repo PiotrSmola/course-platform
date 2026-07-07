@@ -6,6 +6,7 @@ using CoursePlatform.Domain.Entities;
 using CoursePlatform.Domain.Enums;
 using Microsoft.EntityFrameworkCore;
 using CoursePlatform.Application.UnitTests.Common;
+using CoursePlatform.Infrastructure.Search;
 
 namespace CoursePlatform.Application.UnitTests.Features.Courses.Queries;
 
@@ -71,7 +72,8 @@ public class GetCoursesQueryTests
         _currentUserServiceMock.Setup(x => x.UserId).Returns((Guid?)null);
         _currentUserServiceMock.Setup(x => x.IsAdmin).Returns(false);
 
-        var handler = new GetCoursesQueryHandler(_context, _currentUserServiceMock.Object, _fileStorageMock.Object);
+        var searchService = new EfCourseSearchService(_context);
+        var handler = new GetCoursesQueryHandler(_currentUserServiceMock.Object, _fileStorageMock.Object, searchService);
         var result = await handler.Handle(new GetCoursesQuery(null, null, CourseStatus.Draft, null, null, null, null, null, null, null), CancellationToken.None);
 
         result.Items.Should().ContainSingle(c => c.Title == "Published");
@@ -107,7 +109,8 @@ public class GetCoursesQueryTests
         _currentUserServiceMock.Setup(x => x.UserId).Returns(Guid.NewGuid());
         _currentUserServiceMock.Setup(x => x.IsAdmin).Returns(false);
 
-        var handler = new GetCoursesQueryHandler(_context, _currentUserServiceMock.Object, _fileStorageMock.Object);
+        var searchService = new EfCourseSearchService(_context);
+        var handler = new GetCoursesQueryHandler(_currentUserServiceMock.Object, _fileStorageMock.Object, searchService);
         var result = await handler.Handle(
             new GetCoursesQuery(null, null, CourseStatus.Published, null, null, null, null, null, null, null),
             CancellationToken.None);
@@ -161,7 +164,8 @@ public class GetCoursesQueryTests
         _currentUserServiceMock.Setup(x => x.UserId).Returns((Guid?)null);
         _currentUserServiceMock.Setup(x => x.IsAdmin).Returns(false);
 
-        var handler = new GetCoursesQueryHandler(_context, _currentUserServiceMock.Object, _fileStorageMock.Object);
+        var searchService = new EfCourseSearchService(_context);
+        var handler = new GetCoursesQueryHandler(_currentUserServiceMock.Object, _fileStorageMock.Object, searchService);
         var result = await handler.Handle(
             new GetCoursesQuery("Vue", null, null, null, null, null, null, null, null, null),
             CancellationToken.None);
