@@ -51,6 +51,15 @@ const routes: RouteRecordRaw[] = [
     ]
   },
   {
+    path: '/payment',
+    component: () => import('@/app/layouts/DashboardLayout.vue'),
+    beforeEnter: authGuard,
+    children: [
+      { path: 'success', component: () => import('@/features/payments/pages/PaymentSuccessPage.vue'), name: 'PaymentSuccess' },
+      { path: 'cancel', component: () => import('@/features/payments/pages/PaymentCancelPage.vue'), name: 'PaymentCancel' }
+    ]
+  },
+  {
     path: '/learn/:courseId/:lessonId',
     component: () => import('@/app/layouts/DashboardLayout.vue'),
     beforeEnter: authGuard,

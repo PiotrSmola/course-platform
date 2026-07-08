@@ -92,6 +92,11 @@ services:
       Elastic__Enabled: ${ELASTIC_ENABLED:-true}
       Elastic__Uri: http://elasticsearch:9200
       Elastic__CourseIndexName: ${ELASTIC_COURSE_INDEX_NAME:-courseplatform-courses}
+      Stripe__SecretKey: ${STRIPE_SECRET_KEY:-}
+      Stripe__WebhookSecret: ${STRIPE_WEBHOOK_SECRET:-}
+      Stripe__Currency: ${STRIPE_CURRENCY:-pln}
+      Stripe__SuccessUrl: ${STRIPE_SUCCESS_URL:-http://localhost:5173/payment/success}
+      Stripe__CancelUrl: ${STRIPE_CANCEL_URL:-http://localhost:5173/payment/cancel}
     ports:
       - "8080:8080"
     volumes:
@@ -104,6 +109,14 @@ services:
       elasticsearch:
         condition: service_healthy
     mem_limit: 2g
+
+  stripe_cli:
+    image: stripe/stripe-cli:latest
+    container_name: cp_stripe_cli
+    profiles: ["stripe"]
+    command: listen --api-key ${STRIPE_SECRET_KEY} --forward-to http://api:8080/api/payments/webhook
+    depends_on:
+      - api
 
   frontend:
     build:

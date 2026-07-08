@@ -39,6 +39,11 @@ public class EnrollCommandHandler : IRequestHandler<EnrollCommand, Guid>
             throw new ForbiddenAccessException("Course is not published.");
         }
 
+        if (course.Price > 0)
+        {
+            throw new ValidationException(new[] { new ValidationFailure("CourseId", "Ten kurs jest płatny — wymaga zakupu.") });
+        }
+
         var existing = await _context.Enrollments
             .FirstOrDefaultAsync(e => e.UserId == _currentUserService.UserId.Value && e.CourseId == request.CourseId, cancellationToken);
 

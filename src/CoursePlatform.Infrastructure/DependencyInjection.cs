@@ -36,6 +36,7 @@ public static class DependencyInjection
 
         services.Configure<MinioOptions>(configuration.GetSection("Minio"));
         services.Configure<ElasticOptions>(configuration.GetSection("Elastic"));
+        services.Configure<StripeOptions>(configuration.GetSection("Stripe"));
 
         services.AddSingleton<IAmazonS3>(sp =>
         {
@@ -60,6 +61,7 @@ public static class DependencyInjection
         services.AddScoped<IJwtTokenGenerator, JwtTokenGenerator>();
         services.AddSingleton<IDateTimeService, DateTimeService>();
         services.AddSingleton<IHtmlSanitizer, HtmlSanitizerWrapper>();
+        services.AddSingleton<IPaymentGateway, StripePaymentGateway>();
 
         services.AddScoped<EfCourseSearchService>();
 

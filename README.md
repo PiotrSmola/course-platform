@@ -164,6 +164,39 @@ The result is a standard media file (e.g. `video/mp4`) — share it like any oth
 
 Production CSP must include the MinIO/public CDN origin in `img-src`, `media-src` and `connect-src` (browser `PUT`s uploads via `fetch`).
 
+## Payments — Stripe test mode (Etap 3)
+
+Paid courses are purchased through **Stripe Checkout** in test mode. The enrollment is created **only by the webhook** (`checkout.session.completed`) after Stripe confirms the payment — never from the browser redirect. Free courses (price 0) enroll directly without Stripe.
+
+### Flow
+
+1. `POST /api/payments/checkout` (authorized) — verifies the course and price server-side, stores a `Payment` row (`Pending`) and returns the Stripe Checkout URL.
+2. The browser is redirected to Stripe; the user pays with a test card.
+3. Stripe calls `POST /api/payments/webhook` — signature is verified, the amount is compared against the stored payment, the payment becomes `Completed` and the enrollment is created (idempotent; `checkout.session.expired` marks abandoned sessions `Expired`).
+4. The browser lands on `/payment/success`, which polls `GET /api/payments/{sessionId}` until the webhook finishes.
+
+Direct enrollment (`POST /api/enrollments`) rejects paid courses, so payment cannot be bypassed.
+
+### Setup (dev)
+
+1. Create a free Stripe account and copy the **test** secret key (`sk_test_...`) from [dashboard.stripe.com/test/apikeys](https://dashboard.stripe.com/test/apikeys) into `.env` as `STRIPE_SECRET_KEY`.
+2. Start the webhook forwarder (separate compose profile, so the stack runs without it):
+
+   ```bash
+   docker compose --profile stripe up -d stripe_cli
+   docker compose logs stripe_cli   # prints: Your webhook signing secret is whsec_...
+   ```
+
+3. Copy the printed `whsec_...` into `.env` as `STRIPE_WEBHOOK_SECRET` and restart the API:
+
+   ```bash
+   docker compose restart api
+   ```
+
+4. Test with card `4242 4242 4242 4242`, any future expiry date and any CVC.
+
+Without the keys the API responds to checkout attempts with a validation error ("Płatności są chwilowo niedostępne") — the rest of the app works normally.
+
 ## Development commands
 
 All commands run inside Docker containers:

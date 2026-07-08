@@ -12,7 +12,17 @@
             <span class="badge price">{{ course.price }} zł</span>
           </div>
           <div class="actions" v-if="!isInstructor">
-            <button class="btn btn-primary" @click="enroll" v-if="authStore.isAuthenticated && !isEnrolled">Zapisz się</button>
+            <template v-if="authStore.isAuthenticated && !isEnrolled">
+              <button
+                v-if="isPaid"
+                class="btn btn-primary"
+                :disabled="checkoutMutation.isPending.value"
+                @click="buy"
+              >
+                {{ checkoutMutation.isPending.value ? 'Przekierowujemy...' : `Kup teraz — ${course.price} zł` }}
+              </button>
+              <button v-else class="btn btn-primary" @click="enroll">Zapisz się</button>
+            </template>
             <router-link class="btn btn-primary" :to="{ name: 'MyCourses' }" v-else-if="authStore.isAuthenticated && isEnrolled">Przejdź do kursu</router-link>
             <router-link class="btn btn-primary" :to="{ name: 'Login', query: { redirect: route.fullPath } }" v-else>Zaloguj się, aby zapisać</router-link>
           </div>
@@ -101,6 +111,7 @@ import { useRoute } from 'vue-router'
 import { useAuthStore } from '@/features/auth/stores/auth.store'
 import { useCourseDetails } from '@/features/courses/composables/useCourses'
 import { useEnroll } from '@/features/enrollment/composables/useEnrollment'
+import { useCreateCheckout } from '@/features/payments/composables/usePayments'
 import { useCreateReview } from '@/features/reviews/composables/useReviews'
 import { CourseLevel } from '@/features/courses/types/course.types'
 import CourseThumbnail from '@/shared/components/media/CourseThumbnail.vue'
@@ -114,8 +125,11 @@ const reviewRating = ref(5)
 const reviewComment = ref('')
 const createReview = useCreateReview(() => route.params.id as string)
 
+const checkoutMutation = useCreateCheckout()
+
 const isInstructor = computed(() => authStore.user?.id === course.value?.instructorId)
 const isEnrolled = computed(() => course.value?.isEnrolled ?? false)
+const isPaid = computed(() => (course.value?.price ?? 0) > 0)
 
 const levelLabel = computed(() => {
   if (!course.value) return ''
@@ -130,6 +144,11 @@ const levelLabel = computed(() => {
 const enroll = () => {
   if (!course.value) return
   enrollMutation.mutate(course.value.id)
+}
+
+const buy = () => {
+  if (!course.value) return
+  checkoutMutation.mutate(course.value.id)
 }
 
 function submitReview() {
