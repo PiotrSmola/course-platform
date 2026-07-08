@@ -131,6 +131,31 @@ Configuration lives in `.env` (`MINIO_ROOT_USER`, `MINIO_ROOT_PASSWORD`, `MINIO_
 - **Thumbnails** — course DTOs return a presigned `thumbnailUrl` (15 min expiry); `null` when no thumbnail was uploaded.
 - **Videos** — `GET /api/courses/{courseId}/lessons/{lessonId}/video` returns a presigned URL (6 h expiry) only for enrolled students, the course owner or an admin (resource-based authorization).
 
+### Exporting stored files (e.g. sharing a lesson video)
+
+Objects in the MinIO volume are not plain files on disk (each object is a directory with `xl.meta` and `part.N` chunks), so don't copy them from the volume directly — download them through MinIO, which reassembles the object into a regular file.
+
+**Step 1 — find the object key.** Every lesson row stores its key in `VideoObjectKey`:
+
+```bash
+docker compose exec db psql -U postgres -d courseplatform -c \
+  "SELECT l.\"Id\", l.\"Title\", l.\"VideoObjectKey\" FROM \"Lessons\" l WHERE l.\"VideoObjectKey\" IS NOT NULL;"
+```
+
+**Step 2 — download the file.** Run from the directory where you want the file saved (uses the `minio/mc` image already present in the stack; credentials are your `.env` values):
+
+```bash
+docker run --rm --network course-platform_default -v .:/out --entrypoint sh minio/mc -c "
+  mc alias set local http://minio:9000 <MINIO_ROOT_USER> <MINIO_ROOT_PASSWORD> &&
+  mc cp local/course-platform/<VideoObjectKey> /out/lesson-video.mp4"
+```
+
+Example key: `courses/<courseId>/lessons/<lessonId>/video/source`. Thumbnails work the same way (`courses/<courseId>/thumbnail/source`).
+
+**Alternative (GUI):** open the MinIO console at `http://localhost:9001`, log in with `MINIO_ROOT_USER` / `MINIO_ROOT_PASSWORD`, browse the `course-platform` bucket following the object key path and click **Download**.
+
+The result is a standard media file (e.g. `video/mp4`) — share it like any other file. Note that this path bypasses application authorization (it uses storage root credentials), so it is a dev/ops tool, not something to expose to users.
+
 ### Incomplete upload cleanup
 
 `MINIO_API_STALE_UPLOADS_EXPIRY: 72h` on the `minio` service — multipart uploads abandoned mid-way (e.g. closed browser tab) are purged automatically after 3 days.
