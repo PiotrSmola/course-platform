@@ -1,4 +1,4 @@
-import { computed } from 'vue'
+import { computed, type Ref } from 'vue'
 import { useQuery } from '@tanstack/vue-query'
 import { getCategories, getTechnologies, getCourses } from '@/features/courses/api/courses.api'
 import type { CategoryDto, TechnologyDto } from '@/features/courses/api/courses.api'
@@ -20,7 +20,7 @@ export function useTechnologies() {
   })
 }
 
-export function useCourseSearch(searchTerm: { value: string }) {
+export function useCourseSearch(searchTerm: Ref<string>) {
   const term = computed(() => searchTerm.value.trim())
 
   return useQuery({

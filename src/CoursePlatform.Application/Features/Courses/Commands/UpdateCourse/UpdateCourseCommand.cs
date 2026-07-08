@@ -23,12 +23,14 @@ public class UpdateCourseCommandHandler : IRequestHandler<UpdateCourseCommand>
     private readonly IApplicationDbContext _context;
     private readonly ICurrentUserService _currentUserService;
     private readonly IHtmlSanitizer _htmlSanitizer;
+    private readonly ICourseIndexingService _courseIndexing;
 
-    public UpdateCourseCommandHandler(IApplicationDbContext context, ICurrentUserService currentUserService, IHtmlSanitizer htmlSanitizer)
+    public UpdateCourseCommandHandler(IApplicationDbContext context, ICurrentUserService currentUserService, IHtmlSanitizer htmlSanitizer, ICourseIndexingService courseIndexing)
     {
         _context = context;
         _currentUserService = currentUserService;
         _htmlSanitizer = htmlSanitizer;
+        _courseIndexing = courseIndexing;
     }
 
     public async Task Handle(UpdateCourseCommand request, CancellationToken cancellationToken)
@@ -82,5 +84,6 @@ public class UpdateCourseCommandHandler : IRequestHandler<UpdateCourseCommand>
         course.MarkUpdated();
 
         await _context.SaveChangesAsync(cancellationToken);
+        await _courseIndexing.IndexCourseAsync(course.Id, cancellationToken);
     }
 }

@@ -163,19 +163,31 @@ using (var scope = app.Services.CreateScope())
         await ApplicationDbContextSeed.SeedRolesAsync(roleManager);
 
         var seedEnabled = builder.Configuration.GetValue("Dev:Seed", false);
-        if (app.Environment.IsDevelopment() && seedEnabled)
+        var seedRan = app.Environment.IsDevelopment() && seedEnabled;
+        if (seedRan)
         {
             var userManager = scope.ServiceProvider.GetRequiredService<UserManager<ApplicationUser>>();
             await ApplicationDbContextSeed.SeedAsync(context, userManager, roleManager);
+        }
 
-            var elasticEnabled = builder.Configuration.GetValue("Elastic:Enabled", false);
-            if (elasticEnabled)
+        var elasticEnabled = builder.Configuration.GetValue("Elastic:Enabled", false);
+        if (elasticEnabled)
+        {
+            var indexing = scope.ServiceProvider.GetRequiredService<ICourseIndexingService>();
+            try
             {
-                var indexing = scope.ServiceProvider.GetService<ICourseIndexingService>();
-                if (indexing != null)
+                if (seedRan)
                 {
                     await indexing.ReindexCoursesAsync(CancellationToken.None);
                 }
+                else
+                {
+                    await indexing.EnsureIndexAsync(CancellationToken.None);
+                }
+            }
+            catch (Exception ex)
+            {
+                app.Logger.LogWarning(ex, "Elasticsearch index initialization failed. Search will fall back to the database.");
             }
         }
     }

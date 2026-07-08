@@ -27,6 +27,7 @@ public sealed class EfCourseSearchService : ICourseSearchService
                 EF.Functions.Like(c.Title.ToLower(), search) ||
                 EF.Functions.Like(c.ShortDescription.ToLower(), search) ||
                 EF.Functions.Like(c.Description.ToLower(), search) ||
+                EF.Functions.Like((c.Instructor.FirstName + " " + c.Instructor.LastName).ToLower(), search) ||
                 c.Categories.Any(cat => EF.Functions.Like(cat.Name.ToLower(), search)) ||
                 c.Technologies.Any(tech => EF.Functions.Like(tech.Name.ToLower(), search)));
         }

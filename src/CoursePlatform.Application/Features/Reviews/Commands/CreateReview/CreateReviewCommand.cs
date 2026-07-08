@@ -15,12 +15,14 @@ public class CreateReviewCommandHandler : IRequestHandler<CreateReviewCommand, G
     private readonly IApplicationDbContext _context;
     private readonly ICurrentUserService _currentUserService;
     private readonly IHtmlSanitizer _htmlSanitizer;
+    private readonly ICourseIndexingService _courseIndexing;
 
-    public CreateReviewCommandHandler(IApplicationDbContext context, ICurrentUserService currentUserService, IHtmlSanitizer htmlSanitizer)
+    public CreateReviewCommandHandler(IApplicationDbContext context, ICurrentUserService currentUserService, IHtmlSanitizer htmlSanitizer, ICourseIndexingService courseIndexing)
     {
         _context = context;
         _currentUserService = currentUserService;
         _htmlSanitizer = htmlSanitizer;
+        _courseIndexing = courseIndexing;
     }
 
     public async Task<Guid> Handle(CreateReviewCommand request, CancellationToken cancellationToken)
@@ -73,6 +75,7 @@ public class CreateReviewCommandHandler : IRequestHandler<CreateReviewCommand, G
             throw new ValidationException(new[] { new ValidationFailure("Comment", "Już dodałeś opinię do tego kursu.") });
         }
 
+        await _courseIndexing.IndexCourseAsync(request.CourseId, cancellationToken);
         return review.Id;
     }
 }

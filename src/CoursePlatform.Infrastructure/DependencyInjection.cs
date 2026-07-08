@@ -61,6 +61,8 @@ public static class DependencyInjection
         services.AddSingleton<IDateTimeService, DateTimeService>();
         services.AddSingleton<IHtmlSanitizer, HtmlSanitizerWrapper>();
 
+        services.AddScoped<EfCourseSearchService>();
+
         var elasticOptions = configuration.GetSection("Elastic").Get<ElasticOptions>() ?? new ElasticOptions();
         if (elasticOptions.Enabled && !environment.IsEnvironment("Testing"))
         {
@@ -75,7 +77,8 @@ public static class DependencyInjection
         }
         else
         {
-            services.AddScoped<ICourseSearchService, EfCourseSearchService>();
+            services.AddScoped<ICourseSearchService>(sp => sp.GetRequiredService<EfCourseSearchService>());
+            services.AddScoped<ICourseIndexingService, NoOpCourseIndexingService>();
         }
 
         return services;

@@ -22,9 +22,16 @@ services:
       xpack.security.http.ssl.enabled: "false"
       ES_JAVA_OPTS: -Xms512m -Xmx512m
     ports:
-      - "9200:9200"
+      - "127.0.0.1:9200:9200"
     volumes:
       - esdata:/usr/share/elasticsearch/data
+    mem_limit: 1g
+    healthcheck:
+      test: ["CMD-SHELL", "curl -fs http://localhost:9200/_cluster/health || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 30s
 
   minio:
     image: minio/minio:latest
@@ -90,9 +97,13 @@ services:
     volumes:
       - .:/src
     depends_on:
-      - db
-      - minio
-      - elasticsearch
+      db:
+        condition: service_started
+      minio:
+        condition: service_started
+      elasticsearch:
+        condition: service_healthy
+    mem_limit: 2g
 
   frontend:
     build:

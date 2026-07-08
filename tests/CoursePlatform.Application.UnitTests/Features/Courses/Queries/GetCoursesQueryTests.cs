@@ -2,175 +2,81 @@ using FluentAssertions;
 using Moq;
 using CoursePlatform.Application.Common.Interfaces;
 using CoursePlatform.Application.Features.Courses.Queries.GetCourses;
-using CoursePlatform.Domain.Entities;
 using CoursePlatform.Domain.Enums;
-using Microsoft.EntityFrameworkCore;
-using CoursePlatform.Application.UnitTests.Common;
-using CoursePlatform.Infrastructure.Search;
 
 namespace CoursePlatform.Application.UnitTests.Features.Courses.Queries;
 
 public class GetCoursesQueryTests
 {
-    private readonly TestDbContext _context;
-    private readonly Mock<ICurrentUserService> _currentUserServiceMock;
-    private readonly Mock<IFileStorageService> _fileStorageMock;
+    private readonly Mock<ICurrentUserService> _currentUserServiceMock = new();
+    private readonly Mock<IFileStorageService> _fileStorageMock = new();
+    private readonly StubCourseSearchService _searchService = new();
 
-    public GetCoursesQueryTests()
-    {
-        var options = new DbContextOptionsBuilder<TestDbContext>()
-            .UseInMemoryDatabase(Guid.NewGuid().ToString())
-            .Options;
-        _context = new TestDbContext(options);
-        _currentUserServiceMock = new Mock<ICurrentUserService>();
-        _fileStorageMock = new Mock<IFileStorageService>();
-    }
+    private GetCoursesQueryHandler CreateHandler() =>
+        new(_currentUserServiceMock.Object, _fileStorageMock.Object, _searchService);
 
     [Fact]
-    public async Task Handle_AnonymousWithDraftStatus_ReturnsOnlyPublished()
+    public async Task Handle_PassesRequestAndAdminFlagToSearchCriteria()
     {
-        var instructor = new ApplicationUser { Id = Guid.NewGuid(), UserName = "inst", Email = "i@t.com", FirstName = "A", LastName = "B" };
-        _context.Users.Add(instructor);
-        await _context.SaveChangesAsync();
+        _currentUserServiceMock.Setup(x => x.IsAdmin).Returns(true);
 
-        var published = new Course
-        {
-            Title = "Published",
-            Description = "D",
-            ShortDescription = "S",
-            Price = 10,
-            Level = CourseLevel.Beginner,
-            Status = CourseStatus.Published,
-            ThumbnailObjectKey = "",
-            Language = "pl",
-            InstructorId = instructor.Id,
-            Categories = new List<Category>(),
-            Technologies = new List<Technology>(),
-            Modules = new List<Module>(),
-            Reviews = new List<Review>()
-        };
-        var draft = new Course
-        {
-            Title = "Draft",
-            Description = "D",
-            ShortDescription = "S",
-            Price = 10,
-            Level = CourseLevel.Beginner,
-            Status = CourseStatus.Draft,
-            ThumbnailObjectKey = "",
-            Language = "pl",
-            InstructorId = instructor.Id,
-            Categories = new List<Category>(),
-            Technologies = new List<Technology>(),
-            Modules = new List<Module>(),
-            Reviews = new List<Review>()
-        };
-        _context.Courses.Add(published);
-        _context.Courses.Add(draft);
-        await _context.SaveChangesAsync();
-
-        _currentUserServiceMock.Setup(x => x.UserId).Returns((Guid?)null);
-        _currentUserServiceMock.Setup(x => x.IsAdmin).Returns(false);
-
-        var searchService = new EfCourseSearchService(_context);
-        var handler = new GetCoursesQueryHandler(_currentUserServiceMock.Object, _fileStorageMock.Object, searchService);
-        var result = await handler.Handle(new GetCoursesQuery(null, null, CourseStatus.Draft, null, null, null, null, null, null, null), CancellationToken.None);
-
-        result.Items.Should().ContainSingle(c => c.Title == "Published");
-        result.Items.Should().NotContain(c => c.Title == "Draft");
-    }
-
-    [Fact]
-    public async Task Handle_LoggedInNonAdminWithPublishedStatus_SeesPublishedCoursesOfOtherInstructors()
-    {
-        var instructor = new ApplicationUser { Id = Guid.NewGuid(), UserName = "inst", Email = "i@t.com", FirstName = "A", LastName = "B" };
-        _context.Users.Add(instructor);
-        await _context.SaveChangesAsync();
-
-        var published = new Course
-        {
-            Title = "Published",
-            Description = "D",
-            ShortDescription = "S",
-            Price = 10,
-            Level = CourseLevel.Beginner,
-            Status = CourseStatus.Published,
-            ThumbnailObjectKey = "",
-            Language = "pl",
-            InstructorId = instructor.Id,
-            Categories = new List<Category>(),
-            Technologies = new List<Technology>(),
-            Modules = new List<Module>(),
-            Reviews = new List<Review>()
-        };
-        _context.Courses.Add(published);
-        await _context.SaveChangesAsync();
-
-        _currentUserServiceMock.Setup(x => x.UserId).Returns(Guid.NewGuid());
-        _currentUserServiceMock.Setup(x => x.IsAdmin).Returns(false);
-
-        var searchService = new EfCourseSearchService(_context);
-        var handler = new GetCoursesQueryHandler(_currentUserServiceMock.Object, _fileStorageMock.Object, searchService);
-        var result = await handler.Handle(
-            new GetCoursesQuery(null, null, CourseStatus.Published, null, null, null, null, null, null, null),
+        var handler = CreateHandler();
+        await handler.Handle(
+            new GetCoursesQuery("vue", CourseLevel.Beginner, CourseStatus.Draft, "rating", 10, 100, "pl", null, null, 4, 2, 5),
             CancellationToken.None);
 
-        result.Items.Should().ContainSingle(c => c.Title == "Published");
+        _searchService.LastCriteria.Should().NotBeNull();
+        _searchService.LastCriteria!.IsAdmin.Should().BeTrue();
+        _searchService.LastCriteria.SearchTerm.Should().Be("vue");
+        _searchService.LastCriteria.Level.Should().Be(CourseLevel.Beginner);
+        _searchService.LastCriteria.Status.Should().Be(CourseStatus.Draft);
+        _searchService.LastCriteria.SortBy.Should().Be("rating");
+        _searchService.LastCriteria.MinPrice.Should().Be(10);
+        _searchService.LastCriteria.MaxPrice.Should().Be(100);
+        _searchService.LastCriteria.Language.Should().Be("pl");
+        _searchService.LastCriteria.MinRating.Should().Be(4);
+        _searchService.LastCriteria.PageNumber.Should().Be(2);
+        _searchService.LastCriteria.PageSize.Should().Be(5);
     }
 
     [Fact]
-    public async Task Handle_SearchTerm_FiltersPublishedCourses()
+    public async Task Handle_MapsRowsToDtosWithMatchedBy()
     {
-        var instructor = new ApplicationUser { Id = Guid.NewGuid(), UserName = "inst", Email = "i@t.com", FirstName = "A", LastName = "B" };
-        _context.Users.Add(instructor);
-        await _context.SaveChangesAsync();
+        var courseId = Guid.NewGuid();
+        _searchService.Page = new CourseSearchPage(
+            new[]
+            {
+                new CourseListRow(
+                    courseId, "Vue 3", "Short", 49, CourseLevel.Beginner, CourseStatus.Published,
+                    null, "Jan Kowalski", "pl",
+                    new[] { "Frontend" }, new[] { "Vue" },
+                    2, 10, 4.5, 3,
+                    new[] { "title", "tags" })
+            },
+            42);
 
-        var vueCourse = new Course
-        {
-            Title = "Vue 3 Fundamentals",
-            Description = "Vue course",
-            ShortDescription = "Learn Vue",
-            Price = 10,
-            Level = CourseLevel.Beginner,
-            Status = CourseStatus.Published,
-            ThumbnailObjectKey = "",
-            Language = "Polski",
-            InstructorId = instructor.Id,
-            Categories = new List<Category>(),
-            Technologies = new List<Technology>(),
-            Modules = new List<Module>(),
-            Reviews = new List<Review>()
-        };
-        var dotnetCourse = new Course
-        {
-            Title = "Advanced .NET",
-            Description = "Dotnet course",
-            ShortDescription = "Learn .NET",
-            Price = 20,
-            Level = CourseLevel.Advanced,
-            Status = CourseStatus.Published,
-            ThumbnailObjectKey = "",
-            Language = "Polski",
-            InstructorId = instructor.Id,
-            Categories = new List<Category>(),
-            Technologies = new List<Technology>(),
-            Modules = new List<Module>(),
-            Reviews = new List<Review>()
-        };
-        _context.Courses.Add(vueCourse);
-        _context.Courses.Add(dotnetCourse);
-        await _context.SaveChangesAsync();
-
-        _currentUserServiceMock.Setup(x => x.UserId).Returns((Guid?)null);
-        _currentUserServiceMock.Setup(x => x.IsAdmin).Returns(false);
-
-        var searchService = new EfCourseSearchService(_context);
-        var handler = new GetCoursesQueryHandler(_currentUserServiceMock.Object, _fileStorageMock.Object, searchService);
+        var handler = CreateHandler();
         var result = await handler.Handle(
-            new GetCoursesQuery("Vue", null, null, null, null, null, null, null, null, null),
+            new GetCoursesQuery(null, null, null, null, null, null, null, null, null, null),
             CancellationToken.None);
 
-        result.Items.Should().ContainSingle(c => c.Title == "Vue 3 Fundamentals");
-        result.Items.Should().NotContain(c => c.Title == "Advanced .NET");
+        result.TotalCount.Should().Be(42);
+        var dto = result.Items.Should().ContainSingle().Subject;
+        dto.Id.Should().Be(courseId);
+        dto.Title.Should().Be("Vue 3");
+        dto.InstructorName.Should().Be("Jan Kowalski");
+        dto.MatchedBy.Should().BeEquivalentTo("title", "tags");
+    }
+
+    private sealed class StubCourseSearchService : ICourseSearchService
+    {
+        public CourseSearchCriteria? LastCriteria { get; private set; }
+        public CourseSearchPage Page { get; set; } = new(Array.Empty<CourseListRow>(), 0);
+
+        public Task<CourseSearchPage> SearchAsync(CourseSearchCriteria criteria, CancellationToken cancellationToken)
+        {
+            LastCriteria = criteria;
+            return Task.FromResult(Page);
+        }
     }
 }
