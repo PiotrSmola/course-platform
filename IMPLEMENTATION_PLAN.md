@@ -128,7 +128,7 @@ Encje, relacje, auth, enrollment, progress, recenzje, resource authorization. Wi
 MinIO, upload materiałów, presigned URLs zamiast placeholderów.
 
 ### Etap 3 — płatności
-Mock albo Stripe test mode.
+**Decyzja: Stripe w test mode** (nie mock). Checkout po stronie Stripe, webhook potwierdzający płatność tworzy enrollment.
 
 ---
 

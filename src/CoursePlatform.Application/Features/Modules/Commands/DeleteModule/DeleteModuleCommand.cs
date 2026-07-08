@@ -1,5 +1,7 @@
 using FluentValidation;
 using MediatR;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
 using CoursePlatform.Application.Common.Helpers;
 using CoursePlatform.Application.Common.Interfaces;
 
@@ -20,13 +22,19 @@ public class DeleteModuleCommandHandler : IRequestHandler<DeleteModuleCommand>
 {
     private readonly IApplicationDbContext _context;
     private readonly ICurrentUserService _currentUserService;
+    private readonly IFileStorageService _fileStorage;
+    private readonly ILogger<DeleteModuleCommandHandler> _logger;
 
     public DeleteModuleCommandHandler(
         IApplicationDbContext context,
-        ICurrentUserService currentUserService)
+        ICurrentUserService currentUserService,
+        IFileStorageService fileStorage,
+        ILogger<DeleteModuleCommandHandler> logger)
     {
         _context = context;
         _currentUserService = currentUserService;
+        _fileStorage = fileStorage;
+        _logger = logger;
     }
 
     public async Task Handle(DeleteModuleCommand request, CancellationToken cancellationToken)
@@ -34,7 +42,25 @@ public class DeleteModuleCommandHandler : IRequestHandler<DeleteModuleCommand>
         var module = await CourseAccessHelper.GetManagedModuleAsync(
             _context, _currentUserService, request.CourseId, request.ModuleId, cancellationToken);
 
+        var videoObjectKeys = await _context.Lessons
+            .Where(l => l.ModuleId == request.ModuleId && !string.IsNullOrEmpty(l.VideoObjectKey))
+            .Select(l => l.VideoObjectKey!)
+            .ToListAsync(cancellationToken);
+
         _context.Modules.Remove(module);
         await _context.SaveChangesAsync(cancellationToken);
+
+        foreach (var objectKey in videoObjectKeys)
+        {
+            try
+            {
+                await _fileStorage.DeleteObjectAsync(objectKey, cancellationToken);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogWarning(ex, "Failed to delete video object {ObjectKey} for removed module {ModuleId}.",
+                    objectKey, request.ModuleId);
+            }
+        }
     }
 }

@@ -1,6 +1,7 @@
 using FluentValidation;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
 using CoursePlatform.Application.Common.Exceptions;
 using CoursePlatform.Application.Common.Helpers;
 using CoursePlatform.Application.Common.Interfaces;
@@ -23,13 +24,19 @@ public class DeleteLessonCommandHandler : IRequestHandler<DeleteLessonCommand>
 {
     private readonly IApplicationDbContext _context;
     private readonly ICurrentUserService _currentUserService;
+    private readonly IFileStorageService _fileStorage;
+    private readonly ILogger<DeleteLessonCommandHandler> _logger;
 
     public DeleteLessonCommandHandler(
         IApplicationDbContext context,
-        ICurrentUserService currentUserService)
+        ICurrentUserService currentUserService,
+        IFileStorageService fileStorage,
+        ILogger<DeleteLessonCommandHandler> logger)
     {
         _context = context;
         _currentUserService = currentUserService;
+        _fileStorage = fileStorage;
+        _logger = logger;
     }
 
     public async Task Handle(DeleteLessonCommand request, CancellationToken cancellationToken)
@@ -45,7 +52,22 @@ public class DeleteLessonCommandHandler : IRequestHandler<DeleteLessonCommand>
             throw new NotFoundException($"Lesson {request.LessonId} not found.");
         }
 
+        var videoObjectKey = lesson.VideoObjectKey;
+
         _context.Lessons.Remove(lesson);
         await _context.SaveChangesAsync(cancellationToken);
+
+        if (!string.IsNullOrWhiteSpace(videoObjectKey))
+        {
+            try
+            {
+                await _fileStorage.DeleteObjectAsync(videoObjectKey, cancellationToken);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogWarning(ex, "Failed to delete video object {ObjectKey} for removed lesson {LessonId}.",
+                    videoObjectKey, request.LessonId);
+            }
+        }
     }
 }
