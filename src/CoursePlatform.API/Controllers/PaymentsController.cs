@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.RateLimiting;
 using CoursePlatform.Application.Features.Payments.Commands.CreateCheckoutSession;
 using CoursePlatform.Application.Features.Payments.Commands.ProcessPaymentWebhook;
+using CoursePlatform.Application.Features.Payments.Queries.GetMyPurchases;
 using CoursePlatform.Application.Features.Payments.Queries.GetPaymentStatus;
 
 namespace CoursePlatform.API.Controllers;
@@ -29,6 +30,15 @@ public class PaymentsController : ControllerBase
         return Ok(result);
     }
 
+    [HttpGet("my")]
+    [Authorize]
+    public async Task<ActionResult<List<PurchaseDto>>> GetMyPurchases(
+        [FromQuery] int limit = 5, CancellationToken cancellationToken = default)
+    {
+        var result = await _mediator.Send(new GetMyPurchasesQuery(limit), cancellationToken);
+        return Ok(result);
+    }
+
     [HttpGet("{sessionId}")]
     [Authorize]
     public async Task<ActionResult<PaymentStatusDto>> GetPaymentStatus(
@@ -41,6 +51,7 @@ public class PaymentsController : ControllerBase
     [HttpPost("webhook")]
     [AllowAnonymous]
     [DisableRateLimiting]
+    [Consumes("application/json")]
     public async Task<IActionResult> Webhook(CancellationToken cancellationToken)
     {
         using var reader = new StreamReader(Request.Body);

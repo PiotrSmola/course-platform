@@ -3,6 +3,7 @@ using System;
 using CoursePlatform.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
@@ -11,9 +12,11 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace CoursePlatform.Infrastructure.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    partial class ApplicationDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260709082911_ImprovePaymentsAndWebhookIdempotency")]
+    partial class ImprovePaymentsAndWebhookIdempotency
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -34,7 +37,7 @@ namespace CoursePlatform.Infrastructure.Migrations
 
                     b.HasIndex("CoursesId");
 
-                    b.ToTable("CategoryCourse", (string)null);
+                    b.ToTable("CategoryCourse");
                 });
 
             modelBuilder.Entity("CoursePlatform.Domain.Entities.ApplicationUser", b =>
@@ -178,7 +181,7 @@ namespace CoursePlatform.Infrastructure.Migrations
                     b.HasIndex("Slug")
                         .IsUnique();
 
-                    b.ToTable("BusinessPlans", (string)null);
+                    b.ToTable("BusinessPlans");
                 });
 
             modelBuilder.Entity("CoursePlatform.Domain.Entities.BusinessPlanFeature", b =>
@@ -208,7 +211,7 @@ namespace CoursePlatform.Infrastructure.Migrations
 
                     b.HasIndex("BusinessPlanId", "DisplayOrder");
 
-                    b.ToTable("BusinessPlanFeatures", (string)null);
+                    b.ToTable("BusinessPlanFeatures");
                 });
 
             modelBuilder.Entity("CoursePlatform.Domain.Entities.Category", b =>
@@ -242,7 +245,7 @@ namespace CoursePlatform.Infrastructure.Migrations
                     b.HasIndex("Slug")
                         .IsUnique();
 
-                    b.ToTable("Categories", (string)null);
+                    b.ToTable("Categories");
                 });
 
             modelBuilder.Entity("CoursePlatform.Domain.Entities.Course", b =>
@@ -302,7 +305,7 @@ namespace CoursePlatform.Infrastructure.Migrations
 
                     b.HasIndex("Status");
 
-                    b.ToTable("Courses", (string)null);
+                    b.ToTable("Courses");
                 });
 
             modelBuilder.Entity("CoursePlatform.Domain.Entities.Enrollment", b =>
@@ -333,7 +336,7 @@ namespace CoursePlatform.Infrastructure.Migrations
                     b.HasIndex("UserId", "CourseId")
                         .IsUnique();
 
-                    b.ToTable("Enrollments", (string)null);
+                    b.ToTable("Enrollments");
                 });
 
             modelBuilder.Entity("CoursePlatform.Domain.Entities.LearningPath", b =>
@@ -389,7 +392,7 @@ namespace CoursePlatform.Infrastructure.Migrations
                     b.HasIndex("Slug")
                         .IsUnique();
 
-                    b.ToTable("LearningPaths", (string)null);
+                    b.ToTable("LearningPaths");
                 });
 
             modelBuilder.Entity("CoursePlatform.Domain.Entities.LearningPathCourse", b =>
@@ -423,7 +426,7 @@ namespace CoursePlatform.Infrastructure.Migrations
                     b.HasIndex("LearningPathId", "CourseId")
                         .IsUnique();
 
-                    b.ToTable("LearningPathCourses", (string)null);
+                    b.ToTable("LearningPathCourses");
                 });
 
             modelBuilder.Entity("CoursePlatform.Domain.Entities.Lesson", b =>
@@ -464,7 +467,7 @@ namespace CoursePlatform.Infrastructure.Migrations
 
                     b.HasIndex("ModuleId");
 
-                    b.ToTable("Lessons", (string)null);
+                    b.ToTable("Lessons");
                 });
 
             modelBuilder.Entity("CoursePlatform.Domain.Entities.LessonProgress", b =>
@@ -485,7 +488,7 @@ namespace CoursePlatform.Infrastructure.Migrations
 
                     b.HasIndex("LessonId");
 
-                    b.ToTable("LessonProgresses", (string)null);
+                    b.ToTable("LessonProgresses");
                 });
 
             modelBuilder.Entity("CoursePlatform.Domain.Entities.Module", b =>
@@ -515,7 +518,7 @@ namespace CoursePlatform.Infrastructure.Migrations
 
                     b.HasIndex("CourseId");
 
-                    b.ToTable("Modules", (string)null);
+                    b.ToTable("Modules");
                 });
 
             modelBuilder.Entity("CoursePlatform.Domain.Entities.Payment", b =>
@@ -565,7 +568,7 @@ namespace CoursePlatform.Infrastructure.Migrations
 
                     b.HasIndex("UserId", "CourseId");
 
-                    b.ToTable("Payments", (string)null);
+                    b.ToTable("Payments");
                 });
 
             modelBuilder.Entity("CoursePlatform.Domain.Entities.ProcessedStripeEvent", b =>
@@ -593,7 +596,7 @@ namespace CoursePlatform.Infrastructure.Migrations
                     b.HasIndex("StripeEventId")
                         .IsUnique();
 
-                    b.ToTable("ProcessedStripeEvents", (string)null);
+                    b.ToTable("ProcessedStripeEvents");
                 });
 
             modelBuilder.Entity("CoursePlatform.Domain.Entities.Review", b =>
@@ -629,7 +632,7 @@ namespace CoursePlatform.Infrastructure.Migrations
                     b.HasIndex("UserId", "CourseId")
                         .IsUnique();
 
-                    b.ToTable("Reviews", (string)null);
+                    b.ToTable("Reviews");
                 });
 
             modelBuilder.Entity("CoursePlatform.Domain.Entities.Technology", b =>
@@ -663,7 +666,7 @@ namespace CoursePlatform.Infrastructure.Migrations
                     b.HasIndex("Slug")
                         .IsUnique();
 
-                    b.ToTable("Technologies", (string)null);
+                    b.ToTable("Technologies");
                 });
 
             modelBuilder.Entity("CoursePlatform.Domain.Entities.UserStatistics", b =>
@@ -698,7 +701,7 @@ namespace CoursePlatform.Infrastructure.Migrations
 
                     b.HasKey("UserId");
 
-                    b.ToTable("UserStatistics", (string)null);
+                    b.ToTable("UserStatistics");
                 });
 
             modelBuilder.Entity("CourseTechnology", b =>
@@ -713,7 +716,7 @@ namespace CoursePlatform.Infrastructure.Migrations
 
                     b.HasIndex("TechnologiesId");
 
-                    b.ToTable("CourseTechnology", (string)null);
+                    b.ToTable("CourseTechnology");
                 });
 
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityRole<System.Guid>", b =>

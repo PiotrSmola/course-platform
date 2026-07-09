@@ -41,6 +41,12 @@ public class DeleteAccountCommandHandler : IRequestHandler<DeleteAccountCommand>
             throw new ValidationException(new[] { new ValidationFailure("", "Cannot delete account with active courses. Remove or transfer them first.") });
         }
 
+        var hasPayments = await _context.Payments.AnyAsync(p => p.UserId == user.Id, cancellationToken);
+        if (hasPayments)
+        {
+            throw new ValidationException(new[] { new ValidationFailure("", "Cannot delete account with payment history.") });
+        }
+
         var result = await _userManager.DeleteAsync(user);
         if (!result.Succeeded)
         {

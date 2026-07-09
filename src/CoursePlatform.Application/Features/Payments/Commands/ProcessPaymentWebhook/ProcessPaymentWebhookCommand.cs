@@ -1,3 +1,4 @@
+using FluentValidation;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
@@ -8,6 +9,15 @@ using CoursePlatform.Domain.Enums;
 namespace CoursePlatform.Application.Features.Payments.Commands.ProcessPaymentWebhook;
 
 public record ProcessPaymentWebhookCommand(string Payload, string Signature) : IRequest;
+
+public class ProcessPaymentWebhookCommandValidator : AbstractValidator<ProcessPaymentWebhookCommand>
+{
+    public ProcessPaymentWebhookCommandValidator()
+    {
+        RuleFor(x => x.Payload).NotEmpty();
+        RuleFor(x => x.Signature).NotEmpty().MaximumLength(512);
+    }
+}
 
 public class ProcessPaymentWebhookCommandHandler : IRequestHandler<ProcessPaymentWebhookCommand>
 {
@@ -29,6 +39,11 @@ public class ProcessPaymentWebhookCommandHandler : IRequestHandler<ProcessPaymen
     {
         var gatewayEvent = _paymentGateway.ParseWebhookEvent(request.Payload, request.Signature);
 
+        if (await TryMarkEventProcessedAsync(gatewayEvent.EventId, cancellationToken))
+        {
+            return;
+        }
+
         switch (gatewayEvent.Type)
         {
             case PaymentGatewayEventType.CheckoutCompleted:
@@ -37,15 +52,60 @@ public class ProcessPaymentWebhookCommandHandler : IRequestHandler<ProcessPaymen
             case PaymentGatewayEventType.CheckoutExpired:
                 await HandleExpiredAsync(gatewayEvent, cancellationToken);
                 break;
+            case PaymentGatewayEventType.PaymentRefunded:
+                await HandleRefundedAsync(gatewayEvent, PaymentStatus.Refunded, cancellationToken);
+                break;
+            case PaymentGatewayEventType.Chargeback:
+                await HandleRefundedAsync(gatewayEvent, PaymentStatus.Chargeback, cancellationToken);
+                break;
+        }
+    }
+
+    private async Task<bool> TryMarkEventProcessedAsync(string eventId, CancellationToken cancellationToken)
+    {
+        var alreadyProcessed = await _context.ProcessedStripeEvents
+            .AnyAsync(e => e.StripeEventId == eventId, cancellationToken);
+
+        if (alreadyProcessed)
+        {
+            return true;
+        }
+
+        _context.ProcessedStripeEvents.Add(new ProcessedStripeEvent
+        {
+            StripeEventId = eventId,
+            ProcessedAt = DateTime.UtcNow
+        });
+
+        try
+        {
+            await _context.SaveChangesAsync(cancellationToken);
+            return false;
+        }
+        catch (DbUpdateException)
+        {
+            return true;
         }
     }
 
     private async Task HandleCompletedAsync(PaymentGatewayEvent gatewayEvent, CancellationToken cancellationToken)
     {
-        var payment = await FindPaymentAsync(gatewayEvent.SessionId, cancellationToken);
+        var payment = await FindPaymentAsync(gatewayEvent, cancellationToken);
         if (payment == null) return;
 
         if (payment.Status == PaymentStatus.Completed) return;
+
+        if (!string.Equals(gatewayEvent.Currency, payment.Currency, StringComparison.OrdinalIgnoreCase))
+        {
+            _logger.LogError(
+                "Payment {PaymentId} currency mismatch: expected {Expected}, webhook reported {Actual}. Marking as failed.",
+                payment.Id, payment.Currency, gatewayEvent.Currency);
+
+            payment.Status = PaymentStatus.Failed;
+            payment.MarkUpdated();
+            await _context.SaveChangesAsync(cancellationToken);
+            return;
+        }
 
         var expectedMinorUnits = (long)Math.Round(payment.Amount * 100, MidpointRounding.AwayFromZero);
         if (gatewayEvent.AmountTotalMinorUnits != expectedMinorUnits)
@@ -64,10 +124,9 @@ public class ProcessPaymentWebhookCommandHandler : IRequestHandler<ProcessPaymen
         payment.CompletedAt = DateTime.UtcNow;
         payment.MarkUpdated();
 
-        var alreadyEnrolled = await _context.Enrollments
-            .AnyAsync(e => e.UserId == payment.UserId && e.CourseId == payment.CourseId, cancellationToken);
+        await using var transaction = await _context.Database.BeginTransactionAsync(cancellationToken);
 
-        if (!alreadyEnrolled)
+        try
         {
             _context.Enrollments.Add(new Enrollment
             {
@@ -75,14 +134,14 @@ public class ProcessPaymentWebhookCommandHandler : IRequestHandler<ProcessPaymen
                 CourseId = payment.CourseId,
                 EnrolledAt = DateTime.UtcNow
             });
-        }
 
-        try
-        {
             await _context.SaveChangesAsync(cancellationToken);
+            await transaction.CommitAsync(cancellationToken);
         }
         catch (DbUpdateException)
         {
+            await transaction.RollbackAsync(cancellationToken);
+
             var enrolled = await _context.Enrollments
                 .AnyAsync(e => e.UserId == payment.UserId && e.CourseId == payment.CourseId, cancellationToken);
 
@@ -98,7 +157,7 @@ public class ProcessPaymentWebhookCommandHandler : IRequestHandler<ProcessPaymen
 
     private async Task HandleExpiredAsync(PaymentGatewayEvent gatewayEvent, CancellationToken cancellationToken)
     {
-        var payment = await FindPaymentAsync(gatewayEvent.SessionId, cancellationToken);
+        var payment = await FindPaymentAsync(gatewayEvent, cancellationToken);
         if (payment == null) return;
 
         if (payment.Status != PaymentStatus.Pending) return;
@@ -108,20 +167,50 @@ public class ProcessPaymentWebhookCommandHandler : IRequestHandler<ProcessPaymen
         await _context.SaveChangesAsync(cancellationToken);
     }
 
-    private async Task<Payment?> FindPaymentAsync(string? sessionId, CancellationToken cancellationToken)
+    private async Task HandleRefundedAsync(PaymentGatewayEvent gatewayEvent, PaymentStatus status, CancellationToken cancellationToken)
     {
-        if (string.IsNullOrWhiteSpace(sessionId))
+        var payment = await FindPaymentAsync(gatewayEvent, cancellationToken);
+        if (payment == null) return;
+
+        payment.Status = status;
+        payment.MarkUpdated();
+
+        var enrollment = await _context.Enrollments
+            .FirstOrDefaultAsync(e => e.UserId == payment.UserId && e.CourseId == payment.CourseId, cancellationToken);
+
+        if (enrollment != null)
         {
-            _logger.LogWarning("Payment webhook event without session id.");
-            return null;
+            _context.Enrollments.Remove(enrollment);
         }
 
-        var payment = await _context.Payments
-            .FirstOrDefaultAsync(p => p.StripeSessionId == sessionId, cancellationToken);
+        await _context.SaveChangesAsync(cancellationToken);
+
+        _logger.LogInformation(
+            "Payment {PaymentId} marked as {Status}, enrollment for user {UserId} in course {CourseId} removed.",
+            payment.Id, status, payment.UserId, payment.CourseId);
+    }
+
+    private async Task<Payment?> FindPaymentAsync(PaymentGatewayEvent gatewayEvent, CancellationToken cancellationToken)
+    {
+        Payment? payment = null;
+
+        if (!string.IsNullOrWhiteSpace(gatewayEvent.SessionId))
+        {
+            payment = await _context.Payments
+                .FirstOrDefaultAsync(p => p.StripeSessionId == gatewayEvent.SessionId, cancellationToken);
+        }
+
+        if (payment == null && !string.IsNullOrWhiteSpace(gatewayEvent.PaymentId) && Guid.TryParse(gatewayEvent.PaymentId, out var paymentGuid))
+        {
+            payment = await _context.Payments
+                .FirstOrDefaultAsync(p => p.Id == paymentGuid, cancellationToken);
+        }
 
         if (payment == null)
         {
-            _logger.LogWarning("Payment webhook for unknown session {SessionId}.", sessionId);
+            _logger.LogWarning(
+                "Payment webhook for unknown reference session {SessionId}, payment {PaymentId}.",
+                gatewayEvent.SessionId, gatewayEvent.PaymentId);
         }
 
         return payment;

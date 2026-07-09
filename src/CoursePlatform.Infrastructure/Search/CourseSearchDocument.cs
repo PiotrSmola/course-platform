@@ -6,7 +6,7 @@ public sealed class CourseSearchDocument
     public string Title { get; init; } = string.Empty;
     public string ShortDescription { get; init; } = string.Empty;
     public string Description { get; init; } = string.Empty;
-    public decimal Price { get; init; }
+    public long PriceMinorUnits { get; init; }
     public int Level { get; init; }
     public int Status { get; init; }
     public string Language { get; init; } = string.Empty;

@@ -17,6 +17,7 @@ export const queryKeys = {
   lesson: (courseId: string, lessonId: string) => ['lesson', courseId, lessonId] as const,
 
   paymentStatus: (sessionId: string) => ['payment-status', sessionId] as const,
+  myPurchases: () => ['my-purchases'] as const,
 
   instructorCourses: () => ['instructor-courses'] as const,
   adminUsers: () => ['admin-users'] as const,

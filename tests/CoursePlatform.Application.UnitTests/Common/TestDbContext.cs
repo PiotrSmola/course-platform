@@ -21,6 +21,7 @@ public class TestDbContext : DbContext, IApplicationDbContext
     public DbSet<BusinessPlanFeature> BusinessPlanFeatures => Set<BusinessPlanFeature>();
     public DbSet<UserStatistics> UserStatistics => Set<UserStatistics>();
     public DbSet<Payment> Payments => Set<Payment>();
+    public DbSet<ProcessedStripeEvent> ProcessedStripeEvents => Set<ProcessedStripeEvent>();
     public DbSet<ApplicationUser> Users => Set<ApplicationUser>();
 
     public TestDbContext(DbContextOptions<TestDbContext> options) : base(options) { }

@@ -1,25 +1,25 @@
 using CoursePlatform.Application.Common.Interfaces;
 using CoursePlatform.Domain.Entities;
 using CoursePlatform.Infrastructure.Options;
-using CoursePlatform.Infrastructure.Persistence;
 using Elastic.Clients.Elasticsearch;
+using Elastic.Clients.Elasticsearch.IndexManagement;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 
 namespace CoursePlatform.Infrastructure.Search;
 
-internal sealed class ElasticCourseIndexingService : ICourseIndexingService
+public sealed class ElasticCourseIndexingService : ICourseIndexingService
 {
     private readonly ElasticsearchClient _client;
     private readonly ElasticOptions _options;
-    private readonly ApplicationDbContext _db;
+    private readonly IApplicationDbContext _db;
     private readonly ILogger<ElasticCourseIndexingService> _logger;
 
     public ElasticCourseIndexingService(
         ElasticsearchClient client,
         IOptions<ElasticOptions> options,
-        ApplicationDbContext db,
+        IApplicationDbContext db,
         ILogger<ElasticCourseIndexingService> logger)
     {
         _client = client;
@@ -30,64 +30,117 @@ internal sealed class ElasticCourseIndexingService : ICourseIndexingService
 
     public async Task EnsureIndexAsync(CancellationToken cancellationToken)
     {
-        var exists = await _client.Indices.ExistsAsync(_options.CourseIndexName, cancellationToken);
-        if (exists.Exists) return;
+        var aliasExists = await _client.Indices.ExistsAsync(_options.CourseIndexName, cancellationToken);
+        if (aliasExists.Exists) return;
 
-        await CreateIndexAsync(cancellationToken);
+        var indexName = $"{_options.CourseIndexName}-{DateTime.UtcNow:yyyyMMddHHmmssfff}";
+        await CreateIndexAsync(indexName, cancellationToken);
+
+        var aliasResponse = await _client.Indices.PutAliasAsync(indexName, _options.CourseIndexName, cancellationToken);
+        if (!aliasResponse.IsValidResponse)
+        {
+            throw new InvalidOperationException($"Failed to create alias '{_options.CourseIndexName}'.");
+        }
     }
 
     public async Task IndexCourseAsync(Guid courseId, CancellationToken cancellationToken)
     {
-        try
+        var doc = await ProjectToDocuments(_db.Courses.Where(c => c.Id == courseId))
+            .FirstOrDefaultAsync(cancellationToken);
+
+        if (doc == null) return;
+
+        var response = await _client.IndexAsync(doc, i => i
+            .Index(_options.CourseIndexName)
+            .Id(doc.Id.ToString()), cancellationToken);
+
+        if (!response.IsValidResponse)
         {
-            var doc = await ProjectToDocuments(_db.Courses.Where(c => c.Id == courseId))
-                .FirstOrDefaultAsync(cancellationToken);
-
-            if (doc == null) return;
-
-            var response = await _client.IndexAsync(doc, i => i
-                .Index(_options.CourseIndexName)
-                .Id(doc.Id.ToString()), cancellationToken);
-
-            if (!response.IsValidResponse)
-            {
-                _logger.LogWarning("Failed to index course {CourseId} in Elasticsearch: {Details}",
-                    courseId, response.DebugInformation);
-            }
+            throw new InvalidOperationException($"Failed to index course {courseId} in Elasticsearch: {response.DebugInformation}");
         }
-        catch (Exception ex)
+    }
+
+    public async Task DeleteCourseAsync(Guid courseId, CancellationToken cancellationToken)
+    {
+        var response = await _client.DeleteAsync(_options.CourseIndexName, courseId.ToString(), cancellationToken);
+
+        if (!response.IsValidResponse && response.Result != Result.NotFound)
         {
-            _logger.LogWarning(ex, "Failed to index course {CourseId} in Elasticsearch.", courseId);
+            throw new InvalidOperationException($"Failed to delete course {courseId} from Elasticsearch: {response.DebugInformation}");
         }
     }
 
     public async Task ReindexCoursesAsync(CancellationToken cancellationToken)
     {
-        var exists = await _client.Indices.ExistsAsync(_options.CourseIndexName, cancellationToken);
-        if (exists.Exists)
+        var docs = await ProjectToDocuments(_db.Courses).ToListAsync(cancellationToken);
+
+        var oldIndexName = await ResolveIndexNameAsync(cancellationToken);
+        var newIndexName = $"{_options.CourseIndexName}-{DateTime.UtcNow:yyyyMMddHHmmssfff}";
+
+        await CreateIndexAsync(newIndexName, cancellationToken);
+
+        if (docs.Count == 0)
         {
-            await _client.Indices.DeleteAsync(_options.CourseIndexName, cancellationToken);
+            await SwitchAliasAsync(oldIndexName, newIndexName, cancellationToken);
+            if (!string.IsNullOrEmpty(oldIndexName))
+            {
+                await _client.Indices.DeleteAsync(oldIndexName, cancellationToken);
+            }
+            return;
         }
 
-        await CreateIndexAsync(cancellationToken);
-
-        var docs = await ProjectToDocuments(_db.Courses).ToListAsync(cancellationToken);
-        if (docs.Count == 0) return;
-
         var response = await _client.BulkAsync(b => b
-            .Index(_options.CourseIndexName)
+            .Index(newIndexName)
             .IndexMany(docs, (op, doc) => op.Id(doc.Id.ToString()))
             .Refresh(Refresh.WaitFor), cancellationToken);
 
         if (!response.IsValidResponse || response.Errors)
         {
-            throw new InvalidOperationException("Elasticsearch bulk indexing failed.");
+            await _client.Indices.DeleteAsync(newIndexName, cancellationToken);
+            throw new InvalidOperationException($"Elasticsearch bulk indexing failed: {response.DebugInformation}");
+        }
+
+        await SwitchAliasAsync(oldIndexName, newIndexName, cancellationToken);
+
+        if (!string.IsNullOrEmpty(oldIndexName))
+        {
+            await _client.Indices.DeleteAsync(oldIndexName, cancellationToken);
         }
     }
 
-    private async Task CreateIndexAsync(CancellationToken cancellationToken)
+    private async Task<string?> ResolveIndexNameAsync(CancellationToken cancellationToken)
     {
-        var create = await _client.Indices.CreateAsync(_options.CourseIndexName, c => c
+        var aliasResponse = await _client.Indices.GetAliasAsync(Indices.Index(_options.CourseIndexName), cancellationToken);
+        if (!aliasResponse.IsValidResponse)
+        {
+            var indexExists = await _client.Indices.ExistsAsync(_options.CourseIndexName, cancellationToken);
+            return indexExists.Exists ? _options.CourseIndexName : null;
+        }
+
+        return aliasResponse.Values.Keys.FirstOrDefault();
+    }
+
+    private async Task SwitchAliasAsync(string? oldIndexName, string newIndexName, CancellationToken cancellationToken)
+    {
+        var actions = new List<IndexUpdateAliasesAction>();
+
+        if (!string.IsNullOrEmpty(oldIndexName))
+        {
+            actions.Add(new IndexUpdateAliasesAction { Remove = new RemoveAction { Index = oldIndexName, Alias = _options.CourseIndexName } });
+        }
+
+        actions.Add(new IndexUpdateAliasesAction { Add = new AddAction { Index = newIndexName, Alias = _options.CourseIndexName } });
+
+        var response = await _client.Indices.UpdateAliasesAsync(new UpdateAliasesRequest { Actions = actions }, cancellationToken);
+        if (!response.IsValidResponse)
+        {
+            throw new InvalidOperationException($"Failed to switch alias '{_options.CourseIndexName}': {response.DebugInformation}");
+        }
+    }
+
+    private async Task CreateIndexAsync(string indexName, CancellationToken cancellationToken)
+    {
+        var create = await _client.Indices.CreateAsync(indexName, c => c
             .Settings(s => s
                 .NumberOfShards(1)
                 .NumberOfReplicas(0)
@@ -95,28 +148,31 @@ internal sealed class ElasticCourseIndexingService : ICourseIndexingService
                     .Analyzers(an => an
                         .Custom("folding", ca => ca
                             .Tokenizer("standard")
-                            .Filter(new[] { "lowercase", "asciifolding" })))))
+                            .Filter(new[] { "lowercase", "asciifolding" }))
+                        .Custom("polish_folding", ca => ca
+                            .Tokenizer("standard")
+                            .Filter(new[] { "lowercase", "asciifolding", "polish_stem" })))))
             .Mappings(m => m
                 .Properties<CourseSearchDocument>(p => p
-                    .Text(n => n.Title, t => t.Analyzer("folding"))
-                    .Text(n => n.ShortDescription, t => t.Analyzer("folding"))
-                    .Text(n => n.Description, t => t.Analyzer("folding"))
-                    .Text(n => n.InstructorName, t => t.Analyzer("folding"))
-                    .Text(n => n.CategoryNames, t => t.Analyzer("folding"))
-                    .Text(n => n.TechnologyNames, t => t.Analyzer("folding"))
+                    .Text(n => n.Title, t => t.Analyzer("polish_folding"))
+                    .Text(n => n.ShortDescription, t => t.Analyzer("polish_folding"))
+                    .Text(n => n.Description, t => t.Analyzer("polish_folding"))
+                    .Text(n => n.InstructorName, t => t.Analyzer("polish_folding"))
+                    .Text(n => n.CategoryNames, t => t.Analyzer("polish_folding"))
+                    .Text(n => n.TechnologyNames, t => t.Analyzer("polish_folding"))
                     .IntegerNumber(n => n.Level)
                     .IntegerNumber(n => n.Status)
                     .IntegerNumber(n => n.ReviewCount)
-                    .FloatNumber(n => n.Price)
+                    .ScaledFloatNumber(n => n.PriceMinorUnits, num => num.ScalingFactor(100))
                     .FloatNumber(n => n.AverageRating)
                     .Date(n => n.CreatedAt)
                     .Keyword(n => n.Language)
-                    .Keyword(n => n.CategoryIds)
-                    .Keyword(n => n.TechnologyIds))), cancellationToken);
+                    .Keyword("categoryIds")
+                    .Keyword("technologyIds"))), cancellationToken);
 
         if (!create.Acknowledged)
         {
-            throw new InvalidOperationException($"Failed to create index '{_options.CourseIndexName}'.");
+            throw new InvalidOperationException($"Failed to create index '{indexName}'.");
         }
     }
 
@@ -130,7 +186,7 @@ internal sealed class ElasticCourseIndexingService : ICourseIndexingService
                 Title = c.Title,
                 ShortDescription = c.ShortDescription,
                 Description = c.Description,
-                Price = c.Price,
+                PriceMinorUnits = (long)(c.Price * 100),
                 Level = (int)c.Level,
                 Status = (int)c.Status,
                 Language = c.Language.ToLower(),

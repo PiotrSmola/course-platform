@@ -22,14 +22,14 @@ public sealed class EfCourseSearchService : ICourseSearchService
 
         if (!string.IsNullOrWhiteSpace(criteria.SearchTerm))
         {
-            var search = $"%{criteria.SearchTerm.Trim().ToLower()}%";
+            var search = $"%{criteria.SearchTerm.Trim()}%";
             query = query.Where(c =>
-                EF.Functions.Like(c.Title.ToLower(), search) ||
-                EF.Functions.Like(c.ShortDescription.ToLower(), search) ||
-                EF.Functions.Like(c.Description.ToLower(), search) ||
-                EF.Functions.Like((c.Instructor.FirstName + " " + c.Instructor.LastName).ToLower(), search) ||
-                c.Categories.Any(cat => EF.Functions.Like(cat.Name.ToLower(), search)) ||
-                c.Technologies.Any(tech => EF.Functions.Like(tech.Name.ToLower(), search)));
+                EF.Functions.ILike(c.Title, search) ||
+                EF.Functions.ILike(c.ShortDescription, search) ||
+                EF.Functions.ILike(c.Description, search) ||
+                EF.Functions.ILike(c.Instructor.FirstName + " " + c.Instructor.LastName, search) ||
+                c.Categories.Any(cat => EF.Functions.ILike(cat.Name, search)) ||
+                c.Technologies.Any(tech => EF.Functions.ILike(tech.Name, search)));
         }
 
         if (criteria.Level.HasValue)
@@ -112,7 +112,7 @@ public sealed class EfCourseSearchService : ICourseSearchService
                 c.Modules.SelectMany(m => m.Lessons).Count(),
                 c.Reviews.Any() ? c.Reviews.Average(r => r.Rating) : 0,
                 c.Reviews.Count,
-                Array.Empty<string>()))
+                new[] { "database" }))
             .ToListAsync(cancellationToken);
 
         return new CourseSearchPage(rows, totalCount);

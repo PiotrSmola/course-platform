@@ -1,6 +1,6 @@
-import { computed, toValue, type MaybeRefOrGetter } from 'vue'
+import { computed, readonly, ref, toValue, type MaybeRefOrGetter } from 'vue'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/vue-query'
-import { createCheckoutSession, getPaymentStatus } from '@/features/payments/api/payments.api'
+import { createCheckoutSession, getPaymentStatus, getMyPurchases } from '@/features/payments/api/payments.api'
 import { PaymentStatus } from '@/features/payments/types/payment.types'
 import { toast } from '@/shared/toast/toast'
 import { getApiErrorMessage } from '@/shared/api/apiError'
@@ -25,12 +25,46 @@ export function useCreateCheckout() {
   })
 }
 
-export function usePaymentStatus(sessionId: MaybeRefOrGetter<string>) {
+export function useMyPurchases(limit = 5) {
   return useQuery({
+    queryKey: queryKeys.myPurchases(),
+    queryFn: () => getMyPurchases(limit)
+  })
+}
+
+const MAX_POLL_ATTEMPTS = 30
+const POLL_INTERVAL_MS = 2000
+
+export function usePaymentStatus(sessionId: MaybeRefOrGetter<string>) {
+  const queryClient = useQueryClient()
+  const isPollingTimeout = ref(false)
+  let attempts = 0
+
+  const query = useQuery({
     queryKey: computed(() => queryKeys.paymentStatus(toValue(sessionId))),
     queryFn: () => getPaymentStatus(toValue(sessionId)),
     enabled: computed(() => toValue(sessionId).length > 0),
-    refetchInterval: (query) =>
-      query.state.data?.status === PaymentStatus.Pending ? 2000 : false
+    refetchInterval: (q) => {
+      if (isPollingTimeout.value) return false
+      if (q.state.data?.status !== PaymentStatus.Pending) return false
+      if (attempts >= MAX_POLL_ATTEMPTS) {
+        isPollingTimeout.value = true
+        return false
+      }
+      attempts++
+      return POLL_INTERVAL_MS
+    }
   })
+
+  const refetch = async () => {
+    attempts = 0
+    isPollingTimeout.value = false
+    return query.refetch()
+  }
+
+  return {
+    ...query,
+    isPollingTimeout: readonly(isPollingTimeout),
+    refetch
+  }
 }

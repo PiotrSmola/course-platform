@@ -37,6 +37,11 @@ public class ExceptionHandlingMiddleware
             _logger.LogWarning(ex, "Forbidden access");
             await HandleExceptionAsync(context, HttpStatusCode.Forbidden, ex.Message);
         }
+        catch (InvalidWebhookSignatureException ex)
+        {
+            _logger.LogWarning(ex, "Invalid webhook signature");
+            await HandleExceptionAsync(context, HttpStatusCode.BadRequest, ex.Message);
+        }
         catch (ValidationException ex)
         {
             _logger.LogWarning(ex, "Validation error");

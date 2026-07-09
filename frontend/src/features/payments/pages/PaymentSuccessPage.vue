@@ -7,10 +7,30 @@
         <router-link class="btn btn-primary" :to="{ name: 'Courses' }">Przeglądaj kursy</router-link>
       </template>
 
-      <template v-else-if="isPending">
+      <template v-else-if="isChecking">
         <div class="spinner" />
         <h1>Przetwarzamy płatność...</h1>
         <p>To potrwa tylko chwilę. Nie zamykaj tej strony.</p>
+      </template>
+
+      <template v-else-if="statusQuery.isError.value">
+        <div class="result-icon error">✕</div>
+        <h1>Wystąpił błąd</h1>
+        <p>Nie udało się sprawdzić statusu płatności. Spróbuj ponownie później lub skontaktuj się z nami.</p>
+        <div class="result-actions">
+          <button class="btn btn-primary" @click="statusQuery.refetch()">Spróbuj ponownie</button>
+          <router-link class="btn btn-ghost" :to="{ name: 'Courses' }">Wróć do kursów</router-link>
+        </div>
+      </template>
+
+      <template v-else-if="isPollingTimeout">
+        <div class="result-icon error">✕</div>
+        <h1>Przekroczono czas oczekiwania</h1>
+        <p>Nie udało się potwierdzić statusu płatności w czasie oczekiwania. Spróbuj ponownie lub skontaktuj się z nami.</p>
+        <div class="result-actions">
+          <button class="btn btn-primary" @click="statusQuery.refetch()">Spróbuj ponownie</button>
+          <router-link class="btn btn-ghost" :to="{ name: 'Courses' }">Wróć do kursów</router-link>
+        </div>
       </template>
 
       <template v-else-if="isCompleted">
@@ -65,13 +85,14 @@ const queryClient = useQueryClient()
 const sessionId = computed(() => (route.query.session_id as string) ?? '')
 const statusQuery = usePaymentStatus(() => sessionId.value)
 
-const isPending = computed(() =>
-  statusQuery.isLoading.value || statusQuery.data.value?.status === PaymentStatus.Pending
+const isChecking = computed(() =>
+  statusQuery.isLoading.value ||
+  (!statusQuery.isPollingTimeout.value && statusQuery.data.value?.status === PaymentStatus.Pending)
 )
 const isCompleted = computed(() => statusQuery.data.value?.status === PaymentStatus.Completed)
+const isPollingTimeout = computed(() => statusQuery.isPollingTimeout.value)
 
 const failureMessage = computed(() => {
-  if (statusQuery.isError.value) return 'Nie znaleziono płatności.'
   if (statusQuery.data.value?.status === PaymentStatus.Expired) return 'Sesja płatności wygasła. Spróbuj ponownie.'
   return 'Płatność została odrzucona. Spróbuj ponownie lub skontaktuj się z nami.'
 })
@@ -80,6 +101,7 @@ watch(isCompleted, (completed) => {
   if (completed && statusQuery.data.value) {
     queryClient.invalidateQueries({ queryKey: queryKeys.enrollments() })
     queryClient.invalidateQueries({ queryKey: queryKeys.course(statusQuery.data.value.courseId) })
+    queryClient.invalidateQueries({ queryKey: queryKeys.myPurchases() })
   }
 })
 </script>

@@ -7,7 +7,13 @@ using CoursePlatform.Domain.Enums;
 
 namespace CoursePlatform.Application.Features.Payments.Queries.GetPaymentStatus;
 
-public record PaymentStatusDto(PaymentStatus Status, Guid CourseId, string CourseTitle);
+public record PaymentStatusDto(
+    PaymentStatus Status,
+    Guid CourseId,
+    string CourseTitle,
+    decimal Amount,
+    string Currency,
+    DateTime? CompletedAt);
 
 public record GetPaymentStatusQuery(string SessionId) : IRequest<PaymentStatusDto>;
 
@@ -40,7 +46,13 @@ public class GetPaymentStatusQueryHandler : IRequestHandler<GetPaymentStatusQuer
         var payment = await _context.Payments
             .AsNoTracking()
             .Where(p => p.StripeSessionId == request.SessionId && p.UserId == _currentUserService.UserId.Value)
-            .Select(p => new PaymentStatusDto(p.Status, p.CourseId, p.Course.Title))
+            .Select(p => new PaymentStatusDto(
+                p.Status,
+                p.CourseId,
+                p.Course.Title,
+                p.Amount,
+                p.Currency,
+                p.CompletedAt))
             .FirstOrDefaultAsync(cancellationToken);
 
         if (payment == null)

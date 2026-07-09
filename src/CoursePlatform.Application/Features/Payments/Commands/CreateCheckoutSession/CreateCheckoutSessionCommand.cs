@@ -65,18 +65,7 @@ public class CreateCheckoutSessionCommandHandler : IRequestHandler<CreateCheckou
 
         if (alreadyEnrolled)
         {
-            throw new ValidationException(new[] { new ValidationFailure("CourseId", "Jesteś już zapisany na ten kurs.") });
-        }
-
-        if (course.Price <= 0)
-        {
-            await EnrollDirectlyAsync(userId, request.CourseId, cancellationToken);
-            return new CheckoutSessionDto(null, true);
-        }
-
-        if (!_paymentGateway.IsConfigured)
-        {
-            throw new ValidationException(new[] { new ValidationFailure("CourseId", "Płatności są chwilowo niedostępne.") });
+            throw new ValidationException(new[] { new ValidationFailure("CourseId", "You are already enrolled in this course.") });
         }
 
         var user = await _context.Users
@@ -88,37 +77,72 @@ public class CreateCheckoutSessionCommandHandler : IRequestHandler<CreateCheckou
             throw new ForbiddenAccessException("User not found.");
         }
 
+        if (course.Price <= 0)
+        {
+            return await EnrollForFreeAsync(userId, course, cancellationToken);
+        }
+
+        if (!_paymentGateway.IsConfigured)
+        {
+            throw new ValidationException(new[] { new ValidationFailure("CourseId", "Payments are temporarily unavailable.") });
+        }
+
         var payment = new Payment
         {
             UserId = userId,
             CourseId = course.Id,
             Amount = course.Price,
-            Status = PaymentStatus.Pending
+            Currency = string.Empty,
+            Status = PaymentStatus.Pending,
+            StripeSessionId = string.Empty
         };
 
-        var session = await _paymentGateway.CreateCheckoutSessionAsync(
-            payment.Id,
-            course.Id,
-            course.Title,
-            course.Price,
-            user.Email ?? string.Empty,
-            cancellationToken);
+        _context.Payments.Add(payment);
+        await _context.SaveChangesAsync(cancellationToken);
+
+        CheckoutSession session;
+        try
+        {
+            session = await _paymentGateway.CreateCheckoutSessionAsync(
+                payment.Id,
+                course.Id,
+                course.Title,
+                course.Price,
+                user.Email ?? string.Empty,
+                cancellationToken);
+        }
+        catch
+        {
+            return new CheckoutSessionDto(null, false);
+        }
 
         payment.StripeSessionId = session.SessionId;
         payment.Currency = session.Currency;
-
-        _context.Payments.Add(payment);
+        payment.MarkUpdated();
         await _context.SaveChangesAsync(cancellationToken);
 
         return new CheckoutSessionDto(session.RedirectUrl, false);
     }
 
-    private async Task EnrollDirectlyAsync(Guid userId, Guid courseId, CancellationToken cancellationToken)
+    private async Task<CheckoutSessionDto> EnrollForFreeAsync(Guid userId, Course course, CancellationToken cancellationToken)
     {
+        var payment = new Payment
+        {
+            UserId = userId,
+            CourseId = course.Id,
+            Amount = 0,
+            Currency = _paymentGateway.DefaultCurrency,
+            Status = PaymentStatus.Completed,
+            CompletedAt = DateTime.UtcNow,
+            StripeSessionId = string.Empty
+        };
+
+        _context.Payments.Add(payment);
+
         _context.Enrollments.Add(new Enrollment
         {
             UserId = userId,
-            CourseId = courseId,
+            CourseId = course.Id,
             EnrolledAt = DateTime.UtcNow
         });
 
@@ -129,12 +153,14 @@ public class CreateCheckoutSessionCommandHandler : IRequestHandler<CreateCheckou
         catch (DbUpdateException)
         {
             var alreadyEnrolled = await _context.Enrollments
-                .AnyAsync(e => e.UserId == userId && e.CourseId == courseId, cancellationToken);
+                .AnyAsync(e => e.UserId == userId && e.CourseId == course.Id, cancellationToken);
 
             if (!alreadyEnrolled)
             {
                 throw;
             }
         }
+
+        return new CheckoutSessionDto(null, true);
     }
 }

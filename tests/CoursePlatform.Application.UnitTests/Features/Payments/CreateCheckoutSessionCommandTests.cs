@@ -20,6 +20,7 @@ public class CreateCheckoutSessionCommandTests
     {
         var options = new DbContextOptionsBuilder<TestDbContext>()
             .UseInMemoryDatabase(Guid.NewGuid().ToString())
+            .ConfigureWarnings(w => w.Ignore(Microsoft.EntityFrameworkCore.Diagnostics.InMemoryEventId.TransactionIgnoredWarning))
             .Options;
         _context = new TestDbContext(options);
     }
@@ -74,7 +75,24 @@ public class CreateCheckoutSessionCommandTests
     }
 
     [Fact]
-    public async Task Handle_FreeCourse_EnrollsDirectlyWithoutPayment()
+    public async Task Handle_PaidCourse_SavesPaymentBeforeGatewayCall()
+    {
+        var (_, course) = await SeedAsync(price: 49);
+        _gateway.OnCreateCheckoutSession = () =>
+        {
+            var payment = _context.Payments.Single();
+            payment.Status.Should().Be(PaymentStatus.Pending);
+            payment.StripeSessionId.Should().BeEmpty();
+            payment.Currency.Should().BeEmpty();
+        };
+
+        await CreateHandler().Handle(new CreateCheckoutSessionCommand(course.Id), CancellationToken.None);
+
+        _context.Payments.Should().ContainSingle();
+    }
+
+    [Fact]
+    public async Task Handle_FreeCourse_CreatesCompletedPaymentAndEnrolls()
     {
         var (student, course) = await SeedAsync(price: 0);
 
@@ -82,7 +100,15 @@ public class CreateCheckoutSessionCommandTests
 
         result.Enrolled.Should().BeTrue();
         result.RedirectUrl.Should().BeNull();
-        _context.Payments.Should().BeEmpty();
+
+        var payment = _context.Payments.Single();
+        payment.UserId.Should().Be(student.Id);
+        payment.CourseId.Should().Be(course.Id);
+        payment.Amount.Should().Be(0);
+        payment.Currency.Should().Be("pln");
+        payment.Status.Should().Be(PaymentStatus.Completed);
+        payment.CompletedAt.Should().NotBeNull();
+
         _context.Enrollments.Should().ContainSingle(e => e.UserId == student.Id && e.CourseId == course.Id);
     }
 

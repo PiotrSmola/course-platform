@@ -20,4 +20,4 @@ public record CourseListDto(
     int ReviewCount,
     IReadOnlyCollection<string> MatchedBy);
 
-public record CoursesVm(IReadOnlyCollection<CourseListDto> Items, int TotalCount);
+public record CoursesVm(IReadOnlyCollection<CourseListDto> Items, long TotalCount);

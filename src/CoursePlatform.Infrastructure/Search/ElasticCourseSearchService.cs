@@ -2,7 +2,6 @@ using CoursePlatform.Application.Common.Interfaces;
 using CoursePlatform.Application.Features.Courses.Queries.GetCourses;
 using CoursePlatform.Domain.Enums;
 using CoursePlatform.Infrastructure.Options;
-using CoursePlatform.Infrastructure.Persistence;
 using Elastic.Clients.Elasticsearch;
 using Elastic.Clients.Elasticsearch.Core.Search;
 using Elastic.Clients.Elasticsearch.QueryDsl;
@@ -12,18 +11,18 @@ using Microsoft.Extensions.Options;
 
 namespace CoursePlatform.Infrastructure.Search;
 
-internal sealed class ElasticCourseSearchService : ICourseSearchService
+public sealed class ElasticCourseSearchService : ICourseSearchService
 {
     private readonly ElasticsearchClient _client;
     private readonly ElasticOptions _options;
-    private readonly ApplicationDbContext _db;
+    private readonly IApplicationDbContext _db;
     private readonly EfCourseSearchService _fallback;
     private readonly ILogger<ElasticCourseSearchService> _logger;
 
     public ElasticCourseSearchService(
         ElasticsearchClient client,
         IOptions<ElasticOptions> options,
-        ApplicationDbContext db,
+        IApplicationDbContext db,
         EfCourseSearchService fallback,
         ILogger<ElasticCourseSearchService> logger)
     {
@@ -68,11 +67,13 @@ internal sealed class ElasticCourseSearchService : ICourseSearchService
                 .Should(should)
                 .MinimumShouldMatch(1)
                 .Filter(filter)))
-            .Sort(sort => ApplySort(sort, criteria.SortBy)), cancellationToken);
+            .Sort(sort => ApplySort(sort, criteria.SortBy))
+            .TrackTotalHits(true), cancellationToken);
 
         if (!response.IsValidResponse)
         {
-            throw new InvalidOperationException("Elasticsearch search failed.");
+            _logger.LogWarning("Elasticsearch search failed: {Details}", response.DebugInformation);
+            return await _fallback.SearchAsync(criteria, cancellationToken);
         }
 
         var ids = new List<Guid>();
@@ -83,10 +84,10 @@ internal sealed class ElasticCourseSearchService : ICourseSearchService
             if (!Guid.TryParse(hit.Id, out var id)) continue;
 
             ids.Add(id);
-            matchedById[id] = ReadMatchedQueries(hit.MatchedQueries);
+            matchedById[id] = ReadMatchedQueries(hit.MatchedQueries, criteria.SearchTerm!.Trim(), hit.Source);
         }
 
-        var total = response.Total > 0 ? (int)response.Total : ids.Count;
+        var total = response.Total > 0 ? response.Total : ids.Count;
 
         if (ids.Count == 0)
         {
@@ -129,7 +130,7 @@ internal sealed class ElasticCourseSearchService : ICourseSearchService
         var rowById = rows.ToDictionary(x => x.Id, x => x);
         var ordered = ids
             .Where(rowById.ContainsKey)
-            .Select(id => rowById[id] with { MatchedBy = matchedById.GetValueOrDefault(id) ?? Array.Empty<string>() })
+            .Select(id => rowById[id] with { MatchedBy = matchedById.GetValueOrDefault(id) ?? new[] { "database" } })
             .ToList();
 
         return new CourseSearchPage(ordered, total);
@@ -234,10 +235,10 @@ internal sealed class ElasticCourseSearchService : ICourseSearchService
 
         if (criteria.MinPrice.HasValue || criteria.MaxPrice.HasValue)
         {
-            filter.Add(new NumberRangeQuery("price")
+            filter.Add(new NumberRangeQuery("priceMinorUnits")
             {
-                Gte = criteria.MinPrice.HasValue ? (double)criteria.MinPrice.Value : null,
-                Lte = criteria.MaxPrice.HasValue ? (double)criteria.MaxPrice.Value : null
+                Gte = criteria.MinPrice.HasValue ? (double?)ToMinorUnits(criteria.MinPrice.Value) : null,
+                Lte = criteria.MaxPrice.HasValue ? (double?)ToMinorUnits(criteria.MaxPrice.Value) : null
             });
         }
 
@@ -285,8 +286,8 @@ internal sealed class ElasticCourseSearchService : ICourseSearchService
     {
         return sortBy switch
         {
-            "price-asc" => sort.Field(f => f.Price, o => o.Order(SortOrder.Asc)),
-            "price-desc" => sort.Field(f => f.Price, o => o.Order(SortOrder.Desc)),
+            "price-asc" => sort.Field(f => f.PriceMinorUnits, o => o.Order(SortOrder.Asc)),
+            "price-desc" => sort.Field(f => f.PriceMinorUnits, o => o.Order(SortOrder.Desc)),
             "rating" => sort.Field(f => f.AverageRating, o => o.Order(SortOrder.Desc)),
             "popular" => sort.Field(f => f.ReviewCount, o => o.Order(SortOrder.Desc)),
             "newest" => sort.Field(f => f.CreatedAt, o => o.Order(SortOrder.Desc)),
@@ -295,17 +296,46 @@ internal sealed class ElasticCourseSearchService : ICourseSearchService
     }
 
     private static IReadOnlyCollection<string> ReadMatchedQueries(
-        Union<IReadOnlyCollection<string>, IReadOnlyDictionary<string, double>>? matchedQueries)
+        Union<IReadOnlyCollection<string>, IReadOnlyDictionary<string, double>>? matchedQueries,
+        string term,
+        CourseSearchDocument? source)
     {
-        if (matchedQueries is null) return Array.Empty<string>();
-
-        var names = matchedQueries.Match(
+        var names = matchedQueries?.Match(
             plain => plain ?? (IEnumerable<string>)Array.Empty<string>(),
-            scored => scored?.Keys ?? (IEnumerable<string>)Array.Empty<string>());
+            scored => scored?.Keys ?? (IEnumerable<string>)Array.Empty<string>()) ?? Array.Empty<string>();
 
-        return names
+        var result = names
             .Select(n => n.Split(':')[0])
             .Distinct(StringComparer.OrdinalIgnoreCase)
             .ToList();
+
+        if (result.Count > 0)
+        {
+            return result;
+        }
+
+        return ComputeMatchedByFallback(term, source);
     }
+
+    private static IReadOnlyCollection<string> ComputeMatchedByFallback(string term, CourseSearchDocument? source)
+    {
+        if (source == null) return new[] { "database" };
+
+        var normalizedTerm = term.ToLowerInvariant();
+        var matched = new List<string>();
+
+        if (ContainsNormalized(source.Title, normalizedTerm)) matched.Add("title");
+        if (ContainsNormalized(source.ShortDescription, normalizedTerm) || ContainsNormalized(source.Description, normalizedTerm)) matched.Add("description");
+        if (source.CategoryNames.Any(c => ContainsNormalized(c, normalizedTerm)) || source.TechnologyNames.Any(t => ContainsNormalized(t, normalizedTerm))) matched.Add("tags");
+        if (ContainsNormalized(source.InstructorName, normalizedTerm)) matched.Add("instructor");
+
+        return matched.Count > 0 ? matched : new[] { "database" };
+    }
+
+    private static bool ContainsNormalized(string? value, string term)
+    {
+        return value != null && value.ToLowerInvariant().Contains(term, StringComparison.InvariantCultureIgnoreCase);
+    }
+
+    private static long ToMinorUnits(decimal value) => (long)(value * 100);
 }

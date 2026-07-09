@@ -1,3 +1,4 @@
+using CoursePlatform.Application.Common.Exceptions;
 using CoursePlatform.Application.Common.Interfaces;
 using CoursePlatform.Infrastructure.Options;
 using Microsoft.Extensions.Options;
@@ -21,6 +22,8 @@ internal sealed class StripePaymentGateway : IPaymentGateway
 
     public bool IsConfigured =>
         _client != null && !string.IsNullOrWhiteSpace(_options.WebhookSecret);
+
+    public string DefaultCurrency => _options.Currency;
 
     public async Task<CheckoutSession> CreateCheckoutSessionAsync(
         Guid paymentId,
@@ -84,23 +87,36 @@ internal sealed class StripePaymentGateway : IPaymentGateway
         }
         catch (StripeException ex)
         {
-            throw new FluentValidation.ValidationException(new[]
-            {
-                new FluentValidation.Results.ValidationFailure("Signature", $"Invalid webhook signature: {ex.Message}")
-            });
+            throw new InvalidWebhookSignatureException($"Invalid webhook signature: {ex.Message}");
         }
 
         return stripeEvent.Type switch
         {
-            "checkout.session.completed" => ToEvent(PaymentGatewayEventType.CheckoutCompleted, stripeEvent),
-            "checkout.session.expired" => ToEvent(PaymentGatewayEventType.CheckoutExpired, stripeEvent),
-            _ => new PaymentGatewayEvent(PaymentGatewayEventType.Ignored, null, null)
+            "checkout.session.completed" => ToSessionEvent(PaymentGatewayEventType.CheckoutCompleted, stripeEvent),
+            "checkout.session.expired" => ToSessionEvent(PaymentGatewayEventType.CheckoutExpired, stripeEvent),
+            "charge.refunded" => ToChargeEvent(PaymentGatewayEventType.PaymentRefunded, stripeEvent),
+            "charge.dispute.created" => ToChargeEvent(PaymentGatewayEventType.Chargeback, stripeEvent),
+            _ => new PaymentGatewayEvent(PaymentGatewayEventType.Ignored, stripeEvent.Id, null, null, null, null)
         };
     }
 
-    private static PaymentGatewayEvent ToEvent(PaymentGatewayEventType type, Event stripeEvent)
+    private static PaymentGatewayEvent ToSessionEvent(PaymentGatewayEventType type, Event stripeEvent)
     {
         var session = stripeEvent.Data.Object as Session;
-        return new PaymentGatewayEvent(type, session?.Id, session?.AmountTotal);
+        var paymentId = session?.Metadata?["paymentId"] ?? session?.ClientReferenceId;
+        return new PaymentGatewayEvent(type, stripeEvent.Id, session?.Id, session?.AmountTotal, session?.Currency, paymentId);
+    }
+
+    private static PaymentGatewayEvent ToChargeEvent(PaymentGatewayEventType type, Event stripeEvent)
+    {
+        var charge = stripeEvent.Data.Object as Charge;
+        var paymentId = charge?.Metadata?["paymentId"];
+        return new PaymentGatewayEvent(
+            type,
+            stripeEvent.Id,
+            charge?.PaymentIntentId,
+            charge?.AmountRefunded,
+            charge?.Currency,
+            paymentId);
     }
 }

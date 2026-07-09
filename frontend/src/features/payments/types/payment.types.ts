@@ -15,3 +15,11 @@ export interface PaymentStatusDto {
   courseId: string
   courseTitle: string
 }
+
+export interface PurchaseDto {
+  courseId: string
+  courseTitle: string
+  amount: number
+  currency: string
+  completedAt: string
+}

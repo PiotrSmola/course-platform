@@ -11,6 +11,7 @@ using CoursePlatform.Infrastructure.Search;
 using Amazon.S3;
 using Amazon.Runtime;
 using Elastic.Clients.Elasticsearch;
+using Elastic.Transport;
 
 namespace CoursePlatform.Infrastructure;
 
@@ -72,6 +73,16 @@ public static class DependencyInjection
             {
                 var opts = sp.GetRequiredService<Microsoft.Extensions.Options.IOptions<ElasticOptions>>().Value;
                 var settings = new ElasticsearchClientSettings(new Uri(opts.Uri));
+
+                if (!string.IsNullOrWhiteSpace(opts.ApiKey))
+                {
+                    settings.Authentication(new ApiKey(opts.ApiKey));
+                }
+                else if (!string.IsNullOrWhiteSpace(opts.Username) && !string.IsNullOrWhiteSpace(opts.Password))
+                {
+                    settings.Authentication(new BasicAuthentication(opts.Username, opts.Password));
+                }
+
                 return new ElasticsearchClient(settings);
             });
             services.AddScoped<ICourseSearchService, ElasticCourseSearchService>();

@@ -88,6 +88,30 @@
           </div>
         </div>
 
+        <div class="purchases-card glass-card">
+          <h3>Ostatnie zakupy</h3>
+          <div v-if="purchases.isLoading.value" class="purchases-empty">Ładowanie...</div>
+          <div v-else-if="!purchases.data.value?.length" class="purchases-empty">
+            Nie masz jeszcze żadnych zakupionych kursów.
+          </div>
+          <div v-else class="purchases-list">
+            <router-link
+              v-for="purchase in purchases.data.value"
+              :key="purchase.courseId + purchase.completedAt"
+              class="purchase-item"
+              :to="{ name: 'CourseDetails', params: { id: purchase.courseId } }"
+            >
+              <div class="purchase-info">
+                <span class="purchase-title">{{ purchase.courseTitle }}</span>
+                <span class="purchase-date">
+                  {{ new Date(purchase.completedAt).toLocaleDateString('pl-PL') }}
+                </span>
+              </div>
+              <span class="purchase-amount">{{ formatPrice(purchase.amount, purchase.currency) }}</span>
+            </router-link>
+          </div>
+        </div>
+
         <div class="danger-card glass-card">
           <h3>Strefa niebezpieczna</h3>
           <p>Usunięcie konta jest nieodwracalne. Wszystkie Twoje dane, postępy i recenzje zostaną trwale usunięte.</p>
@@ -123,10 +147,12 @@ import { useRouter } from 'vue-router'
 import { useForm } from 'vee-validate'
 import { toTypedSchema } from '@vee-validate/zod'
 import { useProfile } from '@/features/profile/composables/useProfile'
+import { useMyPurchases } from '@/features/payments/composables/usePayments'
 import { useAuthStore } from '@/features/auth/stores/auth.store'
 import { updateProfileSchema } from '@/features/profile/schemas/profile.schema'
 
 const { profile, update, deleteAccount } = useProfile()
+const purchases = useMyPurchases()
 const authStore = useAuthStore()
 const router = useRouter()
 const showDeleteModal = ref(false)
@@ -172,6 +198,10 @@ const stats = computed(() => {
     lastActivityAt: null
   }
 })
+
+function formatPrice(amount: number, currency: string): string {
+  return new Intl.NumberFormat('pl-PL', { style: 'currency', currency: currency.toUpperCase() }).format(amount)
+}
 
 function formatTime(seconds: number): string {
   const hours = Math.floor(seconds / 3600)
@@ -344,6 +374,68 @@ function confirmDelete() {
     font-size: 0.82rem;
     color: $color-muted;
   }
+}
+
+.purchases-card {
+  padding: 28px;
+
+  h3 {
+    font-size: 1.1rem;
+    margin-bottom: 20px;
+  }
+}
+
+.purchases-empty {
+  font-size: 0.9rem;
+  color: $color-muted;
+}
+
+.purchases-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.purchase-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 14px 16px;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.04);
+  text-decoration: none;
+  color: inherit;
+  transition: background 0.2s;
+
+  &:hover {
+    background: rgba(255, 255, 255, 0.08);
+  }
+}
+
+.purchase-info {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+}
+
+.purchase-title {
+  font-size: 0.94rem;
+  font-weight: 600;
+  color: $color-ink;
+}
+
+.purchase-date {
+  font-size: 0.8rem;
+  color: $color-faint;
+}
+
+.purchase-amount {
+  flex-shrink: 0;
+  font-size: 0.94rem;
+  font-weight: 700;
+  color: $color-gold;
 }
 
 .danger-card {

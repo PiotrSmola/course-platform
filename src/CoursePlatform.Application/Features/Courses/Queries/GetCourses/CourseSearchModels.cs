@@ -35,5 +35,5 @@ public sealed record CourseListRow(
     int ReviewCount,
     IReadOnlyCollection<string> MatchedBy);
 
-public sealed record CourseSearchPage(IReadOnlyCollection<CourseListRow> Items, int TotalCount);
+public sealed record CourseSearchPage(IReadOnlyCollection<CourseListRow> Items, long TotalCount);
 

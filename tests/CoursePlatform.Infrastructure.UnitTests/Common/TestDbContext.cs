@@ -1,20 +1,16 @@
 using Microsoft.EntityFrameworkCore;
-using Microsoft.AspNetCore.Identity;
-using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
-using CoursePlatform.Domain.Entities;
 using CoursePlatform.Application.Common.Interfaces;
-using System.Reflection;
+using CoursePlatform.Domain.Entities;
+using CoursePlatform.Infrastructure.Persistence.Configurations;
 
-namespace CoursePlatform.Infrastructure.Persistence;
+namespace CoursePlatform.Infrastructure.UnitTests.Common;
 
-public class ApplicationDbContext : IdentityDbContext<ApplicationUser, IdentityRole<Guid>, Guid>, IApplicationDbContext
+public class TestDbContext : DbContext, IApplicationDbContext
 {
-    public ApplicationDbContext(DbContextOptions<ApplicationDbContext> options) : base(options) { }
-
     public DbSet<Course> Courses => Set<Course>();
     public DbSet<Category> Categories => Set<Category>();
     public DbSet<Technology> Technologies => Set<Technology>();
-    public DbSet<Domain.Entities.Module> Modules => Set<Domain.Entities.Module>();
+    public DbSet<Module> Modules => Set<Module>();
     public DbSet<Lesson> Lessons => Set<Lesson>();
     public DbSet<Enrollment> Enrollments => Set<Enrollment>();
     public DbSet<LessonProgress> LessonProgresses => Set<LessonProgress>();
@@ -26,11 +22,13 @@ public class ApplicationDbContext : IdentityDbContext<ApplicationUser, IdentityR
     public DbSet<UserStatistics> UserStatistics => Set<UserStatistics>();
     public DbSet<Payment> Payments => Set<Payment>();
     public DbSet<ProcessedStripeEvent> ProcessedStripeEvents => Set<ProcessedStripeEvent>();
-    public new DbSet<ApplicationUser> Users => Set<ApplicationUser>();
+    public DbSet<ApplicationUser> Users => Set<ApplicationUser>();
+
+    public TestDbContext(DbContextOptions<TestDbContext> options) : base(options) { }
 
     protected override void OnModelCreating(ModelBuilder builder)
     {
-        base.OnModelCreating(builder);
-        builder.ApplyConfigurationsFromAssembly(Assembly.GetExecutingAssembly());
+        builder.Entity<ApplicationUser>().HasKey(u => u.Id);
+        builder.ApplyConfigurationsFromAssembly(typeof(CourseConfiguration).Assembly);
     }
 }

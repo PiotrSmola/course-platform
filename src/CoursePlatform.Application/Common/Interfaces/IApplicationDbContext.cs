@@ -1,4 +1,5 @@
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Infrastructure;
 using CoursePlatform.Domain.Entities;
 
 namespace CoursePlatform.Application.Common.Interfaces;
@@ -19,7 +20,10 @@ public interface IApplicationDbContext
     DbSet<BusinessPlanFeature> BusinessPlanFeatures { get; }
     DbSet<UserStatistics> UserStatistics { get; }
     DbSet<Payment> Payments { get; }
+    DbSet<ProcessedStripeEvent> ProcessedStripeEvents { get; }
     DbSet<ApplicationUser> Users { get; }
+
+    DatabaseFacade Database { get; }
 
     Task<int> SaveChangesAsync(CancellationToken cancellationToken = default);
 }
