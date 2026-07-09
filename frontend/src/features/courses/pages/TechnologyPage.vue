@@ -475,7 +475,7 @@ const visiblePages = computed(() => {
 .sort-menu {
   @include liquid-glass;
   --lg-r: 16px;
-  --lg-blur: 0px;
+  --lg-blur: 2px;
   --lg-tint: rgba(17, 24, 39, 0.55);
   position: absolute;
   top: calc(100% + 8px);

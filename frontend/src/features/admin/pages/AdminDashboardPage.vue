@@ -7,14 +7,15 @@
       </div>
 
       <div class="tabs">
-        <button type="button" :class="{ active: tab === 'users' }" @click="tab = 'users'">Użytkownicy</button>
-        <button type="button" :class="{ active: tab === 'courses' }" @click="tab = 'courses'">Kursy</button>
-        <button type="button" :class="{ active: tab === 'search' }" @click="tab = 'search'">Wyszukiwarka</button>
+        <button type="button" class="glass no-warp" :class="{ active: tab === 'users' }" @click="tab = 'users'">Użytkownicy</button>
+        <button type="button" class="glass no-warp" :class="{ active: tab === 'courses' }" @click="tab = 'courses'">Kursy</button>
+        <button type="button" class="glass no-warp" :class="{ active: tab === 'search' }" @click="tab = 'search'">Wyszukiwarka</button>
       </div>
 
       <section v-if="tab === 'users'" class="panel glass-card">
         <div v-if="usersLoading" class="loading">Ładowanie...</div>
-        <table v-else class="data-table">
+        <div v-else class="table-scroll">
+        <table class="data-table">
           <thead>
             <tr>
               <th>Email</th>
@@ -41,11 +42,13 @@
             </tr>
           </tbody>
         </table>
+        </div>
       </section>
 
       <section v-else-if="tab === 'courses'" class="panel glass-card">
         <div v-if="coursesLoading" class="loading">Ładowanie...</div>
-        <table v-else class="data-table">
+        <div v-else class="table-scroll">
+        <table class="data-table">
           <thead>
             <tr>
               <th>Tytuł</th>
@@ -80,6 +83,7 @@
             </tr>
           </tbody>
         </table>
+        </div>
       </section>
 
       <section v-else class="panel search-panel">
@@ -135,27 +139,47 @@ function hide(courseId: string) {
 
 .tabs {
   display: flex;
-  gap: 8px;
+  gap: 10px;
   margin-bottom: 24px;
 
   button {
-    padding: 10px 18px;
-    border-radius: 999px;
+    --lg-r: 999px;
+    --lg-blur: 0px;
+    padding: 10px 20px;
     border: none;
-    background: rgba(255, 255, 255, 0.04);
+    background: none;
     color: $color-muted;
     cursor: pointer;
     font: inherit;
+    font-weight: 500;
+    transition: color 0.25s, transform 0.2s;
+
+    &:hover {
+      color: $color-ink;
+      transform: translateY(-1px);
+    }
 
     &.active {
-      background: rgba(245, 158, 11, 0.15);
+      --lg-tint: rgba(245, 158, 11, 0.14);
       color: $color-ink;
+      font-weight: 600;
+
+      &::after {
+        box-shadow:
+          inset 2px 2px 1px -1px rgba(255, 255, 255, 0.6),
+          inset -2px -2px 1px -1px rgba(255, 255, 255, 0.22),
+          inset 0 0 0 1px rgba(251, 191, 36, 0.4),
+          inset 0 -10px 18px -12px rgba(245, 158, 11, 0.5);
+      }
     }
   }
 }
 
 .panel {
   padding: 24px;
+}
+
+.table-scroll {
   overflow-x: auto;
 }
 
@@ -166,19 +190,45 @@ function hide(courseId: string) {
 
 .data-table {
   width: 100%;
-  border-collapse: collapse;
+  border-collapse: separate;
+  border-spacing: 0;
   font-size: 0.9rem;
 
   th, td {
     text-align: left;
-    padding: 12px;
-    border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+    padding: 13px 14px;
   }
 
   th {
     color: $color-muted;
     font-weight: 600;
+    font-size: 0.8rem;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    background: rgba(255, 255, 255, 0.05);
+    box-shadow:
+      inset 0 1px 1px rgba(255, 255, 255, 0.22),
+      inset 0 -1px 0 rgba(255, 255, 255, 0.08);
+
+    &:first-child { border-radius: 14px 0 0 14px; }
+    &:last-child { border-radius: 0 14px 14px 0; }
   }
+
+  td {
+    box-shadow: inset 0 -1px 0 rgba(255, 255, 255, 0.05);
+    transition: background 0.2s;
+  }
+
+  tbody tr:last-child td {
+    box-shadow: none;
+  }
+
+  tbody tr:hover td {
+    background: rgba(255, 255, 255, 0.045);
+  }
+
+  tbody td:first-child { border-radius: 12px 0 0 12px; }
+  tbody td:last-child { border-radius: 0 12px 12px 0; }
 }
 
 .actions-cell {

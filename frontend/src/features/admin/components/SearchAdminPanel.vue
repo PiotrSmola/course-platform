@@ -245,13 +245,13 @@ function formatDuration(startMs: number, endMs: number): string {
 }
 
 .status-banner {
+  @include liquid-glass;
+  --lg-r: 18px;
+  --lg-blur: 0px;
   display: flex;
   align-items: center;
   gap: 14px;
   padding: 14px 18px;
-  border-radius: $radius-md;
-  background: rgba(255, 255, 255, 0.04);
-  border: 1px solid $color-hairline;
 
   strong {
     margin-right: 8px;
@@ -271,14 +271,24 @@ function formatDuration(startMs: number, endMs: number): string {
     display: grid;
     place-items: center;
     background: rgba(255, 255, 255, 0.06);
+    box-shadow:
+      inset 0 1px 1px rgba(255, 255, 255, 0.3),
+      inset 0 0 0 1px rgba(255, 255, 255, 0.08);
     font-weight: 700;
     color: $color-ink;
     flex-shrink: 0;
   }
 
   &.banner-running {
-    background: rgba(34, 211, 238, 0.1);
-    border-color: rgba(34, 211, 238, 0.4);
+    --lg-tint: rgba(34, 211, 238, 0.1);
+
+    &::after {
+      box-shadow:
+        inset 2px 2px 1px -1px rgba(255, 255, 255, 0.55),
+        inset -2px -2px 1px -1px rgba(255, 255, 255, 0.2),
+        inset 0 0 0 1px rgba(34, 211, 238, 0.35),
+        inset 0 -12px 24px -14px rgba(34, 211, 238, 0.45);
+    }
 
     .banner-icon {
       background: rgba(34, 211, 238, 0.2);
@@ -287,8 +297,15 @@ function formatDuration(startMs: number, endMs: number): string {
   }
 
   &.banner-success {
-    background: rgba(34, 197, 94, 0.1);
-    border-color: rgba(34, 197, 94, 0.4);
+    --lg-tint: rgba(34, 197, 94, 0.1);
+
+    &::after {
+      box-shadow:
+        inset 2px 2px 1px -1px rgba(255, 255, 255, 0.55),
+        inset -2px -2px 1px -1px rgba(255, 255, 255, 0.2),
+        inset 0 0 0 1px rgba(34, 197, 94, 0.35),
+        inset 0 -12px 24px -14px rgba(34, 197, 94, 0.45);
+    }
 
     .banner-icon {
       background: rgba(34, 197, 94, 0.2);
@@ -297,8 +314,15 @@ function formatDuration(startMs: number, endMs: number): string {
   }
 
   &.banner-error {
-    background: rgba(244, 63, 94, 0.1);
-    border-color: rgba(244, 63, 94, 0.4);
+    --lg-tint: rgba(244, 63, 94, 0.1);
+
+    &::after {
+      box-shadow:
+        inset 2px 2px 1px -1px rgba(255, 255, 255, 0.55),
+        inset -2px -2px 1px -1px rgba(255, 255, 255, 0.2),
+        inset 0 0 0 1px rgba(244, 63, 94, 0.35),
+        inset 0 -12px 24px -14px rgba(244, 63, 94, 0.45);
+    }
 
     .banner-icon {
       background: rgba(244, 63, 94, 0.2);
@@ -307,8 +331,15 @@ function formatDuration(startMs: number, endMs: number): string {
   }
 
   &.banner-warning {
-    background: rgba(245, 158, 11, 0.1);
-    border-color: rgba(245, 158, 11, 0.4);
+    --lg-tint: rgba(245, 158, 11, 0.1);
+
+    &::after {
+      box-shadow:
+        inset 2px 2px 1px -1px rgba(255, 255, 255, 0.55),
+        inset -2px -2px 1px -1px rgba(255, 255, 255, 0.2),
+        inset 0 0 0 1px rgba(245, 158, 11, 0.35),
+        inset 0 -12px 24px -14px rgba(245, 158, 11, 0.45);
+    }
 
     .banner-icon {
       background: rgba(245, 158, 11, 0.2);
@@ -372,11 +403,14 @@ function formatDuration(startMs: number, endMs: number): string {
     display: grid;
     grid-template-columns: 1fr auto;
     gap: 12px;
-    padding: 6px 0;
-    border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+    padding: 7px 10px;
+    border-radius: 10px;
+    box-shadow: inset 0 -1px 0 rgba(255, 255, 255, 0.05);
     font-size: 0.88rem;
+    transition: background 0.2s;
 
-    &:last-child { border-bottom: none; }
+    &:hover { background: rgba(255, 255, 255, 0.04); }
+    &:last-child { box-shadow: none; }
   }
 
   dt {
@@ -403,6 +437,9 @@ function formatDuration(startMs: number, endMs: number): string {
   position: relative;
   height: 10px;
   background: rgba(255, 255, 255, 0.06);
+  box-shadow:
+    inset 0 1px 2px rgba(3, 6, 24, 0.4),
+    inset 0 0 0 1px rgba(255, 255, 255, 0.08);
   border-radius: $radius-full;
   overflow: hidden;
 }
@@ -414,6 +451,9 @@ function formatDuration(startMs: number, endMs: number): string {
   transition: width 0.3s ease;
   animation: shift 4s linear infinite;
   border-radius: $radius-full;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.35),
+    0 0 12px rgba(245, 158, 11, 0.4);
 }
 
 @keyframes shift {
@@ -442,9 +482,13 @@ function formatDuration(startMs: number, endMs: number): string {
 .logs {
   max-height: 320px;
   overflow-y: auto;
-  background: rgba(0, 0, 0, 0.25);
-  border-radius: $radius-sm;
-  padding: 10px 12px;
+  background: rgba(6, 10, 26, 0.35);
+  box-shadow:
+    inset 0 2px 6px rgba(3, 6, 24, 0.45),
+    inset 0 0 0 1px rgba(255, 255, 255, 0.07),
+    inset 0 -12px 24px -16px rgba(255, 255, 255, 0.14);
+  border-radius: 14px;
+  padding: 12px 14px;
   font-family: ui-monospace, "SFMono-Regular", "Menlo", monospace;
   font-size: 0.78rem;
   display: flex;
@@ -498,35 +542,13 @@ function formatDuration(startMs: number, endMs: number): string {
 
 .btn {
   padding: 10px 20px;
-  border-radius: 999px;
-  border: none;
-  font: inherit;
   font-size: 0.9rem;
-  font-weight: 600;
-  cursor: pointer;
-  color: $color-ink;
-  background: rgba(255, 255, 255, 0.06);
-  transition: background 0.2s, transform 0.15s;
-
-  &:hover:not(:disabled) {
-    background: rgba(255, 255, 255, 0.1);
-    transform: translateY(-1px);
-  }
 
   &:disabled {
     opacity: 0.5;
     cursor: not-allowed;
-  }
-}
-
-.btn-primary {
-  background: rgba(245, 158, 11, 0.2);
-  color: #fcd34d;
-  border: 1px solid rgba(245, 158, 11, 0.45);
-  box-shadow: 0 8px 20px rgba(245, 158, 11, 0.18);
-
-  &:hover:not(:disabled) {
-    background: rgba(245, 158, 11, 0.3);
+    animation: none;
+    transform: none;
   }
 }
 

@@ -5,7 +5,7 @@
 //   --lg-r    : border-radius   (default 24px)
 //   --lg-blur : blur amount     (default 0px  → no blur on most elements)
 //   --lg-tint : tint colour     (default rgba(255,255,255,0.03))
-//   --lens    : SVG filter URL  (default url(#liquid-lens))
+//   --lens    : SVG filter URL  (assigned per element by useLiquidGlass, default none)
 @mixin liquid-glass {
   position: relative;
   z-index: 0;
@@ -24,6 +24,14 @@
     clip-path: inset(12px round var(--lg-r, 24px));
     -webkit-backdrop-filter: blur(var(--lg-blur, 0px)) saturate(200%);
     backdrop-filter: blur(var(--lg-blur, 0px)) saturate(200%);
+    filter: var(--lens, none);
+  }
+
+  @supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+    &::before {
+      background: rgba(15, 23, 42, 0.85);
+      filter: none;
+    }
   }
 
   &::after {

@@ -1,4 +1,7 @@
 <script setup lang="ts">
+import { useLiquidGlass } from '@/shared/composables/useLiquidGlass'
+
+useLiquidGlass()
 </script>
 
 <template>

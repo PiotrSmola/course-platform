@@ -574,7 +574,7 @@ onUnmounted(() => {
 .mega-dropdown {
   @include liquid-glass;
   --lg-r: 20px;
-  --lg-blur: 0px;
+  --lg-blur: 2px;
   --lg-tint: rgba(17, 24, 39, 0.55);
   position: absolute;
   top: calc(100% + 8px);
@@ -740,7 +740,7 @@ onUnmounted(() => {
 .search-dropdown {
   @include liquid-glass;
   --lg-r: 20px;
-  --lg-blur: 0px;
+  --lg-blur: 2px;
   --lg-tint: rgba(17, 24, 39, 0.55);
   position: absolute;
   top: calc(100% + 8px);
