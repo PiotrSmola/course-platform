@@ -8,15 +8,18 @@ import {
 import { queryKeys } from '@/shared/queryKeys'
 import { toast } from '@/shared/toast/toast'
 import { getApiErrorMessage } from '@/shared/api/apiError'
+import { ReindexStatus } from '@/features/admin/types/search.types'
 import type { ReindexJobState } from '@/features/admin/types/search.types'
 
-const POLLING_INTERVAL_MS = 500
+const RUNNING_POLL_MS = 1000
+const IDLE_POLL_MS = 5000
+const STATS_POLL_MS = 10000
 
 export function useSearchStats() {
   return useQuery({
     queryKey: queryKeys.searchStats(),
     queryFn: getSearchStats,
-    refetchInterval: POLLING_INTERVAL_MS
+    refetchInterval: STATS_POLL_MS
   })
 }
 
@@ -28,12 +31,19 @@ export function useReindexJob() {
   const jobQuery = useQuery({
     queryKey: queryKeys.reindexJob(),
     queryFn: getReindexJob,
-    refetchInterval: () => POLLING_INTERVAL_MS,
+    refetchInterval: (query) =>
+      query.state.data?.status === ReindexStatus.Running ? RUNNING_POLL_MS : IDLE_POLL_MS,
     refetchIntervalInBackground: false
   })
 
   const job = computed<ReindexJobState | null>(() => jobQuery.data.value ?? null)
-  const isRunning = computed(() => job.value?.status === 'Running')
+  const isRunning = computed(() => job.value?.status === ReindexStatus.Running)
+
+  watch(isRunning, (running, wasRunning) => {
+    if (!running && wasRunning) {
+      queryClient.invalidateQueries({ queryKey: queryKeys.searchStats() })
+    }
+  })
 
   watch(
     () => job.value?.logs.length ?? 0,

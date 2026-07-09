@@ -42,7 +42,7 @@ public class ElasticCourseSearchServiceTests : IAsyncLifetime
             CourseIndexName = _indexName
         });
 
-        _client.Indices.Delete(_indexName);
+        await DeleteTestIndicesAsync();
 
         var fallback = new EfCourseSearchService(_context);
         _service = new ElasticCourseSearchService(_client, options, _context, fallback, NullLogger<ElasticCourseSearchService>.Instance);
@@ -51,8 +51,22 @@ public class ElasticCourseSearchServiceTests : IAsyncLifetime
 
     public async Task DisposeAsync()
     {
-        _client.Indices.Delete(_indexName);
+        await DeleteTestIndicesAsync();
         await _context.DisposeAsync();
+    }
+
+    private async Task DeleteTestIndicesAsync()
+    {
+        var aliasResponse = await _client.Indices.GetAliasAsync(Indices.Index(_indexName));
+        if (aliasResponse.IsValidResponse && aliasResponse.Values != null)
+        {
+            foreach (var index in aliasResponse.Values.Keys)
+            {
+                await _client.Indices.DeleteAsync(index);
+            }
+        }
+
+        await _client.Indices.DeleteAsync(_indexName);
     }
 
     private static CourseSearchCriteria Criteria(

@@ -3,24 +3,28 @@
     <div class="status-banner" :class="bannerClass">
       <div class="banner-icon" aria-hidden="true">
         <span v-if="isRunning" class="spinner"></span>
-        <span v-else-if="job?.status === 'Succeeded'">✓</span>
-        <span v-else-if="job?.status === 'Failed'">!</span>
-        <span v-else-if="job?.status === 'Cancelled'">⊘</span>
+        <span v-else-if="job?.status === ReindexStatus.Succeeded">✓</span>
+        <span v-else-if="job?.status === ReindexStatus.Failed">!</span>
+        <span v-else-if="job?.status === ReindexStatus.Cancelled">⊘</span>
         <span v-else>•</span>
       </div>
       <div class="banner-text">
         <strong>{{ statusLabel }}</strong>
-        <span v-if="job?.phase && isRunning">{{ phaseLabel }}</span>
-        <span v-else-if="job?.status === 'Succeeded'">
+        <span v-if="isRunning">{{ phaseLabel }}</span>
+        <span v-else-if="job?.status === ReindexStatus.Succeeded">
           Indeks zawiera {{ stats?.documentCount ?? 0 }} dokument(ów).
         </span>
-        <span v-else-if="job?.status === 'Failed' && job.errorMessage">
+        <span v-else-if="job?.status === ReindexStatus.Failed && job.errorMessage">
           {{ job.errorMessage }}
         </span>
-        <span v-else-if="!stats?.enabled">
+        <span v-else-if="statsError">
+          Nie udało się pobrać stanu wyszukiwarki — sprawdź, czy API i Elasticsearch działają.
+        </span>
+        <span v-else-if="!stats">Ładowanie stanu wyszukiwarki...</span>
+        <span v-else-if="!stats.enabled">
           Elasticsearch jest wyłączony w konfiguracji — reindex niedostępny.
         </span>
-        <span v-else-if="!stats?.exists">
+        <span v-else-if="!stats.exists">
           Indeks nie został jeszcze utworzony. Uruchom reindeksowanie.
         </span>
         <span v-else>Gotowy do reindeksowania.</span>
@@ -99,10 +103,10 @@
             v-for="(entry, idx) in (job?.logs ?? [])"
             :key="idx"
             class="log-line"
-            :class="`level-${entry.level.toLowerCase()}`"
+            :class="REINDEX_LOG_LEVEL_CLASS[entry.level]"
           >
             <span class="log-time">{{ formatTime(entry.timestamp) }}</span>
-            <span class="log-level">{{ entry.level }}</span>
+            <span class="log-level">{{ REINDEX_LOG_LEVEL_LABEL[entry.level] }}</span>
             <span class="log-msg">{{ entry.message }}</span>
           </div>
         </div>
@@ -115,13 +119,16 @@
 import { computed, nextTick, ref, watch } from 'vue'
 import { useReindexJob, useSearchStats } from '@/features/admin/composables/useReindexJob'
 import {
+  REINDEX_LOG_LEVEL_CLASS,
+  REINDEX_LOG_LEVEL_LABEL,
   REINDEX_PHASE_LABEL,
   REINDEX_STATUS_LABEL,
+  ReindexStatus,
   isTerminalStatus
 } from '@/features/admin/types/search.types'
-import type { ReindexJobState, ReindexPhase, ReindexStatus } from '@/features/admin/types/search.types'
+import type { ReindexPhase } from '@/features/admin/types/search.types'
 
-const { data: stats } = useSearchStats()
+const { data: stats, isError: statsError } = useSearchStats()
 const { job, isRunning, start, newLogCount } = useReindexJob()
 
 const logBox = ref<HTMLElement | null>(null)
@@ -164,13 +171,13 @@ const canStart = computed(() => {
 })
 
 const statusLabel = computed(() => {
-  const status: ReindexStatus | undefined = job.value?.status ?? (stats.value?.exists ? 'Idle' : undefined) ?? 'Idle'
+  const status = job.value?.status ?? ReindexStatus.Idle
   return REINDEX_STATUS_LABEL[status]
 })
 
 const phaseLabel = computed(() => {
   const phase: ReindexPhase | undefined = job.value?.phase
-  return phase ? REINDEX_PHASE_LABEL[phase] : ''
+  return phase !== undefined ? REINDEX_PHASE_LABEL[phase] : ''
 })
 
 const progressWidth = computed(() => {
@@ -182,9 +189,9 @@ const progressWidth = computed(() => {
 const bannerClass = computed(() => {
   if (isRunning.value) return 'banner-running'
   switch (job.value?.status) {
-    case 'Succeeded': return 'banner-success'
-    case 'Failed': return 'banner-error'
-    case 'Cancelled': return 'banner-warning'
+    case ReindexStatus.Succeeded: return 'banner-success'
+    case ReindexStatus.Failed: return 'banner-error'
+    case ReindexStatus.Cancelled: return 'banner-warning'
     default: return 'banner-neutral'
   }
 })

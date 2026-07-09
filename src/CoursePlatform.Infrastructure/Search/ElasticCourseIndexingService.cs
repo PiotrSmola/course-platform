@@ -31,14 +31,24 @@ public sealed class ElasticCourseIndexingService : ICourseIndexingService
 
     public async Task EnsureIndexAsync(CancellationToken cancellationToken)
     {
-        var aliasExists = await _client.Indices.ExistsAsync(_options.CourseIndexName, cancellationToken);
-        if (aliasExists.Exists) return;
+        var aliasResponse = await _client.Indices.GetAliasAsync(Indices.Index(_options.CourseIndexName), cancellationToken);
+        if (aliasResponse.IsValidResponse && aliasResponse.Values?.Count > 0) return;
+
+        var legacyIndexExists = await _client.Indices.ExistsAsync(_options.CourseIndexName, cancellationToken);
+        if (legacyIndexExists.Exists)
+        {
+            _logger.LogWarning(
+                "Found legacy index '{IndexName}' without an alias. Rebuilding it as an aliased index.",
+                _options.CourseIndexName);
+            await ReindexCoursesAsync(cancellationToken);
+            return;
+        }
 
         var indexName = $"{_options.CourseIndexName}-{DateTime.UtcNow:yyyyMMddHHmmssfff}";
         await CreateIndexAsync(indexName, cancellationToken);
 
-        var aliasResponse = await _client.Indices.PutAliasAsync(indexName, _options.CourseIndexName, cancellationToken);
-        if (!aliasResponse.IsValidResponse)
+        var putAliasResponse = await _client.Indices.PutAliasAsync(indexName, _options.CourseIndexName, cancellationToken);
+        if (!putAliasResponse.IsValidResponse)
         {
             throw new InvalidOperationException($"Failed to create alias '{_options.CourseIndexName}'.");
         }
@@ -46,28 +56,44 @@ public sealed class ElasticCourseIndexingService : ICourseIndexingService
 
     public async Task IndexCourseAsync(Guid courseId, CancellationToken cancellationToken)
     {
-        var doc = await ProjectToDocuments(_db.Courses.Where(c => c.Id == courseId))
-            .FirstOrDefaultAsync(cancellationToken);
-
-        if (doc == null) return;
-
-        var response = await _client.IndexAsync(doc, i => i
-            .Index(_options.CourseIndexName)
-            .Id(doc.Id.ToString()), cancellationToken);
-
-        if (!response.IsValidResponse)
+        try
         {
-            throw new InvalidOperationException($"Failed to index course {courseId} in Elasticsearch: {response.DebugInformation}");
+            var doc = await ProjectToDocuments(_db.Courses.Where(c => c.Id == courseId))
+                .FirstOrDefaultAsync(cancellationToken);
+
+            if (doc == null) return;
+
+            var response = await _client.IndexAsync(doc, i => i
+                .Index(_options.CourseIndexName)
+                .Id(doc.Id.ToString()), cancellationToken);
+
+            if (!response.IsValidResponse)
+            {
+                _logger.LogWarning("Failed to index course {CourseId} in Elasticsearch: {Details}",
+                    courseId, response.DebugInformation);
+            }
+        }
+        catch (Exception ex) when (ex is not OperationCanceledException)
+        {
+            _logger.LogWarning(ex, "Failed to index course {CourseId} in Elasticsearch.", courseId);
         }
     }
 
     public async Task DeleteCourseAsync(Guid courseId, CancellationToken cancellationToken)
     {
-        var response = await _client.DeleteAsync(_options.CourseIndexName, courseId.ToString(), cancellationToken);
-
-        if (!response.IsValidResponse && response.Result != Result.NotFound)
+        try
         {
-            throw new InvalidOperationException($"Failed to delete course {courseId} from Elasticsearch: {response.DebugInformation}");
+            var response = await _client.DeleteAsync(_options.CourseIndexName, courseId.ToString(), cancellationToken);
+
+            if (!response.IsValidResponse && response.Result != Result.NotFound)
+            {
+                _logger.LogWarning("Failed to delete course {CourseId} from Elasticsearch: {Details}",
+                    courseId, response.DebugInformation);
+            }
+        }
+        catch (Exception ex) when (ex is not OperationCanceledException)
+        {
+            _logger.LogWarning(ex, "Failed to delete course {CourseId} from Elasticsearch.", courseId);
         }
     }
 
@@ -114,6 +140,15 @@ public sealed class ElasticCourseIndexingService : ICourseIndexingService
             }
         }
 
+        var health = "unknown";
+        var healthResponse = await _client.Cluster.HealthAsync(
+            new Elastic.Clients.Elasticsearch.Cluster.HealthRequest(Indices.Index(_options.CourseIndexName)),
+            cancellationToken);
+        if (healthResponse.IsValidResponse)
+        {
+            health = healthResponse.Status.ToString().ToLowerInvariant();
+        }
+
         return new CourseIndexStats(
             Exists: true,
             Enabled: _options.Enabled,
@@ -122,7 +157,7 @@ public sealed class ElasticCourseIndexingService : ICourseIndexingService
             ConcreteIndexName: concreteIndex,
             DocumentCount: countResponse.IsValidResponse ? countResponse.Count : 0,
             SizeBytes: sizeBytes,
-            Health: "green");
+            Health: health);
     }
 
     public async Task ReindexCoursesChunkedAsync(
@@ -136,7 +171,7 @@ public sealed class ElasticCourseIndexingService : ICourseIndexingService
         var total = await _db.Courses.AsNoTracking().CountAsync(cancellationToken);
         var batchesTotal = total == 0 ? 0 : (total + batchSize - 1) / batchSize;
 
-        progress?.Report(new ReindexProgress(total, 0, 0, batchSize, 0, batchesTotal, 0));
+        progress?.Report(new ReindexProgress(total, 0, 0, batchSize, 0, batchesTotal, 0, ReindexPhase.PreparingIndex));
         log?.Report(new ReindexLogEntry(DateTimeOffset.UtcNow, ReindexLogLevel.Info,
             $"Reindexing {total} course(s) in {batchesTotal} batch(es) of up to {batchSize}."));
 
@@ -151,12 +186,9 @@ public sealed class ElasticCourseIndexingService : ICourseIndexingService
         {
             log?.Report(new ReindexLogEntry(DateTimeOffset.UtcNow, ReindexLogLevel.Info,
                 "No courses to index — switching alias to empty index."));
-            await SwitchAliasAsync(oldIndexName, newIndexName, cancellationToken);
-            if (!string.IsNullOrEmpty(oldIndexName))
-            {
-                await _client.Indices.DeleteAsync(oldIndexName, cancellationToken);
-            }
-            progress?.Report(new ReindexProgress(0, 0, 0, batchSize, 0, 0, 100));
+            progress?.Report(new ReindexProgress(0, 0, 0, batchSize, 0, 0, 99, ReindexPhase.SwitchingAlias));
+            await SwitchAliasSafelyAsync(oldIndexName, newIndexName, log, cancellationToken);
+            progress?.Report(new ReindexProgress(0, 0, 0, batchSize, 0, 0, 100, ReindexPhase.Done));
             return;
         }
 
@@ -208,24 +240,19 @@ public sealed class ElasticCourseIndexingService : ICourseIndexingService
                 BatchSize: batchSize,
                 BatchesCompleted: batchIndex + 1,
                 BatchesTotal: batchesTotal,
-                Percent: percent));
+                Percent: percent,
+                Phase: ReindexPhase.Indexing));
         }
 
         log?.Report(new ReindexLogEntry(DateTimeOffset.UtcNow, ReindexLogLevel.Info,
             $"Refreshing index and switching alias."));
+        progress?.Report(new ReindexProgress(total, processed, failed, batchSize, batchesTotal, batchesTotal, 99, ReindexPhase.SwitchingAlias));
         await _client.Indices.RefreshAsync(newIndexName, cancellationToken);
-        await SwitchAliasAsync(oldIndexName, newIndexName, cancellationToken);
-
-        if (!string.IsNullOrEmpty(oldIndexName))
-        {
-            log?.Report(new ReindexLogEntry(DateTimeOffset.UtcNow, ReindexLogLevel.Info,
-                $"Deleting old index '{oldIndexName}'."));
-            await _client.Indices.DeleteAsync(oldIndexName, cancellationToken);
-        }
+        await SwitchAliasSafelyAsync(oldIndexName, newIndexName, log, cancellationToken);
 
         log?.Report(new ReindexLogEntry(DateTimeOffset.UtcNow, ReindexLogLevel.Info,
             $"Reindex done. Indexed {processed}/{total}, {failed} failure(s)."));
-        progress?.Report(new ReindexProgress(total, processed, failed, batchSize, batchesTotal, batchesTotal, 100));
+        progress?.Report(new ReindexProgress(total, processed, failed, batchSize, batchesTotal, batchesTotal, 100, ReindexPhase.Done));
     }
 
     private static int CountFailedBulkItems(BulkResponse response)
@@ -246,8 +273,46 @@ public sealed class ElasticCourseIndexingService : ICourseIndexingService
         return aliasResponse.Values?.Keys.FirstOrDefault();
     }
 
-    private async Task SwitchAliasAsync(string? oldIndexName, string newIndexName, CancellationToken cancellationToken)
+    private async Task SwitchAliasSafelyAsync(
+        string? oldIndexName,
+        string newIndexName,
+        IProgress<ReindexLogEntry>? log,
+        CancellationToken cancellationToken)
     {
+        try
+        {
+            await SwitchAliasAsync(oldIndexName, newIndexName, log, cancellationToken);
+        }
+        catch
+        {
+            log?.Report(new ReindexLogEntry(DateTimeOffset.UtcNow, ReindexLogLevel.Error,
+                $"Alias switch failed — deleting orphaned index '{newIndexName}'."));
+            await _client.Indices.DeleteAsync(newIndexName, CancellationToken.None);
+            throw;
+        }
+    }
+
+    private async Task SwitchAliasAsync(
+        string? oldIndexName,
+        string newIndexName,
+        IProgress<ReindexLogEntry>? log,
+        CancellationToken cancellationToken)
+    {
+        if (oldIndexName == _options.CourseIndexName)
+        {
+            log?.Report(new ReindexLogEntry(DateTimeOffset.UtcNow, ReindexLogLevel.Warning,
+                $"Deleting legacy index '{oldIndexName}' to free the alias name."));
+
+            var deleteLegacy = await _client.Indices.DeleteAsync(oldIndexName, cancellationToken);
+            if (!deleteLegacy.IsValidResponse)
+            {
+                throw new InvalidOperationException(
+                    $"Failed to delete legacy index '{oldIndexName}': {deleteLegacy.DebugInformation}");
+            }
+
+            oldIndexName = null;
+        }
+
         var actions = new List<IndexUpdateAliasesAction>();
 
         if (!string.IsNullOrEmpty(oldIndexName))
@@ -261,6 +326,13 @@ public sealed class ElasticCourseIndexingService : ICourseIndexingService
         if (!response.IsValidResponse)
         {
             throw new InvalidOperationException($"Failed to switch alias '{_options.CourseIndexName}': {response.DebugInformation}");
+        }
+
+        if (!string.IsNullOrEmpty(oldIndexName))
+        {
+            log?.Report(new ReindexLogEntry(DateTimeOffset.UtcNow, ReindexLogLevel.Info,
+                $"Deleting old index '{oldIndexName}'."));
+            await _client.Indices.DeleteAsync(oldIndexName, cancellationToken);
         }
     }
 

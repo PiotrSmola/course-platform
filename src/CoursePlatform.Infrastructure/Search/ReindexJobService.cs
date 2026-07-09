@@ -46,7 +46,8 @@ public sealed class ReindexJobService : IReindexJobService
             var emptyLogs = Array.Empty<ReindexLogEntry>();
             var emptyProgress = new ReindexProgress(0, 0, 0, DefaultBatchSize, 0, 0, 0);
 
-            _jobCts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
+            _jobCts?.Dispose();
+            _jobCts = new CancellationTokenSource();
             _current = new ReindexJobState(
                 JobId: jobId,
                 Status: ReindexStatus.Running,
@@ -151,7 +152,8 @@ public sealed class ReindexJobService : IReindexJobService
         lock (_stateLock)
         {
             if (_current == null || _current.JobId != jobId) return;
-            _current = _current with { Progress = progress };
+            if (_current.Status != ReindexStatus.Running) return;
+            _current = _current with { Progress = progress, Phase = progress.Phase };
         }
     }
 

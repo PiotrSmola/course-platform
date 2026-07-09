@@ -38,7 +38,8 @@ public sealed record ReindexProgress(
     int BatchSize,
     int BatchesCompleted,
     int BatchesTotal,
-    double Percent);
+    double Percent,
+    ReindexPhase Phase = ReindexPhase.Indexing);
 
 public sealed record ReindexJobState(
     Guid JobId,
