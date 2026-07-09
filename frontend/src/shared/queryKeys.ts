@@ -22,5 +22,7 @@ export const queryKeys = {
   instructorCourses: () => ['instructor-courses'] as const,
   adminUsers: () => ['admin-users'] as const,
   adminCourses: () => ['admin-courses'] as const,
-  catalogStats: () => ['catalog-stats'] as const
+  catalogStats: () => ['catalog-stats'] as const,
+  searchStats: () => ['admin-search-stats'] as const,
+  reindexJob: () => ['admin-reindex-job'] as const
 }

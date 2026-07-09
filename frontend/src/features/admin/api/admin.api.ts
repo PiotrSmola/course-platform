@@ -1,5 +1,10 @@
 import client from '@/shared/api/client'
 import type { CoursesVm, CourseStatus } from '@/features/courses/types/course.types'
+import type {
+  CourseIndexStats,
+  ReindexJobState,
+  StartReindexResult
+} from '@/features/admin/types/search.types'
 
 export interface AdminUserDto {
   id: string
@@ -33,4 +38,22 @@ export async function updateCourseStatus(courseId: string, status: CourseStatus)
 
 export async function deleteReview(reviewId: string): Promise<void> {
   await client.delete(`/admin/reviews/${reviewId}`)
+}
+
+export async function startReindex(): Promise<StartReindexResult> {
+  const response = await client.post('/admin/search/reindex')
+  return response.data
+}
+
+export async function getReindexJob(): Promise<ReindexJobState | null> {
+  const response = await client.get('/admin/search/reindex')
+  if (response.status === 204 || response.data == null || response.data === '') {
+    return null
+  }
+  return response.data
+}
+
+export async function getSearchStats(): Promise<CourseIndexStats> {
+  const response = await client.get('/admin/search/stats')
+  return response.data
 }

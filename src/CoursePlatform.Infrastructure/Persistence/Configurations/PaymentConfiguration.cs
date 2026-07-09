@@ -18,7 +18,6 @@ public class PaymentConfiguration : IEntityTypeConfiguration<Payment>
             .HasMaxLength(3);
 
         builder.Property(p => p.StripeSessionId)
-            .IsRequired()
             .HasMaxLength(255);
 
         builder.HasIndex(p => p.StripeSessionId)

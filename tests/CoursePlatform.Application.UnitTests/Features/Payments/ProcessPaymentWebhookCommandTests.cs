@@ -194,4 +194,41 @@ public class ProcessPaymentWebhookCommandTests
         _context.Payments.Single().Status.Should().Be(PaymentStatus.Pending);
         _context.Enrollments.Should().BeEmpty();
     }
+
+    [Fact]
+    public async Task Handle_PartialRefund_KeepsEnrollmentAndCompletedStatus()
+    {
+        var payment = await SeedPendingPaymentAsync(amount: 49);
+        _gateway.EventToReturn = new PaymentGatewayEvent(PaymentGatewayEventType.CheckoutCompleted, "evt_12", "cs_test_123", 4900, "pln", null);
+        await CreateHandler().Handle(Command(), CancellationToken.None);
+
+        _gateway.EventToReturn = new PaymentGatewayEvent(PaymentGatewayEventType.PaymentRefunded, "evt_13", null, 1000, "pln", payment.Id.ToString());
+        await CreateHandler().Handle(Command(), CancellationToken.None);
+
+        _context.Payments.Single().Status.Should().Be(PaymentStatus.Completed);
+        _context.Enrollments.Should().HaveCount(1);
+    }
+
+    [Fact]
+    public async Task Handle_UnknownSession_IsRetriable()
+    {
+        await SeedPendingPaymentAsync(amount: 49);
+        var stored = _context.Payments.Single();
+        stored.StripeSessionId = null;
+        await _context.SaveChangesAsync();
+
+        _gateway.EventToReturn = new PaymentGatewayEvent(PaymentGatewayEventType.CheckoutCompleted, "evt_14", "cs_test_123", 4900, "pln", null);
+        await CreateHandler().Handle(Command(), CancellationToken.None);
+        _context.Enrollments.Should().BeEmpty();
+        _context.ChangeTracker.Clear();
+
+        var payment = _context.Payments.Single();
+        payment.StripeSessionId = "cs_test_123";
+        await _context.SaveChangesAsync();
+
+        await CreateHandler().Handle(Command(), CancellationToken.None);
+
+        _context.Payments.Single().Status.Should().Be(PaymentStatus.Completed);
+        _context.Enrollments.Should().HaveCount(1);
+    }
 }

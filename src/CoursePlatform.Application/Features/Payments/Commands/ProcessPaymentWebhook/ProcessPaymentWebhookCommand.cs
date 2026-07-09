@@ -39,10 +39,24 @@ public class ProcessPaymentWebhookCommandHandler : IRequestHandler<ProcessPaymen
     {
         var gatewayEvent = _paymentGateway.ParseWebhookEvent(request.Payload, request.Signature);
 
-        if (await TryMarkEventProcessedAsync(gatewayEvent.EventId, cancellationToken))
+        if (gatewayEvent.Type == PaymentGatewayEventType.Ignored || string.IsNullOrWhiteSpace(gatewayEvent.EventId))
         {
             return;
         }
+
+        var alreadyProcessed = await _context.ProcessedStripeEvents
+            .AnyAsync(e => e.StripeEventId == gatewayEvent.EventId, cancellationToken);
+
+        if (alreadyProcessed)
+        {
+            return;
+        }
+
+        _context.ProcessedStripeEvents.Add(new ProcessedStripeEvent
+        {
+            StripeEventId = gatewayEvent.EventId,
+            ProcessedAt = DateTime.UtcNow
+        });
 
         switch (gatewayEvent.Type)
         {
@@ -58,33 +72,6 @@ public class ProcessPaymentWebhookCommandHandler : IRequestHandler<ProcessPaymen
             case PaymentGatewayEventType.Chargeback:
                 await HandleRefundedAsync(gatewayEvent, PaymentStatus.Chargeback, cancellationToken);
                 break;
-        }
-    }
-
-    private async Task<bool> TryMarkEventProcessedAsync(string eventId, CancellationToken cancellationToken)
-    {
-        var alreadyProcessed = await _context.ProcessedStripeEvents
-            .AnyAsync(e => e.StripeEventId == eventId, cancellationToken);
-
-        if (alreadyProcessed)
-        {
-            return true;
-        }
-
-        _context.ProcessedStripeEvents.Add(new ProcessedStripeEvent
-        {
-            StripeEventId = eventId,
-            ProcessedAt = DateTime.UtcNow
-        });
-
-        try
-        {
-            await _context.SaveChangesAsync(cancellationToken);
-            return false;
-        }
-        catch (DbUpdateException)
-        {
-            return true;
         }
     }
 
@@ -107,7 +94,7 @@ public class ProcessPaymentWebhookCommandHandler : IRequestHandler<ProcessPaymen
             return;
         }
 
-        var expectedMinorUnits = (long)Math.Round(payment.Amount * 100, MidpointRounding.AwayFromZero);
+        var expectedMinorUnits = ToMinorUnits(payment.Amount);
         if (gatewayEvent.AmountTotalMinorUnits != expectedMinorUnits)
         {
             _logger.LogError(
@@ -124,31 +111,43 @@ public class ProcessPaymentWebhookCommandHandler : IRequestHandler<ProcessPaymen
         payment.CompletedAt = DateTime.UtcNow;
         payment.MarkUpdated();
 
-        await using var transaction = await _context.Database.BeginTransactionAsync(cancellationToken);
-
-        try
+        var enrollment = new Enrollment
         {
-            _context.Enrollments.Add(new Enrollment
+            UserId = payment.UserId,
+            CourseId = payment.CourseId,
+            EnrolledAt = DateTime.UtcNow
+        };
+        _context.Enrollments.Add(enrollment);
+
+        DbUpdateException? enrollmentConflict = null;
+
+        await using (var transaction = await _context.Database.BeginTransactionAsync(cancellationToken))
+        {
+            try
             {
-                UserId = payment.UserId,
-                CourseId = payment.CourseId,
-                EnrolledAt = DateTime.UtcNow
-            });
-
-            await _context.SaveChangesAsync(cancellationToken);
-            await transaction.CommitAsync(cancellationToken);
+                await _context.SaveChangesAsync(cancellationToken);
+                await transaction.CommitAsync(cancellationToken);
+            }
+            catch (DbUpdateException ex)
+            {
+                await transaction.RollbackAsync(cancellationToken);
+                enrollmentConflict = ex;
+            }
         }
-        catch (DbUpdateException)
-        {
-            await transaction.RollbackAsync(cancellationToken);
 
+        if (enrollmentConflict != null)
+        {
             var enrolled = await _context.Enrollments
                 .AnyAsync(e => e.UserId == payment.UserId && e.CourseId == payment.CourseId, cancellationToken);
 
             if (!enrolled)
             {
-                throw;
+                throw new InvalidOperationException(
+                    $"Failed to persist enrollment for payment {payment.Id}.", enrollmentConflict);
             }
+
+            _context.Enrollments.Remove(enrollment);
+            await _context.SaveChangesAsync(cancellationToken);
         }
 
         _logger.LogInformation("Payment {PaymentId} completed, user {UserId} enrolled in course {CourseId}.",
@@ -172,6 +171,16 @@ public class ProcessPaymentWebhookCommandHandler : IRequestHandler<ProcessPaymen
         var payment = await FindPaymentAsync(gatewayEvent, cancellationToken);
         if (payment == null) return;
 
+        if (status == PaymentStatus.Refunded && gatewayEvent.AmountTotalMinorUnits != ToMinorUnits(payment.Amount))
+        {
+            _logger.LogInformation(
+                "Payment {PaymentId} partially refunded ({Refunded} of {Expected} minor units), keeping enrollment.",
+                payment.Id, gatewayEvent.AmountTotalMinorUnits, ToMinorUnits(payment.Amount));
+
+            await _context.SaveChangesAsync(cancellationToken);
+            return;
+        }
+
         payment.Status = status;
         payment.MarkUpdated();
 
@@ -189,6 +198,9 @@ public class ProcessPaymentWebhookCommandHandler : IRequestHandler<ProcessPaymen
             "Payment {PaymentId} marked as {Status}, enrollment for user {UserId} in course {CourseId} removed.",
             payment.Id, status, payment.UserId, payment.CourseId);
     }
+
+    private static long ToMinorUnits(decimal amount) =>
+        (long)Math.Round(amount * 100, MidpointRounding.AwayFromZero);
 
     private async Task<Payment?> FindPaymentAsync(PaymentGatewayEvent gatewayEvent, CancellationToken cancellationToken)
     {

@@ -14,6 +14,6 @@ public class Payment : BaseEntity
     public decimal Amount { get; set; }
     public string Currency { get; set; } = string.Empty;
     public PaymentStatus Status { get; set; } = PaymentStatus.Pending;
-    public string StripeSessionId { get; set; } = string.Empty;
+    public string? StripeSessionId { get; set; }
     public DateTime? CompletedAt { get; set; }
 }

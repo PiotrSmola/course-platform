@@ -9,6 +9,7 @@
       <div class="tabs">
         <button type="button" :class="{ active: tab === 'users' }" @click="tab = 'users'">Użytkownicy</button>
         <button type="button" :class="{ active: tab === 'courses' }" @click="tab = 'courses'">Kursy</button>
+        <button type="button" :class="{ active: tab === 'search' }" @click="tab = 'search'">Wyszukiwarka</button>
       </div>
 
       <section v-if="tab === 'users'" class="panel glass-card">
@@ -42,7 +43,7 @@
         </table>
       </section>
 
-      <section v-else class="panel glass-card">
+      <section v-else-if="tab === 'courses'" class="panel glass-card">
         <div v-if="coursesLoading" class="loading">Ładowanie...</div>
         <table v-else class="data-table">
           <thead>
@@ -80,6 +81,10 @@
           </tbody>
         </table>
       </section>
+
+      <section v-else class="panel search-panel">
+        <SearchAdminPanel />
+      </section>
     </div>
   </div>
 </template>
@@ -88,8 +93,10 @@
 import { computed, ref } from 'vue'
 import { useAdminUsers, useAdminCourses, useAdminMutations } from '@/features/admin/composables/useAdmin'
 import { CourseStatus } from '@/features/courses/types/course.types'
+import SearchAdminPanel from '@/features/admin/components/SearchAdminPanel.vue'
 
-const tab = ref<'users' | 'courses'>('users')
+type AdminTab = 'users' | 'courses' | 'search'
+const tab = ref<AdminTab>('users')
 
 const { data: usersData, isLoading: usersLoading } = useAdminUsers()
 const { data: coursesData, isLoading: coursesLoading } = useAdminCourses()
@@ -150,6 +157,11 @@ function hide(courseId: string) {
 .panel {
   padding: 24px;
   overflow-x: auto;
+}
+
+.search-panel {
+  padding: 0;
+  background: transparent;
 }
 
 .data-table {

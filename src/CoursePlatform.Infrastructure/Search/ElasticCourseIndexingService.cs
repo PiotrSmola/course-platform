@@ -1,4 +1,5 @@
 using CoursePlatform.Application.Common.Interfaces;
+using CoursePlatform.Application.Features.Admin.Search;
 using CoursePlatform.Domain.Entities;
 using CoursePlatform.Infrastructure.Options;
 using Elastic.Clients.Elasticsearch;
@@ -72,40 +73,165 @@ public sealed class ElasticCourseIndexingService : ICourseIndexingService
 
     public async Task ReindexCoursesAsync(CancellationToken cancellationToken)
     {
-        var docs = await ProjectToDocuments(_db.Courses).ToListAsync(cancellationToken);
+        await ReindexCoursesChunkedAsync(progress: null, log: null, batchSize: 500, cancellationToken);
+    }
+
+    public async Task<CourseIndexStats> GetStatsAsync(CancellationToken cancellationToken)
+    {
+        var aliasExists = await _client.Indices.ExistsAsync(_options.CourseIndexName, cancellationToken);
+        if (!aliasExists.Exists)
+        {
+            return new CourseIndexStats(
+                Exists: false,
+                Enabled: _options.Enabled,
+                IndexName: _options.CourseIndexName,
+                AliasName: _options.CourseIndexName,
+                ConcreteIndexName: null,
+                DocumentCount: 0,
+                SizeBytes: null,
+                Health: "unknown");
+        }
+
+        var aliasResponse = await _client.Indices.GetAliasAsync(Indices.Index(_options.CourseIndexName), cancellationToken);
+        var concreteIndex = aliasResponse.IsValidResponse && aliasResponse.Values?.Count > 0
+            ? aliasResponse.Values.Keys.First()
+            : _options.CourseIndexName;
+
+        var countResponse = await _client.CountAsync(c => c.Indices(_options.CourseIndexName), cancellationToken);
+
+        long? sizeBytes = null;
+        var statsResponse = await _client.Indices.StatsAsync(new IndicesStatsRequest
+        {
+            Indices = Indices.Index(_options.CourseIndexName)
+        }, cancellationToken);
+
+        if (statsResponse.IsValidResponse && statsResponse.Indices?.Count > 0)
+        {
+            var primary = statsResponse.Indices.FirstOrDefault();
+            if (primary.Value?.Total?.Store?.SizeInBytes > 0)
+            {
+                sizeBytes = primary.Value.Total.Store.SizeInBytes;
+            }
+        }
+
+        return new CourseIndexStats(
+            Exists: true,
+            Enabled: _options.Enabled,
+            IndexName: _options.CourseIndexName,
+            AliasName: _options.CourseIndexName,
+            ConcreteIndexName: concreteIndex,
+            DocumentCount: countResponse.IsValidResponse ? countResponse.Count : 0,
+            SizeBytes: sizeBytes,
+            Health: "green");
+    }
+
+    public async Task ReindexCoursesChunkedAsync(
+        IProgress<ReindexProgress>? progress,
+        IProgress<ReindexLogEntry>? log,
+        int batchSize,
+        CancellationToken cancellationToken)
+    {
+        if (batchSize <= 0) batchSize = 500;
+
+        var total = await _db.Courses.AsNoTracking().CountAsync(cancellationToken);
+        var batchesTotal = total == 0 ? 0 : (total + batchSize - 1) / batchSize;
+
+        progress?.Report(new ReindexProgress(total, 0, 0, batchSize, 0, batchesTotal, 0));
+        log?.Report(new ReindexLogEntry(DateTimeOffset.UtcNow, ReindexLogLevel.Info,
+            $"Reindexing {total} course(s) in {batchesTotal} batch(es) of up to {batchSize}."));
 
         var oldIndexName = await ResolveIndexNameAsync(cancellationToken);
         var newIndexName = $"{_options.CourseIndexName}-{DateTime.UtcNow:yyyyMMddHHmmssfff}";
 
+        log?.Report(new ReindexLogEntry(DateTimeOffset.UtcNow, ReindexLogLevel.Info,
+            $"Creating new index '{newIndexName}'."));
         await CreateIndexAsync(newIndexName, cancellationToken);
 
-        if (docs.Count == 0)
+        if (total == 0)
         {
+            log?.Report(new ReindexLogEntry(DateTimeOffset.UtcNow, ReindexLogLevel.Info,
+                "No courses to index — switching alias to empty index."));
             await SwitchAliasAsync(oldIndexName, newIndexName, cancellationToken);
             if (!string.IsNullOrEmpty(oldIndexName))
             {
                 await _client.Indices.DeleteAsync(oldIndexName, cancellationToken);
             }
+            progress?.Report(new ReindexProgress(0, 0, 0, batchSize, 0, 0, 100));
             return;
         }
 
-        var response = await _client.BulkAsync(b => b
-            .Index(newIndexName)
-            .IndexMany(docs, (op, doc) => op.Id(doc.Id.ToString()))
-            .Refresh(Refresh.WaitFor), cancellationToken);
+        var processed = 0;
+        var failed = 0;
 
-        if (!response.IsValidResponse || response.Errors)
+        for (var batchIndex = 0; batchIndex < batchesTotal; batchIndex++)
         {
-            await _client.Indices.DeleteAsync(newIndexName, cancellationToken);
-            throw new InvalidOperationException($"Elasticsearch bulk indexing failed: {response.DebugInformation}");
+            cancellationToken.ThrowIfCancellationRequested();
+
+            var skip = batchIndex * batchSize;
+            var docs = await ProjectToDocuments(_db.Courses.AsNoTracking())
+                .OrderBy(c => c.Id)
+                .Skip(skip)
+                .Take(batchSize)
+                .ToListAsync(cancellationToken);
+
+            if (docs.Count == 0) break;
+
+            log?.Report(new ReindexLogEntry(DateTimeOffset.UtcNow, ReindexLogLevel.Info,
+                $"Indexing batch {batchIndex + 1}/{batchesTotal} ({docs.Count} course(s))."));
+
+            var response = await _client.BulkAsync(b => b
+                .Index(newIndexName)
+                .IndexMany(docs, (op, doc) => op.Id(doc.Id.ToString())), cancellationToken);
+
+            var batchFailed = 0;
+            if (!response.IsValidResponse || response.Errors)
+            {
+                batchFailed = CountFailedBulkItems(response);
+                log?.Report(new ReindexLogEntry(DateTimeOffset.UtcNow, ReindexLogLevel.Error,
+                    $"Batch {batchIndex + 1} reported errors: {batchFailed} item(s) failed. {response.DebugInformation}"));
+
+                if (!response.IsValidResponse)
+                {
+                    await _client.Indices.DeleteAsync(newIndexName, cancellationToken);
+                    throw new InvalidOperationException($"Elasticsearch bulk indexing failed: {response.DebugInformation}");
+                }
+            }
+
+            processed += docs.Count - batchFailed;
+            failed += batchFailed;
+            var percent = total == 0 ? 100 : Math.Round((double)processed / total * 100, 2);
+
+            progress?.Report(new ReindexProgress(
+                Total: total,
+                Processed: processed,
+                Failed: failed,
+                BatchSize: batchSize,
+                BatchesCompleted: batchIndex + 1,
+                BatchesTotal: batchesTotal,
+                Percent: percent));
         }
 
+        log?.Report(new ReindexLogEntry(DateTimeOffset.UtcNow, ReindexLogLevel.Info,
+            $"Refreshing index and switching alias."));
+        await _client.Indices.RefreshAsync(newIndexName, cancellationToken);
         await SwitchAliasAsync(oldIndexName, newIndexName, cancellationToken);
 
         if (!string.IsNullOrEmpty(oldIndexName))
         {
+            log?.Report(new ReindexLogEntry(DateTimeOffset.UtcNow, ReindexLogLevel.Info,
+                $"Deleting old index '{oldIndexName}'."));
             await _client.Indices.DeleteAsync(oldIndexName, cancellationToken);
         }
+
+        log?.Report(new ReindexLogEntry(DateTimeOffset.UtcNow, ReindexLogLevel.Info,
+            $"Reindex done. Indexed {processed}/{total}, {failed} failure(s)."));
+        progress?.Report(new ReindexProgress(total, processed, failed, batchSize, batchesTotal, batchesTotal, 100));
+    }
+
+    private static int CountFailedBulkItems(BulkResponse response)
+    {
+        if (response.Items == null) return 0;
+        return response.Items.Count(item => item.Error != null);
     }
 
     private async Task<string?> ResolveIndexNameAsync(CancellationToken cancellationToken)
@@ -117,7 +243,7 @@ public sealed class ElasticCourseIndexingService : ICourseIndexingService
             return indexExists.Exists ? _options.CourseIndexName : null;
         }
 
-        return aliasResponse.Values.Keys.FirstOrDefault();
+        return aliasResponse.Values?.Keys.FirstOrDefault();
     }
 
     private async Task SwitchAliasAsync(string? oldIndexName, string newIndexName, CancellationToken cancellationToken)

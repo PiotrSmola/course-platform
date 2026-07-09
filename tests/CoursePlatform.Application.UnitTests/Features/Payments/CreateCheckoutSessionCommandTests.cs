@@ -2,6 +2,7 @@ using FluentAssertions;
 using FluentValidation;
 using Moq;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging.Abstractions;
 using CoursePlatform.Application.Common.Interfaces;
 using CoursePlatform.Application.Features.Payments.Commands.CreateCheckoutSession;
 using CoursePlatform.Application.UnitTests.Common;
@@ -26,7 +27,7 @@ public class CreateCheckoutSessionCommandTests
     }
 
     private CreateCheckoutSessionCommandHandler CreateHandler() =>
-        new(_context, _currentUserServiceMock.Object, _gateway);
+        new(_context, _currentUserServiceMock.Object, _gateway, NullLogger<CreateCheckoutSessionCommandHandler>.Instance);
 
     private async Task<(ApplicationUser Student, Course Course)> SeedAsync(decimal price, CourseStatus status = CourseStatus.Published)
     {
@@ -82,7 +83,7 @@ public class CreateCheckoutSessionCommandTests
         {
             var payment = _context.Payments.Single();
             payment.Status.Should().Be(PaymentStatus.Pending);
-            payment.StripeSessionId.Should().BeEmpty();
+            payment.StripeSessionId.Should().BeNull();
             payment.Currency.Should().BeEmpty();
         };
 
@@ -134,5 +135,39 @@ public class CreateCheckoutSessionCommandTests
         var act = () => CreateHandler().Handle(new CreateCheckoutSessionCommand(course.Id), CancellationToken.None);
 
         await act.Should().ThrowAsync<ValidationException>();
+    }
+
+    [Fact]
+    public async Task Handle_GatewayFailure_MarksPaymentFailedAndThrowsValidation()
+    {
+        var (_, course) = await SeedAsync(price: 49);
+        _gateway.OnCreateCheckoutSession = () => throw new InvalidOperationException("stripe down");
+
+        var act = () => CreateHandler().Handle(new CreateCheckoutSessionCommand(course.Id), CancellationToken.None);
+
+        await act.Should().ThrowAsync<ValidationException>();
+
+        var payment = _context.Payments.Single();
+        payment.Status.Should().Be(PaymentStatus.Failed);
+        payment.StripeSessionId.Should().BeNull();
+        _context.Enrollments.Should().BeEmpty();
+    }
+
+    [Fact]
+    public async Task Handle_TwoFreeEnrollmentsAndFailedCheckout_DoNotCollideOnSessionId()
+    {
+        var (_, courseA) = await SeedAsync(price: 0);
+
+        await CreateHandler().Handle(new CreateCheckoutSessionCommand(courseA.Id), CancellationToken.None);
+
+        var studentB = new ApplicationUser { Id = Guid.NewGuid(), UserName = "stud2", Email = "s2@t.com", FirstName = "E", LastName = "F" };
+        _context.Users.Add(studentB);
+        await _context.SaveChangesAsync();
+        _currentUserServiceMock.Setup(x => x.UserId).Returns(studentB.Id);
+
+        await CreateHandler().Handle(new CreateCheckoutSessionCommand(courseA.Id), CancellationToken.None);
+
+        _context.Payments.Should().HaveCount(2);
+        _context.Payments.Select(p => p.StripeSessionId).Should().AllSatisfy(id => id.Should().BeNull());
     }
 }

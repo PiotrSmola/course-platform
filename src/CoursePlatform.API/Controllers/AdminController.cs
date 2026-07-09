@@ -4,8 +4,12 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.RateLimiting;
 using CoursePlatform.Application.Features.Admin.Commands.AssignUserRole;
 using CoursePlatform.Application.Features.Admin.Commands.DeleteReview;
+using CoursePlatform.Application.Features.Admin.Commands.StartReindex;
 using CoursePlatform.Application.Features.Admin.Commands.UpdateCourseStatus;
+using CoursePlatform.Application.Features.Admin.Queries.GetReindexJob;
+using CoursePlatform.Application.Features.Admin.Queries.GetSearchStats;
 using CoursePlatform.Application.Features.Admin.Queries.GetUsers;
+using CoursePlatform.Application.Features.Admin.Search;
 using CoursePlatform.Application.Features.Courses.Queries.GetCourses;
 using CoursePlatform.Domain.Enums;
 
@@ -67,5 +71,26 @@ public class AdminController : ControllerBase
     {
         await _mediator.Send(new DeleteReviewCommand(reviewId), cancellationToken);
         return NoContent();
+    }
+
+    [HttpPost("search/reindex")]
+    public async Task<ActionResult<StartReindexResult>> StartReindex(CancellationToken cancellationToken)
+    {
+        var result = await _mediator.Send(new StartReindexCommand(), cancellationToken);
+        return Accepted(result);
+    }
+
+    [HttpGet("search/reindex")]
+    public async Task<ActionResult<ReindexJobState?>> GetReindexJob(CancellationToken cancellationToken)
+    {
+        var state = await _mediator.Send(new GetReindexJobQuery(), cancellationToken);
+        return Ok(state);
+    }
+
+    [HttpGet("search/stats")]
+    public async Task<ActionResult<CourseIndexStats>> GetSearchStats(CancellationToken cancellationToken)
+    {
+        var stats = await _mediator.Send(new GetSearchStatsQuery(), cancellationToken);
+        return Ok(stats);
     }
 }

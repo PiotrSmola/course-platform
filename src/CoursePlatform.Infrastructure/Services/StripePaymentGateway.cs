@@ -65,6 +65,14 @@ internal sealed class StripePaymentGateway : IPaymentGateway
             {
                 ["paymentId"] = paymentId.ToString(),
                 ["courseId"] = courseId.ToString()
+            },
+            PaymentIntentData = new SessionPaymentIntentDataOptions
+            {
+                Metadata = new Dictionary<string, string>
+                {
+                    ["paymentId"] = paymentId.ToString(),
+                    ["courseId"] = courseId.ToString()
+                }
             }
         };
 
@@ -76,6 +84,11 @@ internal sealed class StripePaymentGateway : IPaymentGateway
 
     public PaymentGatewayEvent ParseWebhookEvent(string payload, string signature)
     {
+        if (!IsConfigured)
+        {
+            throw new InvalidWebhookSignatureException("Stripe webhook is not configured.");
+        }
+
         Event stripeEvent;
         try
         {
@@ -103,20 +116,23 @@ internal sealed class StripePaymentGateway : IPaymentGateway
     private static PaymentGatewayEvent ToSessionEvent(PaymentGatewayEventType type, Event stripeEvent)
     {
         var session = stripeEvent.Data.Object as Session;
-        var paymentId = session?.Metadata?["paymentId"] ?? session?.ClientReferenceId;
+        var paymentId = GetMetadataValue(session?.Metadata, "paymentId") ?? session?.ClientReferenceId;
         return new PaymentGatewayEvent(type, stripeEvent.Id, session?.Id, session?.AmountTotal, session?.Currency, paymentId);
     }
 
     private static PaymentGatewayEvent ToChargeEvent(PaymentGatewayEventType type, Event stripeEvent)
     {
         var charge = stripeEvent.Data.Object as Charge;
-        var paymentId = charge?.Metadata?["paymentId"];
+        var paymentId = GetMetadataValue(charge?.Metadata, "paymentId");
         return new PaymentGatewayEvent(
             type,
             stripeEvent.Id,
-            charge?.PaymentIntentId,
+            null,
             charge?.AmountRefunded,
             charge?.Currency,
             paymentId);
     }
+
+    private static string? GetMetadataValue(IDictionary<string, string>? metadata, string key) =>
+        metadata != null && metadata.TryGetValue(key, out var value) ? value : null;
 }

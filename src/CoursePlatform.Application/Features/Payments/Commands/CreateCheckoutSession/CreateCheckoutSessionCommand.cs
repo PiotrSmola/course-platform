@@ -2,6 +2,7 @@ using FluentValidation;
 using FluentValidation.Results;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
 using CoursePlatform.Application.Common.Exceptions;
 using CoursePlatform.Application.Common.Interfaces;
 using CoursePlatform.Domain.Entities;
@@ -26,15 +27,18 @@ public class CreateCheckoutSessionCommandHandler : IRequestHandler<CreateCheckou
     private readonly IApplicationDbContext _context;
     private readonly ICurrentUserService _currentUserService;
     private readonly IPaymentGateway _paymentGateway;
+    private readonly ILogger<CreateCheckoutSessionCommandHandler> _logger;
 
     public CreateCheckoutSessionCommandHandler(
         IApplicationDbContext context,
         ICurrentUserService currentUserService,
-        IPaymentGateway paymentGateway)
+        IPaymentGateway paymentGateway,
+        ILogger<CreateCheckoutSessionCommandHandler> logger)
     {
         _context = context;
         _currentUserService = currentUserService;
         _paymentGateway = paymentGateway;
+        _logger = logger;
     }
 
     public async Task<CheckoutSessionDto> Handle(CreateCheckoutSessionCommand request, CancellationToken cancellationToken)
@@ -94,7 +98,7 @@ public class CreateCheckoutSessionCommandHandler : IRequestHandler<CreateCheckou
             Amount = course.Price,
             Currency = string.Empty,
             Status = PaymentStatus.Pending,
-            StripeSessionId = string.Empty
+            StripeSessionId = null
         };
 
         _context.Payments.Add(payment);
@@ -111,9 +115,15 @@ public class CreateCheckoutSessionCommandHandler : IRequestHandler<CreateCheckou
                 user.Email ?? string.Empty,
                 cancellationToken);
         }
-        catch
+        catch (Exception ex) when (ex is not OperationCanceledException)
         {
-            return new CheckoutSessionDto(null, false);
+            _logger.LogError(ex, "Failed to create Stripe checkout session for payment {PaymentId}.", payment.Id);
+
+            payment.Status = PaymentStatus.Failed;
+            payment.MarkUpdated();
+            await _context.SaveChangesAsync(cancellationToken);
+
+            throw new ValidationException(new[] { new ValidationFailure("CourseId", "Could not start the payment. Please try again.") });
         }
 
         payment.StripeSessionId = session.SessionId;
@@ -134,7 +144,7 @@ public class CreateCheckoutSessionCommandHandler : IRequestHandler<CreateCheckou
             Currency = _paymentGateway.DefaultCurrency,
             Status = PaymentStatus.Completed,
             CompletedAt = DateTime.UtcNow,
-            StripeSessionId = string.Empty
+            StripeSessionId = null
         };
 
         _context.Payments.Add(payment);

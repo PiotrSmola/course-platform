@@ -87,11 +87,13 @@ public static class DependencyInjection
             });
             services.AddScoped<ICourseSearchService, ElasticCourseSearchService>();
             services.AddScoped<ICourseIndexingService, ElasticCourseIndexingService>();
+            services.AddSingleton<IReindexJobService, ReindexJobService>();
         }
         else
         {
             services.AddScoped<ICourseSearchService>(sp => sp.GetRequiredService<EfCourseSearchService>());
             services.AddScoped<ICourseIndexingService, NoOpCourseIndexingService>();
+            services.AddSingleton<IReindexJobService, NoOpReindexJobService>();
         }
 
         return services;
