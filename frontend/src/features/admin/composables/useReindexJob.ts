@@ -11,8 +11,7 @@ import { getApiErrorMessage } from '@/shared/api/apiError'
 import { ReindexStatus } from '@/features/admin/types/search.types'
 import type { ReindexJobState } from '@/features/admin/types/search.types'
 
-const RUNNING_POLL_MS = 1000
-const IDLE_POLL_MS = 5000
+const FALLBACK_POLL_MS = 30000
 const STATS_POLL_MS = 10000
 
 export function useSearchStats() {
@@ -31,8 +30,7 @@ export function useReindexJob() {
   const jobQuery = useQuery({
     queryKey: queryKeys.reindexJob(),
     queryFn: getReindexJob,
-    refetchInterval: (query) =>
-      query.state.data?.status === ReindexStatus.Running ? RUNNING_POLL_MS : IDLE_POLL_MS,
+    refetchInterval: FALLBACK_POLL_MS,
     refetchIntervalInBackground: false
   })
 

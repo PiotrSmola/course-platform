@@ -9,13 +9,24 @@ public record GetLearningPathsQuery : IRequest<LearningPathsVm>;
 public class GetLearningPathsQueryHandler : IRequestHandler<GetLearningPathsQuery, LearningPathsVm>
 {
     private readonly IApplicationDbContext _context;
+    private readonly IAppCache _cache;
 
-    public GetLearningPathsQueryHandler(IApplicationDbContext context)
+    public GetLearningPathsQueryHandler(IApplicationDbContext context, IAppCache cache)
     {
         _context = context;
+        _cache = cache;
     }
 
     public async Task<LearningPathsVm> Handle(GetLearningPathsQuery request, CancellationToken cancellationToken)
+    {
+        return await _cache.GetOrCreateAsync(
+            "cp:learning-paths",
+            TimeSpan.FromMinutes(15),
+            async ct => await LoadAsync(ct),
+            cancellationToken: cancellationToken);
+    }
+
+    private async Task<LearningPathsVm> LoadAsync(CancellationToken cancellationToken)
     {
         var paths = await _context.LearningPaths
             .AsNoTracking()

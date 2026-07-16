@@ -40,7 +40,6 @@ export interface LessonDto {
   description: string | null
   duration: number
   order: number
-  videoObjectKey: string
   moduleId?: string
   moduleTitle?: string
   courseId?: string

@@ -25,8 +25,11 @@ public class ProcessPaymentWebhookCommandTests
         _context = new TestDbContext(options);
     }
 
+    private readonly FakeNotificationService _notifications = new();
+    private readonly FakeEmailQueue _emailQueue = new();
+
     private ProcessPaymentWebhookCommandHandler CreateHandler() =>
-        new(_context, _gateway, NullLogger<ProcessPaymentWebhookCommandHandler>.Instance);
+        new(_context, _gateway, _notifications, _emailQueue, NullLogger<ProcessPaymentWebhookCommandHandler>.Instance);
 
     private async Task<Payment> SeedPendingPaymentAsync(decimal amount = 49)
     {

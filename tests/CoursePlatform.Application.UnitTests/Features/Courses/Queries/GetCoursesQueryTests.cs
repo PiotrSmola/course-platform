@@ -2,6 +2,7 @@ using FluentAssertions;
 using Moq;
 using CoursePlatform.Application.Common.Interfaces;
 using CoursePlatform.Application.Features.Courses.Queries.GetCourses;
+using CoursePlatform.Application.UnitTests.Common;
 using CoursePlatform.Domain.Enums;
 
 namespace CoursePlatform.Application.UnitTests.Features.Courses.Queries;
@@ -11,9 +12,10 @@ public class GetCoursesQueryTests
     private readonly Mock<ICurrentUserService> _currentUserServiceMock = new();
     private readonly Mock<IFileStorageService> _fileStorageMock = new();
     private readonly StubCourseSearchService _searchService = new();
+    private readonly IAppCache _cache = new PassThroughAppCache();
 
     private GetCoursesQueryHandler CreateHandler() =>
-        new(_currentUserServiceMock.Object, _fileStorageMock.Object, _searchService);
+        new(_currentUserServiceMock.Object, _fileStorageMock.Object, _searchService, _cache);
 
     [Fact]
     public async Task Handle_PassesRequestAndAdminFlagToSearchCriteria()

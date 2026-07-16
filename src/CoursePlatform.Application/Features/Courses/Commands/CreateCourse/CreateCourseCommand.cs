@@ -23,13 +23,15 @@ public class CreateCourseCommandHandler : IRequestHandler<CreateCourseCommand, G
     private readonly ICurrentUserService _currentUserService;
     private readonly IHtmlSanitizer _htmlSanitizer;
     private readonly ICourseIndexingService _courseIndexing;
+    private readonly IAppCache _cache;
 
-    public CreateCourseCommandHandler(IApplicationDbContext context, ICurrentUserService currentUserService, IHtmlSanitizer htmlSanitizer, ICourseIndexingService courseIndexing)
+    public CreateCourseCommandHandler(IApplicationDbContext context, ICurrentUserService currentUserService, IHtmlSanitizer htmlSanitizer, ICourseIndexingService courseIndexing, IAppCache cache)
     {
         _context = context;
         _currentUserService = currentUserService;
         _htmlSanitizer = htmlSanitizer;
         _courseIndexing = courseIndexing;
+        _cache = cache;
     }
 
     public async Task<Guid> Handle(CreateCourseCommand request, CancellationToken cancellationToken)
@@ -74,6 +76,7 @@ public class CreateCourseCommandHandler : IRequestHandler<CreateCourseCommand, G
         _context.Courses.Add(course);
         await _context.SaveChangesAsync(cancellationToken);
         await _courseIndexing.IndexCourseAsync(course.Id, cancellationToken);
+        await _cache.InvalidateTagAsync("courses", cancellationToken);
         return course.Id;
     }
 }

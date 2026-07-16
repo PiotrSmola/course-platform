@@ -119,6 +119,9 @@ public class GetUserProfileQueryHandler : IRequestHandler<GetUserProfileQuery, U
             ? (double)totalLessonsCompleted / totalLessonsAvailable * 100
             : 0;
 
+        var certificatesEarned = await _context.Certificates
+            .CountAsync(c => c.UserId == userId, cancellationToken);
+
         return new UserStatisticsDto(
             totalEnrollments,
             completedCourses,
@@ -126,7 +129,7 @@ public class GetUserProfileQueryHandler : IRequestHandler<GetUserProfileQuery, U
             totalLessonsAvailable,
             Math.Round(averageProgress, 2),
             totalLearningTimeSeconds,
-            completedCourses,
+            certificatesEarned,
             lastActivityAt
         );
     }

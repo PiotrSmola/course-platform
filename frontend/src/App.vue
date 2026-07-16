@@ -1,7 +1,9 @@
 <script setup lang="ts">
 import { useLiquidGlass } from '@/shared/composables/useLiquidGlass'
+import { useRealtime } from '@/shared/composables/useRealtime'
 
 useLiquidGlass()
+useRealtime()
 </script>
 
 <template>

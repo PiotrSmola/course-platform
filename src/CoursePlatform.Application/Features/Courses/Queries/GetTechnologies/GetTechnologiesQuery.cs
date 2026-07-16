@@ -11,18 +11,24 @@ public record GetTechnologiesQuery : IRequest<List<TechnologyDto>>;
 public class GetTechnologiesQueryHandler : IRequestHandler<GetTechnologiesQuery, List<TechnologyDto>>
 {
     private readonly IApplicationDbContext _context;
+    private readonly IAppCache _cache;
 
-    public GetTechnologiesQueryHandler(IApplicationDbContext context)
+    public GetTechnologiesQueryHandler(IApplicationDbContext context, IAppCache cache)
     {
         _context = context;
+        _cache = cache;
     }
 
     public async Task<List<TechnologyDto>> Handle(GetTechnologiesQuery request, CancellationToken cancellationToken)
     {
-        return await _context.Technologies
-            .AsNoTracking()
-            .OrderBy(t => t.Name)
-            .Select(t => new TechnologyDto(t.Id, t.Name, t.Slug, t.Description))
-            .ToListAsync(cancellationToken);
+        return await _cache.GetOrCreateAsync(
+            "cp:technologies",
+            TimeSpan.FromHours(1),
+            async ct => await _context.Technologies
+                .AsNoTracking()
+                .OrderBy(t => t.Name)
+                .Select(t => new TechnologyDto(t.Id, t.Name, t.Slug, t.Description))
+                .ToListAsync(ct),
+            cancellationToken: cancellationToken);
     }
 }

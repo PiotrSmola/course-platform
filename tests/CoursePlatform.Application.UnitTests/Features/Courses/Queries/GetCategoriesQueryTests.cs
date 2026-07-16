@@ -23,7 +23,7 @@ public class GetCategoriesQueryTests
         );
         await context.SaveChangesAsync();
 
-        var handler = new GetCategoriesQueryHandler(context);
+        var handler = new GetCategoriesQueryHandler(context, new PassThroughAppCache());
         var result = await handler.Handle(new GetCategoriesQuery(), CancellationToken.None);
 
         result.Should().HaveCount(3);

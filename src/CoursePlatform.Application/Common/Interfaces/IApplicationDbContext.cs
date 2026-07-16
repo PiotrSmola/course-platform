@@ -21,6 +21,7 @@ public interface IApplicationDbContext
     DbSet<UserStatistics> UserStatistics { get; }
     DbSet<Payment> Payments { get; }
     DbSet<ProcessedStripeEvent> ProcessedStripeEvents { get; }
+    DbSet<Certificate> Certificates { get; }
     DbSet<ApplicationUser> Users { get; }
 
     DatabaseFacade Database { get; }

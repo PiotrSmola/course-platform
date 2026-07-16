@@ -12,12 +12,14 @@ public class DeleteCourseCommandHandler : IRequestHandler<DeleteCourseCommand>
     private readonly IApplicationDbContext _context;
     private readonly ICurrentUserService _currentUserService;
     private readonly ICourseIndexingService _courseIndexing;
+    private readonly IAppCache _cache;
 
-    public DeleteCourseCommandHandler(IApplicationDbContext context, ICurrentUserService currentUserService, ICourseIndexingService courseIndexing)
+    public DeleteCourseCommandHandler(IApplicationDbContext context, ICurrentUserService currentUserService, ICourseIndexingService courseIndexing, IAppCache cache)
     {
         _context = context;
         _currentUserService = currentUserService;
         _courseIndexing = courseIndexing;
+        _cache = cache;
     }
 
     public async Task Handle(DeleteCourseCommand request, CancellationToken cancellationToken)
@@ -42,5 +44,6 @@ public class DeleteCourseCommandHandler : IRequestHandler<DeleteCourseCommand>
         _context.Courses.Remove(course);
         await _context.SaveChangesAsync(cancellationToken);
         await _courseIndexing.DeleteCourseAsync(request.Id, cancellationToken);
+        await _cache.InvalidateTagAsync("courses", cancellationToken);
     }
 }

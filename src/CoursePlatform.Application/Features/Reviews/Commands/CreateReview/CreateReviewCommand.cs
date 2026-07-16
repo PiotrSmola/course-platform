@@ -16,13 +16,15 @@ public class CreateReviewCommandHandler : IRequestHandler<CreateReviewCommand, G
     private readonly ICurrentUserService _currentUserService;
     private readonly IHtmlSanitizer _htmlSanitizer;
     private readonly ICourseIndexingService _courseIndexing;
+    private readonly IAppCache _cache;
 
-    public CreateReviewCommandHandler(IApplicationDbContext context, ICurrentUserService currentUserService, IHtmlSanitizer htmlSanitizer, ICourseIndexingService courseIndexing)
+    public CreateReviewCommandHandler(IApplicationDbContext context, ICurrentUserService currentUserService, IHtmlSanitizer htmlSanitizer, ICourseIndexingService courseIndexing, IAppCache cache)
     {
         _context = context;
         _currentUserService = currentUserService;
         _htmlSanitizer = htmlSanitizer;
         _courseIndexing = courseIndexing;
+        _cache = cache;
     }
 
     public async Task<Guid> Handle(CreateReviewCommand request, CancellationToken cancellationToken)
@@ -76,6 +78,7 @@ public class CreateReviewCommandHandler : IRequestHandler<CreateReviewCommand, G
         }
 
         await _courseIndexing.IndexCourseAsync(request.CourseId, cancellationToken);
+        await _cache.InvalidateTagAsync("courses", cancellationToken);
         return review.Id;
     }
 }

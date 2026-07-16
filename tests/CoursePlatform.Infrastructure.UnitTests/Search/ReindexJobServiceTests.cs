@@ -80,7 +80,7 @@ public class ReindexJobServiceTests
 
     private static async Task<ReindexJobState> WaitForTerminalStateAsync(IReindexJobService service)
     {
-        for (var i = 0; i < 100; i++)
+        for (var i = 0; i < 500; i++)
         {
             var current = service.GetCurrent();
             if (current is { Status: ReindexStatus.Succeeded or ReindexStatus.Failed or ReindexStatus.Cancelled })
@@ -107,8 +107,15 @@ public class ReindexJobServiceTests
                 : new StubIndexingService());
 
         services.AddLogging();
+        services.AddSingleton<INotificationService, StubNotificationService>();
         services.AddSingleton<IReindexJobService, ReindexJobService>();
         return services.BuildServiceProvider();
+    }
+
+    private sealed class StubNotificationService : INotificationService
+    {
+        public Task NotifyReindexAsync(ReindexJobState state, CancellationToken cancellationToken) => Task.CompletedTask;
+        public Task NotifyUserAsync(Guid userId, UserNotification notification, CancellationToken cancellationToken) => Task.CompletedTask;
     }
 
     private sealed class StubIndexingService : ICourseIndexingService

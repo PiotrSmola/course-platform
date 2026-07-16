@@ -18,7 +18,7 @@
   },
   "SecurityHeaders": {
     "Csp": {
-      "Development": "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https://placeholder.local; font-src 'self' data:; connect-src 'self' http://localhost:8080 http://localhost:5173; frame-ancestors 'none'; object-src 'none'; base-uri 'self'; form-action 'self';"
+      "Development": "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https://placeholder.local; font-src 'self' data:; connect-src 'self' http://localhost:8080 ws://localhost:8080 http://localhost:5173; frame-ancestors 'none'; object-src 'none'; base-uri 'self'; form-action 'self';"
     }
   }
 }

@@ -11,17 +11,53 @@ public sealed class ReindexJobService : IReindexJobService
     private const int DefaultBatchSize = 500;
     private const int MaxLogEntries = 500;
 
+    private const int PushThrottleMs = 250;
+
     private readonly IServiceScopeFactory _scopeFactory;
+    private readonly INotificationService _notifications;
     private readonly ILogger<ReindexJobService> _logger;
 
     private readonly object _stateLock = new();
     private ReindexJobState? _current;
     private CancellationTokenSource? _jobCts;
+    private long _lastPushTicks;
 
-    public ReindexJobService(IServiceScopeFactory scopeFactory, ILogger<ReindexJobService> logger)
+    public ReindexJobService(
+        IServiceScopeFactory scopeFactory,
+        INotificationService notifications,
+        ILogger<ReindexJobService> logger)
     {
         _scopeFactory = scopeFactory;
+        _notifications = notifications;
         _logger = logger;
+    }
+
+    private void PushState(bool force = false)
+    {
+        ReindexJobState? snapshot;
+        lock (_stateLock)
+        {
+            snapshot = _current;
+        }
+        if (snapshot == null) return;
+
+        var now = Environment.TickCount64;
+        if (!force && now - Interlocked.Read(ref _lastPushTicks) < PushThrottleMs) return;
+        Interlocked.Exchange(ref _lastPushTicks, now);
+
+        _ = PushStateCoreAsync(snapshot);
+    }
+
+    private async Task PushStateCoreAsync(ReindexJobState snapshot)
+    {
+        try
+        {
+            await _notifications.NotifyReindexAsync(snapshot, CancellationToken.None);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(ex, "Failed to push reindex state for job {JobId}.", snapshot.JobId);
+        }
     }
 
     public ReindexJobState? GetCurrent()
@@ -61,6 +97,7 @@ public sealed class ReindexJobService : IReindexJobService
             _ = Task.Run(() => RunAsync(jobId, _jobCts.Token), CancellationToken.None);
         }
 
+        PushState(force: true);
         return Task.FromResult(ReindexStartResult.Started(GetCurrent()!));
     }
 
@@ -145,6 +182,7 @@ public sealed class ReindexJobService : IReindexJobService
             if (_current == null || _current.JobId != jobId) return;
             _current = _current with { Phase = phase };
         }
+        PushState();
     }
 
     private void UpdateProgress(Guid jobId, ReindexProgress progress)
@@ -155,6 +193,7 @@ public sealed class ReindexJobService : IReindexJobService
             if (_current.Status != ReindexStatus.Running) return;
             _current = _current with { Progress = progress, Phase = progress.Phase };
         }
+        PushState();
     }
 
     private void AddLog(Guid jobId, ReindexLogLevel level, string message, ConcurrentQueue<ReindexLogEntry> bag)
@@ -175,6 +214,7 @@ public sealed class ReindexJobService : IReindexJobService
             if (_current == null || _current.JobId != jobId) return;
             _current = _current with { Logs = snapshot };
         }
+        PushState();
     }
 
     private void Succeed(Guid jobId)
@@ -189,6 +229,7 @@ public sealed class ReindexJobService : IReindexJobService
                 Phase = ReindexPhase.Done
             };
         }
+        PushState(force: true);
     }
 
     private void Fail(Guid jobId, string message, DateTimeOffset startedAt)
@@ -204,6 +245,7 @@ public sealed class ReindexJobService : IReindexJobService
                 Phase = ReindexPhase.Done
             };
         }
+        PushState(force: true);
     }
 
     private void Cancel(Guid jobId)
@@ -218,5 +260,6 @@ public sealed class ReindexJobService : IReindexJobService
                 Phase = ReindexPhase.Done
             };
         }
+        PushState(force: true);
     }
 }

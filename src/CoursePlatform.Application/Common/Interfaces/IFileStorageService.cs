@@ -45,4 +45,10 @@ public interface IFileStorageService
     Task DeleteObjectAsync(
         string objectKey,
         CancellationToken cancellationToken = default);
+
+    Task UploadAsync(
+        string objectKey,
+        byte[] content,
+        string contentType,
+        CancellationToken cancellationToken = default);
 }

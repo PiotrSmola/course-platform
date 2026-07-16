@@ -9,13 +9,24 @@ public record GetBusinessPlansQuery : IRequest<BusinessPlansVm>;
 public class GetBusinessPlansQueryHandler : IRequestHandler<GetBusinessPlansQuery, BusinessPlansVm>
 {
     private readonly IApplicationDbContext _context;
+    private readonly IAppCache _cache;
 
-    public GetBusinessPlansQueryHandler(IApplicationDbContext context)
+    public GetBusinessPlansQueryHandler(IApplicationDbContext context, IAppCache cache)
     {
         _context = context;
+        _cache = cache;
     }
 
     public async Task<BusinessPlansVm> Handle(GetBusinessPlansQuery request, CancellationToken cancellationToken)
+    {
+        return await _cache.GetOrCreateAsync(
+            "cp:business-plans",
+            TimeSpan.FromMinutes(15),
+            async ct => await LoadAsync(ct),
+            cancellationToken: cancellationToken);
+    }
+
+    private async Task<BusinessPlansVm> LoadAsync(CancellationToken cancellationToken)
     {
         var plans = await _context.BusinessPlans
             .AsNoTracking()

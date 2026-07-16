@@ -25,6 +25,22 @@ public class MinioFileStorageService : IFileStorageService
             : Protocol.HTTPS;
     }
 
+    public async Task UploadAsync(
+        string objectKey,
+        byte[] content,
+        string contentType,
+        CancellationToken cancellationToken = default)
+    {
+        using var stream = new MemoryStream(content);
+        await _s3.PutObjectAsync(new PutObjectRequest
+        {
+            BucketName = _options.Bucket,
+            Key = objectKey,
+            InputStream = stream,
+            ContentType = contentType
+        }, cancellationToken);
+    }
+
     public Task<string> GetPresignedDownloadUrlAsync(
         string objectKey,
         TimeSpan expiration,

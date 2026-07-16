@@ -9,6 +9,10 @@ using CoursePlatform.Domain.Entities;
 using CoursePlatform.Application.Common.Interfaces;
 using Serilog;
 using System.Threading.RateLimiting;
+using Npgsql;
+using OpenTelemetry.Metrics;
+using OpenTelemetry.Resources;
+using OpenTelemetry.Trace;
 
 const string JwtKeyPlaceholder = "REPLACE_WITH_YOUR_OWN_KEY_AT_LEAST_32_CHARS";
 
@@ -24,7 +28,22 @@ builder.WebHost.ConfigureKestrel(options =>
 });
 
 builder.Host.UseSerilog((context, configuration) =>
-    configuration.ReadFrom.Configuration(context.Configuration));
+{
+    configuration.ReadFrom.Configuration(context.Configuration);
+
+    var otlpEndpoint = context.Configuration["OTEL_EXPORTER_OTLP_ENDPOINT"];
+    if (!string.IsNullOrEmpty(otlpEndpoint))
+    {
+        configuration.WriteTo.OpenTelemetry(options =>
+        {
+            options.Endpoint = otlpEndpoint;
+            options.ResourceAttributes = new Dictionary<string, object>
+            {
+                ["service.name"] = context.Configuration["OTEL_SERVICE_NAME"] ?? "course-platform-api"
+            };
+        });
+    }
+});
 
 builder.Services.AddApplication();
 builder.Services.AddInfrastructure(builder.Configuration, builder.Environment);
@@ -32,6 +51,44 @@ builder.Services.AddInfrastructure(builder.Configuration, builder.Environment);
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
+builder.Services.AddSignalR();
+builder.Services.AddSingleton<CoursePlatform.Application.Common.Interfaces.INotificationService, CoursePlatform.API.Services.SignalRNotificationService>();
+
+var otelEndpoint = builder.Configuration["OTEL_EXPORTER_OTLP_ENDPOINT"];
+if (!string.IsNullOrEmpty(otelEndpoint))
+{
+    builder.Services.AddOpenTelemetry()
+        .ConfigureResource(resource => resource.AddService(builder.Configuration["OTEL_SERVICE_NAME"] ?? "course-platform-api"))
+        .WithTracing(tracing => tracing
+            .AddAspNetCoreInstrumentation()
+            .AddHttpClientInstrumentation()
+            .AddNpgsql()
+            .AddSource("CoursePlatform")
+            .AddSource("Elastic.Transport")
+            .AddOtlpExporter())
+        .WithMetrics(metrics => metrics
+            .AddAspNetCoreInstrumentation()
+            .AddHttpClientInstrumentation()
+            .AddRuntimeInstrumentation()
+            .AddOtlpExporter());
+}
+
+var healthChecks = builder.Services.AddHealthChecks()
+    .AddCheck<CoursePlatform.API.HealthChecks.ElasticsearchHealthCheck>("elasticsearch")
+    .AddCheck<CoursePlatform.API.HealthChecks.MinioHealthCheck>("minio")
+    .AddCheck<CoursePlatform.API.HealthChecks.StripeHealthCheck>("stripe");
+
+var healthDbConnection = builder.Configuration.GetConnectionString("DefaultConnection");
+if (!string.IsNullOrEmpty(healthDbConnection))
+{
+    healthChecks.AddNpgSql(healthDbConnection, name: "postgres");
+}
+
+var healthRedisConnection = builder.Configuration.GetConnectionString("Redis");
+if (!string.IsNullOrEmpty(healthRedisConnection))
+{
+    healthChecks.AddRedis(healthRedisConnection, name: "redis");
+}
 
 builder.Services.AddIdentity<ApplicationUser, IdentityRole<Guid>>(options =>
 {
@@ -74,6 +131,19 @@ builder.Services
             NameClaimType = System.Security.Claims.ClaimTypes.Name,
             ClockSkew = TimeSpan.Zero
         };
+
+        options.Events = new Microsoft.AspNetCore.Authentication.JwtBearer.JwtBearerEvents
+        {
+            OnMessageReceived = context =>
+            {
+                var accessToken = context.Request.Query["access_token"];
+                if (!string.IsNullOrEmpty(accessToken) && context.HttpContext.Request.Path.StartsWithSegments("/hubs"))
+                {
+                    context.Token = accessToken;
+                }
+                return Task.CompletedTask;
+            }
+        };
     });
 
 builder.Services.AddAuthorization();
@@ -87,6 +157,7 @@ builder.Services.AddCors(options =>
         policy.WithOrigins("http://localhost:5173")
               .AllowAnyHeader()
               .AllowAnyMethod()
+              .AllowCredentials()
               .WithExposedHeaders("X-RateLimit-Limit", "X-RateLimit-Remaining", "X-RateLimit-Reset");
     });
 });
@@ -150,6 +221,27 @@ app.UseAuthorization();
 app.UseMiddleware<CoursePlatform.API.Middleware.ExceptionHandlingMiddleware>();
 
 app.MapControllers();
+app.MapHub<CoursePlatform.API.Hubs.NotificationHub>("/hubs/notifications");
+app.MapHealthChecks("/health", new Microsoft.AspNetCore.Diagnostics.HealthChecks.HealthCheckOptions
+{
+    ResponseWriter = async (context, report) =>
+    {
+        context.Response.ContentType = "application/json";
+        await context.Response.WriteAsJsonAsync(new
+        {
+            status = report.Status.ToString(),
+            totalDurationMs = Math.Round(report.TotalDuration.TotalMilliseconds, 1),
+            entries = report.Entries.ToDictionary(
+                e => e.Key,
+                e => new
+                {
+                    status = e.Value.Status.ToString(),
+                    description = e.Value.Description,
+                    durationMs = Math.Round(e.Value.Duration.TotalMilliseconds, 1)
+                })
+        });
+    }
+});
 
 using (var scope = app.Services.CreateScope())
 {

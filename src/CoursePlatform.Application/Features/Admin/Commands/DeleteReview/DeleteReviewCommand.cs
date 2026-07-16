@@ -21,12 +21,14 @@ public class DeleteReviewCommandHandler : IRequestHandler<DeleteReviewCommand>
     private readonly IApplicationDbContext _context;
     private readonly ICurrentUserService _currentUserService;
     private readonly ICourseIndexingService _courseIndexing;
+    private readonly IAppCache _cache;
 
-    public DeleteReviewCommandHandler(IApplicationDbContext context, ICurrentUserService currentUserService, ICourseIndexingService courseIndexing)
+    public DeleteReviewCommandHandler(IApplicationDbContext context, ICurrentUserService currentUserService, ICourseIndexingService courseIndexing, IAppCache cache)
     {
         _context = context;
         _currentUserService = currentUserService;
         _courseIndexing = courseIndexing;
+        _cache = cache;
     }
 
     public async Task Handle(DeleteReviewCommand request, CancellationToken cancellationToken)
@@ -47,5 +49,6 @@ public class DeleteReviewCommandHandler : IRequestHandler<DeleteReviewCommand>
         _context.Reviews.Remove(review);
         await _context.SaveChangesAsync(cancellationToken);
         await _courseIndexing.IndexCourseAsync(review.CourseId, cancellationToken);
+        await _cache.InvalidateTagAsync("courses", cancellationToken);
     }
 }

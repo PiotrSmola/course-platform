@@ -2,6 +2,7 @@ using FluentValidation;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
+using CoursePlatform.Application.Common.Helpers;
 using CoursePlatform.Application.Common.Interfaces;
 using CoursePlatform.Domain.Entities;
 using CoursePlatform.Domain.Enums;
@@ -23,15 +24,21 @@ public class ProcessPaymentWebhookCommandHandler : IRequestHandler<ProcessPaymen
 {
     private readonly IApplicationDbContext _context;
     private readonly IPaymentGateway _paymentGateway;
+    private readonly INotificationService _notifications;
+    private readonly IEmailQueue _emailQueue;
     private readonly ILogger<ProcessPaymentWebhookCommandHandler> _logger;
 
     public ProcessPaymentWebhookCommandHandler(
         IApplicationDbContext context,
         IPaymentGateway paymentGateway,
+        INotificationService notifications,
+        IEmailQueue emailQueue,
         ILogger<ProcessPaymentWebhookCommandHandler> logger)
     {
         _context = context;
         _paymentGateway = paymentGateway;
+        _notifications = notifications;
+        _emailQueue = emailQueue;
         _logger = logger;
     }
 
@@ -152,6 +159,39 @@ public class ProcessPaymentWebhookCommandHandler : IRequestHandler<ProcessPaymen
 
         _logger.LogInformation("Payment {PaymentId} completed, user {UserId} enrolled in course {CourseId}.",
             payment.Id, payment.UserId, payment.CourseId);
+
+        try
+        {
+            var courseTitle = await _context.Courses
+                .Where(c => c.Id == payment.CourseId)
+                .Select(c => c.Title)
+                .FirstOrDefaultAsync(cancellationToken) ?? "kurs";
+
+            var buyer = await _context.Users
+                .Where(u => u.Id == payment.UserId)
+                .Select(u => new { u.Email, u.FirstName })
+                .FirstOrDefaultAsync(cancellationToken);
+
+            if (buyer?.Email != null)
+            {
+                var (subject, html) = EmailTemplates.PurchaseConfirmed(
+                    buyer.FirstName, courseTitle, payment.Amount, payment.Currency);
+                _emailQueue.Enqueue(new EmailMessage(buyer.Email, subject, html));
+            }
+
+            await _notifications.NotifyUserAsync(
+                payment.UserId,
+                new UserNotification(
+                    "purchase-completed",
+                    "Zakup zakończony",
+                    $"Masz już dostęp do kursu „{courseTitle}”.",
+                    $"/courses/{payment.CourseId}"),
+                cancellationToken);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(ex, "Failed to send purchase notification for payment {PaymentId}.", payment.Id);
+        }
     }
 
     private async Task HandleExpiredAsync(PaymentGatewayEvent gatewayEvent, CancellationToken cancellationToken)

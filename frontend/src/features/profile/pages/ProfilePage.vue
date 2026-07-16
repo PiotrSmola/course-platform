@@ -112,6 +112,40 @@
           </div>
         </div>
 
+        <div class="certificates-card glass-card">
+          <h3>Certyfikaty</h3>
+          <div v-if="certificates.isLoading.value" class="purchases-empty">Ładowanie...</div>
+          <div v-else-if="!certificates.data.value?.length" class="purchases-empty">
+            Ukończ kurs w 100%, aby otrzymać certyfikat.
+          </div>
+          <div v-else class="purchases-list">
+            <div v-for="cert in certificates.data.value" :key="cert.id" class="certificate-item">
+              <div class="purchase-info">
+                <span class="purchase-title">{{ cert.courseTitle }}</span>
+                <span class="purchase-date">
+                  {{ cert.number }} · {{ new Date(cert.issuedAt).toLocaleDateString('pl-PL') }}
+                </span>
+              </div>
+              <div class="certificate-actions">
+                <router-link
+                  class="btn btn-ghost btn-sm"
+                  :to="{ name: 'CertificateVerify', params: { number: cert.number } }"
+                >
+                  Weryfikuj
+                </router-link>
+                <button
+                  type="button"
+                  class="btn btn-primary btn-sm"
+                  :disabled="downloadCertificate.isPending.value"
+                  @click="downloadCertificate.mutate(cert.id)"
+                >
+                  Pobierz PDF
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+
         <div class="danger-card glass-card">
           <h3>Strefa niebezpieczna</h3>
           <p>Usunięcie konta jest nieodwracalne. Wszystkie Twoje dane, postępy i recenzje zostaną trwale usunięte.</p>
@@ -148,11 +182,14 @@ import { useForm } from 'vee-validate'
 import { toTypedSchema } from '@vee-validate/zod'
 import { useProfile } from '@/features/profile/composables/useProfile'
 import { useMyPurchases } from '@/features/payments/composables/usePayments'
+import { useMyCertificates, useDownloadCertificate } from '@/features/certificates/composables/useCertificates'
 import { useAuthStore } from '@/features/auth/stores/auth.store'
 import { updateProfileSchema } from '@/features/profile/schemas/profile.schema'
 
 const { profile, update, deleteAccount } = useProfile()
 const purchases = useMyPurchases()
+const certificates = useMyCertificates()
+const downloadCertificate = useDownloadCertificate()
 const authStore = useAuthStore()
 const router = useRouter()
 const showDeleteModal = ref(false)
@@ -376,13 +413,36 @@ function confirmDelete() {
   }
 }
 
-.purchases-card {
+.purchases-card,
+.certificates-card {
   padding: 28px;
 
   h3 {
     font-size: 1.1rem;
     margin-bottom: 20px;
   }
+}
+
+.certificate-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 14px 16px;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.04);
+  box-shadow: inset 0 1px 1px rgba(255, 255, 255, 0.14), inset 0 0 0 1px rgba(255, 255, 255, 0.05);
+}
+
+.certificate-actions {
+  display: flex;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+.btn-sm {
+  padding: 8px 14px;
+  font-size: 0.82rem;
 }
 
 .purchases-empty {

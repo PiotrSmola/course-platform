@@ -7,5 +7,8 @@ public static class ObjectKeyBuilder
 
     public static string CourseThumbnailObjectKey(Guid courseId)
         => $"courses/{courseId:D}/thumbnail/source";
+
+    public static string CertificatePdfObjectKey(Guid certificateId)
+        => $"certificates/{certificateId:D}/certificate.pdf";
 }
 

@@ -38,6 +38,8 @@ public static class DependencyInjection
         services.Configure<MinioOptions>(configuration.GetSection("Minio"));
         services.Configure<ElasticOptions>(configuration.GetSection("Elastic"));
         services.Configure<StripeOptions>(configuration.GetSection("Stripe"));
+        services.Configure<CertificateOptions>(configuration.GetSection("Certificates"));
+        services.Configure<EmailOptions>(configuration.GetSection("Email"));
 
         services.AddSingleton<IAmazonS3>(sp =>
         {
@@ -63,6 +65,23 @@ public static class DependencyInjection
         services.AddSingleton<IDateTimeService, DateTimeService>();
         services.AddSingleton<IHtmlSanitizer, HtmlSanitizerWrapper>();
         services.AddSingleton<IPaymentGateway, StripePaymentGateway>();
+
+        QuestPDF.Settings.License = QuestPDF.Infrastructure.LicenseType.Community;
+        services.AddSingleton<ICertificatePdfGenerator, QuestPdfCertificateGenerator>();
+
+        services.AddSingleton<Email.ChannelEmailQueue>();
+        services.AddSingleton<IEmailQueue>(sp => sp.GetRequiredService<Email.ChannelEmailQueue>());
+        services.AddSingleton<IEmailSender, Email.SmtpEmailSender>();
+        services.AddHostedService<Email.EmailDispatcher>();
+
+        var redisConnection = configuration.GetConnectionString("Redis");
+        if (!string.IsNullOrEmpty(redisConnection) && !environment.IsEnvironment("Testing"))
+        {
+            services.AddStackExchangeRedisCache(options => options.Configuration = redisConnection);
+        }
+
+        services.AddHybridCache();
+        services.AddSingleton<IAppCache, Caching.HybridAppCache>();
 
         services.AddScoped<EfCourseSearchService>();
 

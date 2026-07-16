@@ -23,7 +23,7 @@ public class GetTechnologiesQueryTests
         );
         await context.SaveChangesAsync();
 
-        var handler = new GetTechnologiesQueryHandler(context);
+        var handler = new GetTechnologiesQueryHandler(context, new PassThroughAppCache());
         var result = await handler.Handle(new GetTechnologiesQuery(), CancellationToken.None);
 
         result.Should().HaveCount(3);

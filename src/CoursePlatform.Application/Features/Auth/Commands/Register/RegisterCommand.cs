@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Identity;
 using FluentValidation;
 using FluentValidation.Results;
 using CoursePlatform.Domain.Entities;
+using CoursePlatform.Application.Common.Helpers;
 using CoursePlatform.Application.Common.Interfaces;
 
 namespace CoursePlatform.Application.Features.Auth.Commands.Register;
@@ -17,11 +18,16 @@ public class RegisterCommandHandler : IRequestHandler<RegisterCommand, AuthRespo
 {
     private readonly UserManager<ApplicationUser> _userManager;
     private readonly IJwtTokenGenerator _jwtTokenGenerator;
+    private readonly IEmailQueue _emailQueue;
 
-    public RegisterCommandHandler(UserManager<ApplicationUser> userManager, IJwtTokenGenerator jwtTokenGenerator)
+    public RegisterCommandHandler(
+        UserManager<ApplicationUser> userManager,
+        IJwtTokenGenerator jwtTokenGenerator,
+        IEmailQueue emailQueue)
     {
         _userManager = userManager;
         _jwtTokenGenerator = jwtTokenGenerator;
+        _emailQueue = emailQueue;
     }
 
     public async Task<AuthResponse> Handle(RegisterCommand request, CancellationToken cancellationToken)
@@ -45,6 +51,9 @@ public class RegisterCommandHandler : IRequestHandler<RegisterCommand, AuthRespo
         {
             throw new ValidationException(roleResult.Errors.Select(e => new ValidationFailure(e.Code, e.Description)));
         }
+
+        var (subject, html) = EmailTemplates.Welcome(user.FirstName);
+        _emailQueue.Enqueue(new EmailMessage(user.Email!, subject, html));
 
         var roles = await _userManager.GetRolesAsync(user);
         var token = _jwtTokenGenerator.GenerateToken(user, roles);

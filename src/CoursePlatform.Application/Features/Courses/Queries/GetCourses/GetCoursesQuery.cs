@@ -24,15 +24,18 @@ public class GetCoursesQueryHandler : IRequestHandler<GetCoursesQuery, CoursesVm
     private readonly ICurrentUserService _currentUserService;
     private readonly IFileStorageService _fileStorage;
     private readonly ICourseSearchService _courseSearch;
+    private readonly IAppCache _cache;
 
     public GetCoursesQueryHandler(
         ICurrentUserService currentUserService,
         IFileStorageService fileStorage,
-        ICourseSearchService courseSearch)
+        ICourseSearchService courseSearch,
+        IAppCache cache)
     {
         _currentUserService = currentUserService;
         _fileStorage = fileStorage;
         _courseSearch = courseSearch;
+        _cache = cache;
     }
 
     public async Task<CoursesVm> Handle(GetCoursesQuery request, CancellationToken cancellationToken)
@@ -52,7 +55,16 @@ public class GetCoursesQueryHandler : IRequestHandler<GetCoursesQuery, CoursesVm
             request.PageNumber,
             request.PageSize);
 
-        var page = await _courseSearch.SearchAsync(criteria, cancellationToken);
+        var cacheable = !criteria.IsAdmin && string.IsNullOrWhiteSpace(criteria.SearchTerm);
+
+        var page = cacheable
+            ? await _cache.GetOrCreateAsync(
+                BuildCacheKey(criteria),
+                TimeSpan.FromSeconds(60),
+                async ct => await _courseSearch.SearchAsync(criteria, ct),
+                tags: new[] { "courses" },
+                cancellationToken: cancellationToken)
+            : await _courseSearch.SearchAsync(criteria, cancellationToken);
 
         var items = new List<CourseListDto>(page.Items.Count);
         foreach (var row in page.Items)
@@ -77,5 +89,13 @@ public class GetCoursesQueryHandler : IRequestHandler<GetCoursesQuery, CoursesVm
         }
 
         return new CoursesVm(items, page.TotalCount);
+    }
+
+    private static string BuildCacheKey(CourseSearchCriteria criteria)
+    {
+        var payload = System.Text.Json.JsonSerializer.Serialize(criteria);
+        var hash = Convert.ToHexString(
+            System.Security.Cryptography.SHA256.HashData(System.Text.Encoding.UTF8.GetBytes(payload)));
+        return $"cp:courses:{hash}";
     }
 }
