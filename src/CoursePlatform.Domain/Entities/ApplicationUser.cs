@@ -13,4 +13,5 @@ public class ApplicationUser : IdentityUser<Guid>
     public ICollection<Review> Reviews { get; set; } = new List<Review>();
     public ICollection<LessonProgress> LessonProgresses { get; set; } = new List<LessonProgress>();
     public ICollection<RefreshToken> RefreshTokens { get; set; } = new List<RefreshToken>();
+    public ICollection<Payment> Payments { get; set; } = new List<Payment>();
 }

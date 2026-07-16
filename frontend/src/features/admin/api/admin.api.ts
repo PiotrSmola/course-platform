@@ -55,6 +55,28 @@ export async function getAdminReviews(): Promise<AdminReviewDto[]> {
   return response.data
 }
 
+export interface AuditLogDto {
+  id: string
+  createdAt: string
+  action: string
+  entityType: string
+  entityId: string
+  details: string
+  adminEmail: string | null
+}
+
+export interface PagedAuditLogsDto {
+  items: AuditLogDto[]
+  totalCount: number
+  pageNumber: number
+  pageSize: number
+}
+
+export async function getAdminAuditLogs(pageNumber = 1, pageSize = 50): Promise<PagedAuditLogsDto> {
+  const response = await client.get(`/admin/audit-logs?pageNumber=${pageNumber}&pageSize=${pageSize}`)
+  return response.data
+}
+
 export async function startReindex(): Promise<StartReindexResult> {
   const response = await client.post('/admin/search/reindex')
   return response.data

@@ -12,6 +12,21 @@
         </router-link>
       </div>
 
+      <section v-if="!dashboardLoading && dashboard" class="stats-grid">
+        <div class="stat-card glass-card">
+          <span class="stat-value">{{ dashboard.totalStudents }}</span>
+          <span class="stat-label">Studentów</span>
+        </div>
+        <div class="stat-card glass-card">
+          <span class="stat-value">{{ formatCurrency(dashboard.totalRevenue) }}</span>
+          <span class="stat-label">Przychód</span>
+        </div>
+        <div class="stat-card glass-card">
+          <span class="stat-value">{{ dashboard.averageCompletionRate }}%</span>
+          <span class="stat-label">Średni postęp</span>
+        </div>
+      </section>
+
       <div v-if="isLoading" class="loading">Ładowanie...</div>
       <div v-else-if="!courses?.length" class="empty glass-card">
         <p>Nie masz jeszcze kursów. Utwórz pierwszy kurs i dodaj moduły z lekcjami.</p>
@@ -25,6 +40,8 @@
               <span>{{ course.enrollmentCount }} studentów</span>
               <span>{{ course.moduleCount }} mod. · {{ course.lessonCount }} lek.</span>
               <span class="status" :class="statusClass(course.status)">{{ statusLabel(course.status) }}</span>
+              <span v-if="courseStats(course.id)">{{ formatCurrency(courseStats(course.id)!.revenue) }}</span>
+              <span v-if="courseStats(course.id)">{{ courseStats(course.id)!.completionRate }}% ukończono</span>
             </div>
             <router-link class="btn btn-ghost" :to="{ name: 'EditCourse', params: { id: course.id } }">
               Edytuj
@@ -38,12 +55,14 @@
 
 <script setup lang="ts">
 import { computed } from 'vue'
-import { useInstructorCourses } from '@/features/instructor/composables/useInstructor'
+import { useInstructorCourses, useInstructorDashboard } from '@/features/instructor/composables/useInstructor'
 import { CourseStatus } from '@/features/courses/types/course.types'
 import CourseThumbnail from '@/shared/components/media/CourseThumbnail.vue'
 
 const { data, isLoading } = useInstructorCourses()
+const { data: dashboardData, isLoading: dashboardLoading } = useInstructorDashboard()
 const courses = computed(() => data.value ?? [])
+const dashboard = computed(() => dashboardData.value)
 
 function statusLabel(status: CourseStatus) {
   switch (status) {
@@ -60,6 +79,14 @@ function statusClass(status: CourseStatus) {
     default: return 'draft'
   }
 }
+
+function courseStats(courseId: string) {
+  return dashboard.value?.courses.find((c) => c.id === courseId)
+}
+
+function formatCurrency(value: number): string {
+  return new Intl.NumberFormat('pl-PL', { style: 'currency', currency: 'PLN' }).format(value)
+}
 </script>
 
 <style lang="scss" scoped>
@@ -71,6 +98,31 @@ function statusClass(status: CourseStatus) {
 
 .actions {
   margin-bottom: 40px;
+}
+
+.stats-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 20px;
+  margin-bottom: 40px;
+}
+
+.stat-card {
+  padding: 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.stat-value {
+  font-size: 2rem;
+  font-weight: 700;
+  color: $color-ink;
+}
+
+.stat-label {
+  font-size: 0.9rem;
+  color: $color-muted;
 }
 
 .courses-grid {

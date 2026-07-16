@@ -1,6 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/vue-query'
 import {
   getInstructorCourses,
+  getInstructorDashboard,
   createModule,
   updateModule,
   deleteModule,
@@ -25,6 +26,13 @@ export function useInstructorCourses() {
   return useQuery({
     queryKey: queryKeys.instructorCourses(),
     queryFn: getInstructorCourses
+  })
+}
+
+export function useInstructorDashboard() {
+  return useQuery({
+    queryKey: queryKeys.instructorDashboard(),
+    queryFn: getInstructorDashboard
   })
 }
 

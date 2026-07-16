@@ -8,6 +8,7 @@ using CoursePlatform.Application.Features.Admin.Commands.StartReindex;
 using CoursePlatform.Application.Features.Admin.Commands.UpdateCourseStatus;
 using CoursePlatform.Application.Features.Admin.Queries.GetReindexJob;
 using CoursePlatform.Application.Features.Admin.Queries.GetSearchStats;
+using CoursePlatform.Application.Features.Admin.Queries.GetAuditLogs;
 using CoursePlatform.Application.Features.Admin.Queries.GetReviews;
 using CoursePlatform.Application.Features.Admin.Queries.GetUsers;
 using CoursePlatform.Application.Features.Admin.Search;
@@ -71,6 +72,16 @@ public class AdminController : ControllerBase
     public async Task<ActionResult<List<AdminReviewDto>>> GetReviews(CancellationToken cancellationToken)
     {
         var result = await _mediator.Send(new GetAdminReviewsQuery(), cancellationToken);
+        return Ok(result);
+    }
+
+    [HttpGet("audit-logs")]
+    public async Task<ActionResult<PagedAuditLogsDto>> GetAuditLogs(
+        [FromQuery] int pageNumber = 1,
+        [FromQuery] int pageSize = 50,
+        CancellationToken cancellationToken = default)
+    {
+        var result = await _mediator.Send(new GetAuditLogsQuery(pageNumber, pageSize), cancellationToken);
         return Ok(result);
     }
 

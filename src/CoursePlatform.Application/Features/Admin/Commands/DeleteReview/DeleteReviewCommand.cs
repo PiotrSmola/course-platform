@@ -22,13 +22,20 @@ public class DeleteReviewCommandHandler : IRequestHandler<DeleteReviewCommand>
     private readonly ICurrentUserService _currentUserService;
     private readonly ICourseIndexingService _courseIndexing;
     private readonly IAppCache _cache;
+    private readonly IAuditLogService _auditLog;
 
-    public DeleteReviewCommandHandler(IApplicationDbContext context, ICurrentUserService currentUserService, ICourseIndexingService courseIndexing, IAppCache cache)
+    public DeleteReviewCommandHandler(
+        IApplicationDbContext context,
+        ICurrentUserService currentUserService,
+        ICourseIndexingService courseIndexing,
+        IAppCache cache,
+        IAuditLogService auditLog)
     {
         _context = context;
         _currentUserService = currentUserService;
         _courseIndexing = courseIndexing;
         _cache = cache;
+        _auditLog = auditLog;
     }
 
     public async Task Handle(DeleteReviewCommand request, CancellationToken cancellationToken)
@@ -39,6 +46,8 @@ public class DeleteReviewCommandHandler : IRequestHandler<DeleteReviewCommand>
         }
 
         var review = await _context.Reviews
+            .Include(r => r.User)
+            .Include(r => r.Course)
             .FirstOrDefaultAsync(r => r.Id == request.ReviewId, cancellationToken);
 
         if (review == null)
@@ -46,9 +55,20 @@ public class DeleteReviewCommandHandler : IRequestHandler<DeleteReviewCommand>
             throw new NotFoundException($"Review {request.ReviewId} not found.");
         }
 
+        var courseId = review.CourseId;
+        var courseTitle = review.Course.Title;
+        var authorEmail = review.User.Email;
+
         _context.Reviews.Remove(review);
         await _context.SaveChangesAsync(cancellationToken);
-        await _courseIndexing.IndexCourseAsync(review.CourseId, cancellationToken);
+        await _courseIndexing.IndexCourseAsync(courseId, cancellationToken);
         await _cache.InvalidateTagAsync("courses", cancellationToken);
+
+        await _auditLog.LogAsync(
+            "DeleteReview",
+            "Review",
+            request.ReviewId.ToString(),
+            $"Review by '{authorEmail}' removed from course '{courseTitle}'.",
+            cancellationToken);
     }
 }

@@ -1,8 +1,29 @@
 import client from '@/shared/api/client'
-import type { InstructorCourseDto } from '@/features/courses/types/course.types'
+import type { InstructorCourseDto, CourseStatus } from '@/features/courses/types/course.types'
 
 export async function getInstructorCourses(): Promise<InstructorCourseDto[]> {
   const response = await client.get('/courses/instructor/my')
+  return response.data
+}
+
+export interface InstructorCourseStatsDto {
+  id: string
+  title: string
+  status: CourseStatus
+  enrollmentCount: number
+  revenue: number
+  completionRate: number
+}
+
+export interface InstructorDashboardDto {
+  totalStudents: number
+  totalRevenue: number
+  averageCompletionRate: number
+  courses: InstructorCourseStatsDto[]
+}
+
+export async function getInstructorDashboard(): Promise<InstructorDashboardDto> {
+  const response = await client.get('/courses/instructor/dashboard')
   return response.data
 }
 

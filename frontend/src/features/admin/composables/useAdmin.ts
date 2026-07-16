@@ -1,11 +1,13 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/vue-query'
+import { computed, toValue, type MaybeRefOrGetter } from 'vue'
 import {
   getAdminUsers,
   assignUserRole,
   getAdminCourses,
   updateCourseStatus,
   deleteReview,
-  getAdminReviews
+  getAdminReviews,
+  getAdminAuditLogs
 } from '@/features/admin/api/admin.api'
 import { queryKeys } from '@/shared/queryKeys'
 import { toast } from '@/shared/toast/toast'
@@ -30,6 +32,13 @@ export function useAdminReviews() {
   return useQuery({
     queryKey: queryKeys.adminReviews(),
     queryFn: getAdminReviews
+  })
+}
+
+export function useAdminAuditLogs(pageNumber: MaybeRefOrGetter<number> = 1, pageSize: MaybeRefOrGetter<number> = 50) {
+  return useQuery({
+    queryKey: computed(() => queryKeys.adminAuditLogs(toValue(pageNumber), toValue(pageSize))),
+    queryFn: () => getAdminAuditLogs(toValue(pageNumber), toValue(pageSize))
   })
 }
 

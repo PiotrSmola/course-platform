@@ -27,11 +27,13 @@ public class AssignUserRoleCommandHandler : IRequestHandler<AssignUserRoleComman
 {
     private readonly IIdentityService _identityService;
     private readonly ICurrentUserService _currentUserService;
+    private readonly IAuditLogService _auditLog;
 
-    public AssignUserRoleCommandHandler(IIdentityService identityService, ICurrentUserService currentUserService)
+    public AssignUserRoleCommandHandler(IIdentityService identityService, ICurrentUserService currentUserService, IAuditLogService auditLog)
     {
         _identityService = identityService;
         _currentUserService = currentUserService;
+        _auditLog = auditLog;
     }
 
     public async Task Handle(AssignUserRoleCommand request, CancellationToken cancellationToken)
@@ -60,5 +62,12 @@ public class AssignUserRoleCommandHandler : IRequestHandler<AssignUserRoleComman
         {
             throw new ValidationException(result.Errors.Select(e => new ValidationFailure(string.Empty, e)));
         }
+
+        await _auditLog.LogAsync(
+            "AssignUserRole",
+            "User",
+            user.Id.ToString(),
+            $"Role '{request.Role}' assigned to user '{user.Email}' by admin.",
+            cancellationToken);
     }
 }

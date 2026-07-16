@@ -66,6 +66,7 @@ public static class DependencyInjection
         services.AddScoped<IIdentityService, IdentityService>();
         services.AddSingleton<IFileStorageService, MinioFileStorageService>();
         services.AddSingleton<INotificationService, SignalRNotificationService>();
+        services.AddScoped<IAuditLogService, AuditLogService>();
         services.AddScoped<IJwtTokenGenerator, JwtTokenGenerator>();
         services.AddSingleton<IDateTimeService, DateTimeService>();
         services.AddSingleton<IHtmlSanitizer, HtmlSanitizerWrapper>();

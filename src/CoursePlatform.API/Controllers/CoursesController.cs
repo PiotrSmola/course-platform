@@ -10,6 +10,7 @@ using CoursePlatform.Application.Features.Courses.Commands.CreateCourse;
 using CoursePlatform.Application.Features.Courses.Commands.UpdateCourse;
 using CoursePlatform.Application.Features.Courses.Commands.ThumbnailUploads;
 using CoursePlatform.Application.Features.Courses.Queries.GetInstructorCourses;
+using CoursePlatform.Application.Features.Courses.Queries.GetInstructorDashboard;
 using CoursePlatform.Domain.Enums;
 
 namespace CoursePlatform.API.Controllers;
@@ -70,6 +71,14 @@ public class CoursesController : ControllerBase
     public async Task<ActionResult<List<InstructorCourseDto>>> GetInstructorCourses(CancellationToken cancellationToken)
     {
         var result = await _mediator.Send(new GetInstructorCoursesQuery(), cancellationToken);
+        return Ok(result);
+    }
+
+    [HttpGet("instructor/dashboard")]
+    [Authorize(Roles = "Instructor,Admin")]
+    public async Task<ActionResult<InstructorDashboardDto>> GetInstructorDashboard(CancellationToken cancellationToken)
+    {
+        var result = await _mediator.Send(new GetInstructorDashboardQuery(), cancellationToken);
         return Ok(result);
     }
 

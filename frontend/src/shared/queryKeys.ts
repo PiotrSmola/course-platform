@@ -22,9 +22,11 @@ export const queryKeys = {
   certificateVerification: (number: string) => ['certificate-verification', number] as const,
 
   instructorCourses: () => ['instructor-courses'] as const,
+  instructorDashboard: () => ['instructor-dashboard'] as const,
   adminUsers: () => ['admin-users'] as const,
   adminCourses: () => ['admin-courses'] as const,
   adminReviews: () => ['admin-reviews'] as const,
+  adminAuditLogs: (pageNumber: number, pageSize: number) => ['admin-audit-logs', pageNumber, pageSize] as const,
   catalogStats: () => ['catalog-stats'] as const,
   searchStats: () => ['admin-search-stats'] as const,
   reindexJob: () => ['admin-reindex-job'] as const

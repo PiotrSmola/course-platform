@@ -23,13 +23,20 @@ public class UpdateCourseStatusCommandHandler : IRequestHandler<UpdateCourseStat
     private readonly ICurrentUserService _currentUserService;
     private readonly ICourseIndexingService _courseIndexing;
     private readonly IAppCache _cache;
+    private readonly IAuditLogService _auditLog;
 
-    public UpdateCourseStatusCommandHandler(IApplicationDbContext context, ICurrentUserService currentUserService, ICourseIndexingService courseIndexing, IAppCache cache)
+    public UpdateCourseStatusCommandHandler(
+        IApplicationDbContext context,
+        ICurrentUserService currentUserService,
+        ICourseIndexingService courseIndexing,
+        IAppCache cache,
+        IAuditLogService auditLog)
     {
         _context = context;
         _currentUserService = currentUserService;
         _courseIndexing = courseIndexing;
         _cache = cache;
+        _auditLog = auditLog;
     }
 
     public async Task Handle(UpdateCourseStatusCommand request, CancellationToken cancellationToken)
@@ -47,10 +54,18 @@ public class UpdateCourseStatusCommandHandler : IRequestHandler<UpdateCourseStat
             throw new NotFoundException($"Course {request.CourseId} not found.");
         }
 
+        var previousStatus = course.Status;
         course.Status = request.Status;
         course.MarkUpdated();
         await _context.SaveChangesAsync(cancellationToken);
         await _courseIndexing.IndexCourseAsync(course.Id, cancellationToken);
         await _cache.InvalidateTagAsync("courses", cancellationToken);
+
+        await _auditLog.LogAsync(
+            "UpdateCourseStatus",
+            "Course",
+            course.Id.ToString(),
+            $"Status changed from {previousStatus} to {request.Status} for course '{course.Title}'.",
+            cancellationToken);
     }
 }

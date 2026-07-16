@@ -23,6 +23,7 @@ public class TestDbContext : DbContext, IApplicationDbContext
     public DbSet<ProcessedStripeEvent> ProcessedStripeEvents => Set<ProcessedStripeEvent>();
     public DbSet<Certificate> Certificates => Set<Certificate>();
     public DbSet<RefreshToken> RefreshTokens => Set<RefreshToken>();
+    public DbSet<AuditLog> AuditLogs => Set<AuditLog>();
     public DbSet<ApplicationUser> Users => Set<ApplicationUser>();
 
     public TestDbContext(DbContextOptions<TestDbContext> options) : base(options) { }

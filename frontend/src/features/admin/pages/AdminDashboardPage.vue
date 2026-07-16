@@ -10,6 +10,7 @@
         <button type="button" class="glass no-warp" :class="{ active: tab === 'users' }" @click="tab = 'users'">Użytkownicy</button>
         <button type="button" class="glass no-warp" :class="{ active: tab === 'courses' }" @click="tab = 'courses'">Kursy</button>
         <button type="button" class="glass no-warp" :class="{ active: tab === 'reviews' }" @click="tab = 'reviews'">Recenzje</button>
+        <button type="button" class="glass no-warp" :class="{ active: tab === 'audit' }" @click="tab = 'audit'">Audit log</button>
         <button type="button" class="glass no-warp" :class="{ active: tab === 'search' }" @click="tab = 'search'">Wyszukiwarka</button>
       </div>
 
@@ -123,6 +124,53 @@
         </div>
       </section>
 
+      <section v-else-if="tab === 'audit'" class="panel glass-card">
+        <div v-if="auditLogsLoading" class="loading">Ładowanie...</div>
+        <div v-else>
+          <div class="table-scroll">
+            <table class="data-table">
+              <thead>
+                <tr>
+                  <th>Data</th>
+                  <th>Akcja</th>
+                  <th>Encja</th>
+                  <th>Admin</th>
+                  <th>Szczegóły</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr v-for="log in auditLogs" :key="log.id">
+                  <td>{{ formatDate(log.createdAt) }}</td>
+                  <td>{{ log.action }}</td>
+                  <td>{{ log.entityType }} ({{ log.entityId.slice(0, 8) }})</td>
+                  <td>{{ log.adminEmail ?? '—' }}</td>
+                  <td class="audit-details">{{ log.details }}</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+          <div class="pagination">
+            <button
+              type="button"
+              class="btn btn-ghost"
+              :disabled="auditPageNumber <= 1"
+              @click="auditPageNumber--"
+            >
+              ← Poprzednia
+            </button>
+            <span>Strona {{ auditPageNumber }}</span>
+            <button
+              type="button"
+              class="btn btn-ghost"
+              :disabled="!auditLogsData || auditLogs.length < auditPageSize"
+              @click="auditPageNumber++"
+            >
+              Następna →
+            </button>
+          </div>
+        </div>
+      </section>
+
       <section v-else class="panel search-panel">
         <SearchAdminPanel />
       </section>
@@ -132,21 +180,25 @@
 
 <script setup lang="ts">
 import { computed, ref } from 'vue'
-import { useAdminUsers, useAdminCourses, useAdminReviews, useAdminMutations } from '@/features/admin/composables/useAdmin'
+import { useAdminUsers, useAdminCourses, useAdminReviews, useAdminAuditLogs, useAdminMutations } from '@/features/admin/composables/useAdmin'
 import { CourseStatus } from '@/features/courses/types/course.types'
 import SearchAdminPanel from '@/features/admin/components/SearchAdminPanel.vue'
 
-type AdminTab = 'users' | 'courses' | 'reviews' | 'search'
+type AdminTab = 'users' | 'courses' | 'reviews' | 'audit' | 'search'
 const tab = ref<AdminTab>('users')
 
 const { data: usersData, isLoading: usersLoading } = useAdminUsers()
 const { data: coursesData, isLoading: coursesLoading } = useAdminCourses()
 const { data: reviewsData, isLoading: reviewsLoading } = useAdminReviews()
+const auditPageNumber = ref(1)
+const auditPageSize = 50
+const { data: auditLogsData, isLoading: auditLogsLoading } = useAdminAuditLogs(auditPageNumber, auditPageSize)
 const { assignRole, setCourseStatus, removeReview: removeReviewMutation } = useAdminMutations()
 
 const users = computed(() => usersData.value ?? [])
 const adminCourses = computed(() => coursesData.value?.items ?? [])
 const adminReviews = computed(() => reviewsData.value ?? [])
+const auditLogs = computed(() => auditLogsData.value?.items ?? [])
 
 function formatDate(value: string): string {
   return new Date(value).toLocaleString('pl-PL')
@@ -289,6 +341,26 @@ function removeReview(reviewId: string) {
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+}
+
+.audit-details {
+  max-width: 360px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.pagination {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  margin-top: 20px;
+
+  span {
+    color: $color-muted;
+    font-size: 0.9rem;
+  }
 }
 
 .danger {

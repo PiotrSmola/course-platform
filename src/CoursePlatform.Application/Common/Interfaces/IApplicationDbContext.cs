@@ -22,6 +22,7 @@ public interface IApplicationDbContext
     DbSet<ProcessedStripeEvent> ProcessedStripeEvents { get; }
     DbSet<Certificate> Certificates { get; }
     DbSet<RefreshToken> RefreshTokens { get; }
+    DbSet<AuditLog> AuditLogs { get; }
     DbSet<ApplicationUser> Users { get; }
 
     DatabaseFacade Database { get; }
