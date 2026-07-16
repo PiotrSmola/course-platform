@@ -1,5 +1,4 @@
 using MediatR;
-using Microsoft.AspNetCore.Identity;
 using FluentValidation;
 using FluentValidation.Results;
 using CoursePlatform.Domain.Entities;
@@ -11,34 +10,33 @@ public record LoginCommand(string Email, string Password) : IRequest<AuthRespons
 
 public class LoginCommandHandler : IRequestHandler<LoginCommand, AuthResponse>
 {
-    private readonly UserManager<ApplicationUser> _userManager;
-    private readonly SignInManager<ApplicationUser> _signInManager;
+    private readonly IIdentityService _identityService;
     private readonly IJwtTokenGenerator _jwtTokenGenerator;
 
-    public LoginCommandHandler(UserManager<ApplicationUser> userManager, SignInManager<ApplicationUser> signInManager, IJwtTokenGenerator jwtTokenGenerator)
+    public LoginCommandHandler(IIdentityService identityService, IJwtTokenGenerator jwtTokenGenerator)
     {
-        _userManager = userManager;
-        _signInManager = signInManager;
+        _identityService = identityService;
         _jwtTokenGenerator = jwtTokenGenerator;
     }
 
     public async Task<AuthResponse> Handle(LoginCommand request, CancellationToken cancellationToken)
     {
-        var user = await _userManager.FindByEmailAsync(request.Email);
+        var user = await _identityService.FindByEmailAsync(request.Email, cancellationToken);
         if (user == null)
         {
             throw new ValidationException(new[] { new ValidationFailure("Email", "Invalid email or password.") });
         }
 
-        var result = await _signInManager.CheckPasswordSignInAsync(user, request.Password, true);
-        if (!result.Succeeded)
+        var result = await _identityService.CheckPasswordAsync(user, request.Password, cancellationToken);
+        if (result != AuthPasswordVerificationResult.Success)
         {
             throw new ValidationException(new[] { new ValidationFailure("Password", "Invalid email or password.") });
         }
 
-        var roles = await _userManager.GetRolesAsync(user);
+        var roles = await _identityService.GetRolesAsync(user, cancellationToken);
         var token = _jwtTokenGenerator.GenerateToken(user, roles);
+        var refreshToken = await _identityService.CreateRefreshTokenAsync(user.Id, cancellationToken);
 
-        return new AuthResponse(user.Id, user.Email, user.FirstName, user.LastName, token, roles.ToList());
+        return new AuthResponse(user.Id, user.Email, user.FirstName, user.LastName, token, refreshToken.Token, roles.ToList());
     }
 }

@@ -8,6 +8,7 @@ using CoursePlatform.Application.Features.Admin.Commands.StartReindex;
 using CoursePlatform.Application.Features.Admin.Commands.UpdateCourseStatus;
 using CoursePlatform.Application.Features.Admin.Queries.GetReindexJob;
 using CoursePlatform.Application.Features.Admin.Queries.GetSearchStats;
+using CoursePlatform.Application.Features.Admin.Queries.GetReviews;
 using CoursePlatform.Application.Features.Admin.Queries.GetUsers;
 using CoursePlatform.Application.Features.Admin.Search;
 using CoursePlatform.Application.Features.Courses.Queries.GetCourses;
@@ -64,6 +65,13 @@ public class AdminController : ControllerBase
         if (courseId != command.CourseId) return BadRequest();
         await _mediator.Send(command, cancellationToken);
         return NoContent();
+    }
+
+    [HttpGet("reviews")]
+    public async Task<ActionResult<List<AdminReviewDto>>> GetReviews(CancellationToken cancellationToken)
+    {
+        var result = await _mediator.Send(new GetAdminReviewsQuery(), cancellationToken);
+        return Ok(result);
     }
 
     [HttpDelete("reviews/{reviewId:guid}")]

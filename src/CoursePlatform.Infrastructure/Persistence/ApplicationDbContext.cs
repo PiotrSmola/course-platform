@@ -23,10 +23,10 @@ public class ApplicationDbContext : IdentityDbContext<ApplicationUser, IdentityR
     public DbSet<LearningPathCourse> LearningPathCourses => Set<LearningPathCourse>();
     public DbSet<BusinessPlan> BusinessPlans => Set<BusinessPlan>();
     public DbSet<BusinessPlanFeature> BusinessPlanFeatures => Set<BusinessPlanFeature>();
-    public DbSet<UserStatistics> UserStatistics => Set<UserStatistics>();
     public DbSet<Payment> Payments => Set<Payment>();
     public DbSet<ProcessedStripeEvent> ProcessedStripeEvents => Set<ProcessedStripeEvent>();
     public DbSet<Certificate> Certificates => Set<Certificate>();
+    public DbSet<RefreshToken> RefreshTokens => Set<RefreshToken>();
     public new DbSet<ApplicationUser> Users => Set<ApplicationUser>();
 
     protected override void OnModelCreating(ModelBuilder builder)

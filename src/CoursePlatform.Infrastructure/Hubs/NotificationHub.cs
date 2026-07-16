@@ -1,7 +1,7 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.SignalR;
 
-namespace CoursePlatform.API.Hubs;
+namespace CoursePlatform.Infrastructure.Hubs;
 
 [Authorize]
 public class NotificationHub : Hub

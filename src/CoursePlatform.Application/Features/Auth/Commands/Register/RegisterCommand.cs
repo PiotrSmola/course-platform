@@ -1,5 +1,4 @@
 using MediatR;
-using Microsoft.AspNetCore.Identity;
 using FluentValidation;
 using FluentValidation.Results;
 using CoursePlatform.Domain.Entities;
@@ -16,16 +15,16 @@ public record RegisterCommand(
 
 public class RegisterCommandHandler : IRequestHandler<RegisterCommand, AuthResponse>
 {
-    private readonly UserManager<ApplicationUser> _userManager;
+    private readonly IIdentityService _identityService;
     private readonly IJwtTokenGenerator _jwtTokenGenerator;
     private readonly IEmailQueue _emailQueue;
 
     public RegisterCommandHandler(
-        UserManager<ApplicationUser> userManager,
+        IIdentityService identityService,
         IJwtTokenGenerator jwtTokenGenerator,
         IEmailQueue emailQueue)
     {
-        _userManager = userManager;
+        _identityService = identityService;
         _jwtTokenGenerator = jwtTokenGenerator;
         _emailQueue = emailQueue;
     }
@@ -40,24 +39,25 @@ public class RegisterCommandHandler : IRequestHandler<RegisterCommand, AuthRespo
             LastName = request.LastName
         };
 
-        var result = await _userManager.CreateAsync(user, request.Password);
-        if (!result.Succeeded)
+        var createResult = await _identityService.CreateUserAsync(user, request.Password, cancellationToken);
+        if (!createResult.Succeeded)
         {
-            throw new ValidationException(result.Errors.Select(e => new ValidationFailure(e.Code, e.Description)));
+            throw new ValidationException(createResult.Errors.Select(e => new ValidationFailure(string.Empty, e)));
         }
 
-        var roleResult = await _userManager.AddToRoleAsync(user, "Student");
+        var roleResult = await _identityService.AddToRoleAsync(user, "Student", cancellationToken);
         if (!roleResult.Succeeded)
         {
-            throw new ValidationException(roleResult.Errors.Select(e => new ValidationFailure(e.Code, e.Description)));
+            throw new ValidationException(roleResult.Errors.Select(e => new ValidationFailure(string.Empty, e)));
         }
 
         var (subject, html) = EmailTemplates.Welcome(user.FirstName);
         _emailQueue.Enqueue(new EmailMessage(user.Email!, subject, html));
 
-        var roles = await _userManager.GetRolesAsync(user);
+        var roles = await _identityService.GetRolesAsync(user, cancellationToken);
         var token = _jwtTokenGenerator.GenerateToken(user, roles);
+        var refreshToken = await _identityService.CreateRefreshTokenAsync(user.Id, cancellationToken);
 
-        return new AuthResponse(user.Id, user.Email, user.FirstName, user.LastName, token, roles.ToList());
+        return new AuthResponse(user.Id, user.Email, user.FirstName, user.LastName, token, refreshToken.Token, roles.ToList());
     }
 }

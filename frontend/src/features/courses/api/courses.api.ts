@@ -81,7 +81,7 @@ export interface UpdateCourseRequest {
   shortDescription: string
   price: number
   level: CourseLevel
-  status: CourseStatus
+  status?: CourseStatus
   language: string
   categoryIds: string[]
   technologyIds: string[]

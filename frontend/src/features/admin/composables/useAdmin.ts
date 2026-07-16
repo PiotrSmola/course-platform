@@ -4,7 +4,8 @@ import {
   assignUserRole,
   getAdminCourses,
   updateCourseStatus,
-  deleteReview
+  deleteReview,
+  getAdminReviews
 } from '@/features/admin/api/admin.api'
 import { queryKeys } from '@/shared/queryKeys'
 import { toast } from '@/shared/toast/toast'
@@ -22,6 +23,13 @@ export function useAdminCourses() {
   return useQuery({
     queryKey: queryKeys.adminCourses(),
     queryFn: () => getAdminCourses()
+  })
+}
+
+export function useAdminReviews() {
+  return useQuery({
+    queryKey: queryKeys.adminReviews(),
+    queryFn: getAdminReviews
   })
 }
 
@@ -52,6 +60,7 @@ export function useAdminMutations() {
   const removeReview = useMutation({
     mutationFn: (reviewId: string) => deleteReview(reviewId),
     onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.adminReviews() })
       queryClient.invalidateQueries({ queryKey: queryKeys.courses() })
       queryClient.invalidateQueries({ queryKey: queryKeys.coursesBrowseAll() })
       toast.success('Recenzja została usunięta')

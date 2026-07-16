@@ -1,5 +1,4 @@
 using MediatR;
-using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using CoursePlatform.Application.Common.Interfaces;
 using CoursePlatform.Application.Common.Exceptions;
@@ -14,16 +13,16 @@ public class DeleteAccountCommandHandler : IRequestHandler<DeleteAccountCommand>
 {
     private readonly IApplicationDbContext _context;
     private readonly ICurrentUserService _currentUserService;
-    private readonly UserManager<Domain.Entities.ApplicationUser> _userManager;
+    private readonly IIdentityService _identityService;
 
     public DeleteAccountCommandHandler(
         IApplicationDbContext context,
         ICurrentUserService currentUserService,
-        UserManager<Domain.Entities.ApplicationUser> userManager)
+        IIdentityService identityService)
     {
         _context = context;
         _currentUserService = currentUserService;
-        _userManager = userManager;
+        _identityService = identityService;
     }
 
     public async Task Handle(DeleteAccountCommand request, CancellationToken cancellationToken)
@@ -31,7 +30,7 @@ public class DeleteAccountCommandHandler : IRequestHandler<DeleteAccountCommand>
         if (_currentUserService.UserId == null)
             throw new ForbiddenAccessException();
 
-        var user = await _userManager.FindByIdAsync(_currentUserService.UserId.Value.ToString());
+        var user = await _identityService.FindByIdAsync(_currentUserService.UserId.Value, cancellationToken);
         if (user == null)
             throw new NotFoundException("User", _currentUserService.UserId.Value.ToString());
 
@@ -47,10 +46,10 @@ public class DeleteAccountCommandHandler : IRequestHandler<DeleteAccountCommand>
             throw new ValidationException(new[] { new ValidationFailure("", "Cannot delete account with payment history.") });
         }
 
-        var result = await _userManager.DeleteAsync(user);
+        var result = await _identityService.DeleteUserAsync(user, cancellationToken);
         if (!result.Succeeded)
         {
-            throw new InvalidOperationException(string.Join("; ", result.Errors.Select(e => e.Description)));
+            throw new InvalidOperationException(string.Join("; ", result.Errors));
         }
     }
 }

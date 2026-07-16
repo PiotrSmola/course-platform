@@ -9,6 +9,7 @@
       <div class="tabs">
         <button type="button" class="glass no-warp" :class="{ active: tab === 'users' }" @click="tab = 'users'">Użytkownicy</button>
         <button type="button" class="glass no-warp" :class="{ active: tab === 'courses' }" @click="tab = 'courses'">Kursy</button>
+        <button type="button" class="glass no-warp" :class="{ active: tab === 'reviews' }" @click="tab = 'reviews'">Recenzje</button>
         <button type="button" class="glass no-warp" :class="{ active: tab === 'search' }" @click="tab = 'search'">Wyszukiwarka</button>
       </div>
 
@@ -86,6 +87,42 @@
         </div>
       </section>
 
+      <section v-else-if="tab === 'reviews'" class="panel glass-card">
+        <div v-if="reviewsLoading" class="loading">Ładowanie...</div>
+        <div v-else class="table-scroll">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>Kurs</th>
+                <th>Autor</th>
+                <th>Ocena</th>
+                <th>Komentarz</th>
+                <th>Data</th>
+                <th>Akcje</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr v-for="review in adminReviews" :key="review.id">
+                <td>{{ review.courseTitle }}</td>
+                <td>{{ review.authorName }}</td>
+                <td>{{ review.rating }}/5</td>
+                <td class="review-comment">{{ review.comment }}</td>
+                <td>{{ formatDate(review.createdAt) }}</td>
+                <td>
+                  <button
+                    type="button"
+                    class="btn btn-ghost danger"
+                    @click="removeReview(review.id)"
+                  >
+                    Usuń
+                  </button>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
       <section v-else class="panel search-panel">
         <SearchAdminPanel />
       </section>
@@ -95,19 +132,25 @@
 
 <script setup lang="ts">
 import { computed, ref } from 'vue'
-import { useAdminUsers, useAdminCourses, useAdminMutations } from '@/features/admin/composables/useAdmin'
+import { useAdminUsers, useAdminCourses, useAdminReviews, useAdminMutations } from '@/features/admin/composables/useAdmin'
 import { CourseStatus } from '@/features/courses/types/course.types'
 import SearchAdminPanel from '@/features/admin/components/SearchAdminPanel.vue'
 
-type AdminTab = 'users' | 'courses' | 'search'
+type AdminTab = 'users' | 'courses' | 'reviews' | 'search'
 const tab = ref<AdminTab>('users')
 
 const { data: usersData, isLoading: usersLoading } = useAdminUsers()
 const { data: coursesData, isLoading: coursesLoading } = useAdminCourses()
-const { assignRole, setCourseStatus } = useAdminMutations()
+const { data: reviewsData, isLoading: reviewsLoading } = useAdminReviews()
+const { assignRole, setCourseStatus, removeReview: removeReviewMutation } = useAdminMutations()
 
 const users = computed(() => usersData.value ?? [])
 const adminCourses = computed(() => coursesData.value?.items ?? [])
+const adminReviews = computed(() => reviewsData.value ?? [])
+
+function formatDate(value: string): string {
+  return new Date(value).toLocaleString('pl-PL')
+}
 
 function statusLabel(status: CourseStatus) {
   switch (status) {
@@ -127,6 +170,10 @@ function publish(courseId: string) {
 
 function hide(courseId: string) {
   setCourseStatus.mutate({ courseId, status: CourseStatus.Hidden })
+}
+
+function removeReview(reviewId: string) {
+  removeReviewMutation.mutate(reviewId)
 }
 </script>
 
@@ -235,6 +282,13 @@ function hide(courseId: string) {
   display: flex;
   gap: 8px;
   flex-wrap: wrap;
+}
+
+.review-comment {
+  max-width: 320px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .danger {

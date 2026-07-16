@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.RateLimiting;
 using CoursePlatform.Application.Features.Auth;
 using CoursePlatform.Application.Features.Auth.Commands.Login;
+using CoursePlatform.Application.Features.Auth.Commands.RefreshToken;
 using CoursePlatform.Application.Features.Auth.Commands.Register;
 using CoursePlatform.Application.Features.Auth.Queries.GetCurrentUser;
 
@@ -34,6 +35,15 @@ public class AuthController : ControllerBase
     [AllowAnonymous]
     [EnableRateLimiting("auth")]
     public async Task<ActionResult<AuthResponse>> Login(LoginCommand command, CancellationToken cancellationToken)
+    {
+        var result = await _mediator.Send(command, cancellationToken);
+        return Ok(result);
+    }
+
+    [HttpPost("refresh")]
+    [AllowAnonymous]
+    [EnableRateLimiting("auth")]
+    public async Task<ActionResult<AuthResponse>> Refresh(RefreshTokenCommand command, CancellationToken cancellationToken)
     {
         var result = await _mediator.Send(command, cancellationToken);
         return Ok(result);

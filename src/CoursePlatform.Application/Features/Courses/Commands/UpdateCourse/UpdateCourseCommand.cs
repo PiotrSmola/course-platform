@@ -13,7 +13,7 @@ public record UpdateCourseCommand(
     string ShortDescription,
     decimal Price,
     CourseLevel Level,
-    CourseStatus Status,
+    CourseStatus? Status,
     string Language,
     List<Guid> CategoryIds,
     List<Guid> TechnologyIds) : IRequest;
@@ -79,7 +79,7 @@ public class UpdateCourseCommandHandler : IRequestHandler<UpdateCourseCommand>
         course.ShortDescription = _htmlSanitizer.Sanitize(request.ShortDescription);
         course.Price = request.Price;
         course.Level = request.Level;
-        course.Status = request.Status;
+        course.Status = _currentUserService.IsAdmin && request.Status.HasValue ? request.Status.Value : course.Status;
         course.Language = request.Language;
         course.Categories = categories;
         course.Technologies = technologies;

@@ -17,7 +17,6 @@ public static class ApplicationDbContextSeed
         await SeedEnrollmentsAsync(context);
         await SeedReviewsAsync(context);
         await SeedLessonProgressAsync(context);
-        await SeedUserStatisticsAsync(context);
         await SeedLearningPathsAsync(context);
         await SeedBusinessPlansAsync(context);
     }
@@ -1175,87 +1174,6 @@ public static class ApplicationDbContextSeed
         }
 
         context.LessonProgresses.AddRange(progressEntries);
-        await context.SaveChangesAsync();
-    }
-
-    private static async Task SeedUserStatisticsAsync(ApplicationDbContext context)
-    {
-        var students = await context.Users
-            .Where(u => u.Email!.EndsWith("@courseplatform.com") &&
-                        (u.Email.StartsWith("piotr.") || u.Email.StartsWith("karolina.") ||
-                         u.Email.StartsWith("tomasz.") || u.Email.StartsWith("monika.") ||
-                         u.Email.StartsWith("jakub.")))
-            .ToListAsync();
-
-        var studentIds = students.Select(s => s.Id).ToList();
-        var existingStatsCount = await context.UserStatistics
-            .Where(us => studentIds.Contains(us.UserId))
-            .CountAsync();
-
-        if (existingStatsCount > 0) return;
-
-        var enrollments = await context.Enrollments
-            .Include(e => e.Course)
-            .ThenInclude(c => c.Modules)
-            .ThenInclude(m => m.Lessons)
-            .ToListAsync();
-
-        var lessonProgress = await context.LessonProgresses.ToListAsync();
-
-        foreach (var student in students)
-        {
-            var studentEnrollments = enrollments.Where(e => e.UserId == student.Id).ToList();
-            var completedLessonIds = lessonProgress
-                .Where(lp => lp.UserId == student.Id && lp.IsCompleted)
-                .Select(lp => lp.LessonId)
-                .ToHashSet();
-
-            int totalEnrollments = studentEnrollments.Count;
-            int totalLessonsAvailable = 0;
-            int totalLessonsCompleted = 0;
-            int completedCourses = 0;
-            int totalLearningTimeSeconds = 0;
-
-            foreach (var enrollment in studentEnrollments)
-            {
-                var lessons = enrollment.Course.Modules.SelectMany(m => m.Lessons).ToList();
-                totalLessonsAvailable += lessons.Count;
-
-                var courseCompletedIds = lessons.Select(l => l.Id).ToHashSet();
-                var completedInCourse = completedLessonIds.Count(cid => courseCompletedIds.Contains(cid));
-                totalLessonsCompleted += completedInCourse;
-
-                if (lessons.Count > 0 && completedInCourse == lessons.Count)
-                {
-                    completedCourses++;
-                }
-
-                foreach (var lesson in lessons.Where(l => completedLessonIds.Contains(l.Id)))
-                {
-                    totalLearningTimeSeconds += lesson.Duration;
-                }
-            }
-
-            double averageProgress = totalLessonsAvailable > 0
-                ? (double)totalLessonsCompleted / totalLessonsAvailable * 100
-                : 0;
-
-            var random = new Random(42);
-
-            context.UserStatistics.Add(new UserStatistics
-            {
-                UserId = student.Id,
-                TotalEnrollments = totalEnrollments,
-                CompletedCourses = completedCourses,
-                TotalLessonsCompleted = totalLessonsCompleted,
-                TotalLessonsAvailable = totalLessonsAvailable,
-                AverageProgressPercentage = Math.Round(averageProgress, 2),
-                TotalLearningTimeSeconds = totalLearningTimeSeconds,
-                CertificatesEarned = completedCourses,
-                LastActivityAt = DateTime.UtcNow.AddDays(-random.Next(1, 10))
-            });
-        }
-
         await context.SaveChangesAsync();
     }
 }

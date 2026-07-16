@@ -15,8 +15,12 @@ function toCurrentUser(data: AuthResponse | CurrentUser): CurrentUser {
   }
 }
 
+const TOKEN_KEY = 'token'
+const REFRESH_TOKEN_KEY = 'refreshToken'
+
 export const useAuthStore = defineStore('auth', () => {
-  const token = ref<string | null>(localStorage.getItem('token'))
+  const token = ref<string | null>(localStorage.getItem(TOKEN_KEY))
+  const refreshToken = ref<string | null>(localStorage.getItem(REFRESH_TOKEN_KEY))
   const user = ref<CurrentUser | null>(null)
   const isReady = ref(false)
   const bootstrapPromise = ref<Promise<void> | null>(null)
@@ -27,10 +31,19 @@ export const useAuthStore = defineStore('auth', () => {
 
   function setAuth(data: AuthResponse) {
     token.value = data.token
+    refreshToken.value = data.refreshToken
     user.value = toCurrentUser(data)
     isReady.value = true
     bootstrapPromise.value = null
-    localStorage.setItem('token', data.token)
+    localStorage.setItem(TOKEN_KEY, data.token)
+    localStorage.setItem(REFRESH_TOKEN_KEY, data.refreshToken)
+  }
+
+  function setToken(data: AuthResponse) {
+    token.value = data.token
+    refreshToken.value = data.refreshToken
+    localStorage.setItem(TOKEN_KEY, data.token)
+    localStorage.setItem(REFRESH_TOKEN_KEY, data.refreshToken)
   }
 
   function setUser(data: CurrentUser) {
@@ -39,10 +52,12 @@ export const useAuthStore = defineStore('auth', () => {
 
   function logout() {
     token.value = null
+    refreshToken.value = null
     user.value = null
     isReady.value = false
     bootstrapPromise.value = null
-    localStorage.removeItem('token')
+    localStorage.removeItem(TOKEN_KEY)
+    localStorage.removeItem(REFRESH_TOKEN_KEY)
   }
 
   async function refreshUser() {
@@ -79,6 +94,7 @@ export const useAuthStore = defineStore('auth', () => {
 
   return {
     token,
+    refreshToken,
     user,
     isReady,
     bootstrap,
@@ -87,6 +103,7 @@ export const useAuthStore = defineStore('auth', () => {
     isInstructor,
     isAdmin,
     setAuth,
+    setToken,
     setUser,
     logout
   }

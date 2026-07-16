@@ -2,6 +2,7 @@ using System.Text;
 using CoursePlatform.Application;
 using CoursePlatform.Infrastructure;
 using CoursePlatform.Infrastructure.Persistence;
+using CoursePlatform.Infrastructure.Hubs;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.EntityFrameworkCore;
@@ -52,7 +53,6 @@ builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 builder.Services.AddSignalR();
-builder.Services.AddSingleton<CoursePlatform.Application.Common.Interfaces.INotificationService, CoursePlatform.API.Services.SignalRNotificationService>();
 
 var otelEndpoint = builder.Configuration["OTEL_EXPORTER_OTLP_ENDPOINT"];
 if (!string.IsNullOrEmpty(otelEndpoint))
@@ -221,7 +221,7 @@ app.UseAuthorization();
 app.UseMiddleware<CoursePlatform.API.Middleware.ExceptionHandlingMiddleware>();
 
 app.MapControllers();
-app.MapHub<CoursePlatform.API.Hubs.NotificationHub>("/hubs/notifications");
+app.MapHub<NotificationHub>("/hubs/notifications");
 app.MapHealthChecks("/health", new Microsoft.AspNetCore.Diagnostics.HealthChecks.HealthCheckOptions
 {
     ResponseWriter = async (context, report) =>

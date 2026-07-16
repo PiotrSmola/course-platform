@@ -1,7 +1,6 @@
 using FluentValidation;
 using FluentValidation.Results;
 using MediatR;
-using Microsoft.AspNetCore.Identity;
 using CoursePlatform.Application.Common.Exceptions;
 using CoursePlatform.Application.Common.Interfaces;
 using CoursePlatform.Domain.Entities;
@@ -26,12 +25,12 @@ public class AssignUserRoleCommandValidator : AbstractValidator<AssignUserRoleCo
 
 public class AssignUserRoleCommandHandler : IRequestHandler<AssignUserRoleCommand>
 {
-    private readonly UserManager<ApplicationUser> _userManager;
+    private readonly IIdentityService _identityService;
     private readonly ICurrentUserService _currentUserService;
 
-    public AssignUserRoleCommandHandler(UserManager<ApplicationUser> userManager, ICurrentUserService currentUserService)
+    public AssignUserRoleCommandHandler(IIdentityService identityService, ICurrentUserService currentUserService)
     {
-        _userManager = userManager;
+        _identityService = identityService;
         _currentUserService = currentUserService;
     }
 
@@ -42,13 +41,13 @@ public class AssignUserRoleCommandHandler : IRequestHandler<AssignUserRoleComman
             throw new ForbiddenAccessException("Admin access required.");
         }
 
-        var user = await _userManager.FindByIdAsync(request.UserId.ToString());
+        var user = await _identityService.FindByIdAsync(request.UserId, cancellationToken);
         if (user == null)
         {
             throw new NotFoundException($"User {request.UserId} not found.");
         }
 
-        if (await _userManager.IsInRoleAsync(user, request.Role))
+        if (await _identityService.IsInRoleAsync(user, request.Role, cancellationToken))
         {
             throw new ValidationException(new[]
             {
@@ -56,10 +55,10 @@ public class AssignUserRoleCommandHandler : IRequestHandler<AssignUserRoleComman
             });
         }
 
-        var result = await _userManager.AddToRoleAsync(user, request.Role);
+        var result = await _identityService.AddToRoleAsync(user, request.Role, cancellationToken);
         if (!result.Succeeded)
         {
-            throw new ValidationException(result.Errors.Select(e => new ValidationFailure(e.Code, e.Description)));
+            throw new ValidationException(result.Errors.Select(e => new ValidationFailure(string.Empty, e)));
         }
     }
 }

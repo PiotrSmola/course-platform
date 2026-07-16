@@ -13,6 +13,15 @@ export interface RegisterRequest {
   lastName: string
 }
 
+export interface RefreshTokenRequest {
+  refreshToken: string
+}
+
+export async function refreshToken(data: RefreshTokenRequest): Promise<AuthResponse> {
+  const response = await client.post('/auth/refresh', data)
+  return response.data
+}
+
 export async function login(data: LoginRequest): Promise<AuthResponse> {
   const response = await client.post('/auth/login', data)
   return response.data

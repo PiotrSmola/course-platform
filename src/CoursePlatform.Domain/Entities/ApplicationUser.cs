@@ -12,5 +12,5 @@ public class ApplicationUser : IdentityUser<Guid>
     public ICollection<Enrollment> Enrollments { get; set; } = new List<Enrollment>();
     public ICollection<Review> Reviews { get; set; } = new List<Review>();
     public ICollection<LessonProgress> LessonProgresses { get; set; } = new List<LessonProgress>();
-    public UserStatistics? Statistics { get; set; }
+    public ICollection<RefreshToken> RefreshTokens { get; set; } = new List<RefreshToken>();
 }

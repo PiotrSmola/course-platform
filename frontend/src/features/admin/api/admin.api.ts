@@ -15,6 +15,16 @@ export interface AdminUserDto {
   isLockedOut: boolean
 }
 
+export interface AdminReviewDto {
+  id: string
+  courseId: string
+  courseTitle: string
+  rating: number
+  comment: string
+  authorName: string
+  createdAt: string
+}
+
 export async function getAdminUsers(): Promise<AdminUserDto[]> {
   const response = await client.get('/admin/users')
   return response.data
@@ -38,6 +48,11 @@ export async function updateCourseStatus(courseId: string, status: CourseStatus)
 
 export async function deleteReview(reviewId: string): Promise<void> {
   await client.delete(`/admin/reviews/${reviewId}`)
+}
+
+export async function getAdminReviews(): Promise<AdminReviewDto[]> {
+  const response = await client.get('/admin/reviews')
+  return response.data
 }
 
 export async function startReindex(): Promise<StartReindexResult> {

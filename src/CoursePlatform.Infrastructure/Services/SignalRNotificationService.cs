@@ -1,9 +1,9 @@
 using Microsoft.AspNetCore.SignalR;
-using CoursePlatform.API.Hubs;
 using CoursePlatform.Application.Common.Interfaces;
 using CoursePlatform.Application.Features.Admin.Search;
+using CoursePlatform.Infrastructure.Hubs;
 
-namespace CoursePlatform.API.Services;
+namespace CoursePlatform.Infrastructure.Services;
 
 public class SignalRNotificationService : INotificationService
 {

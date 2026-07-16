@@ -4,6 +4,7 @@ export interface AuthResponse {
   firstName: string
   lastName: string
   token: string
+  refreshToken: string
   roles: string[]
 }
 

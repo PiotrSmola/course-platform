@@ -1,5 +1,4 @@
 using MediatR;
-using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using CoursePlatform.Application.Common.Exceptions;
 using CoursePlatform.Application.Common.Interfaces;
@@ -19,17 +18,14 @@ public record AdminUserDto(
 
 public class GetUsersQueryHandler : IRequestHandler<GetUsersQuery, List<AdminUserDto>>
 {
-    private readonly IApplicationDbContext _context;
-    private readonly UserManager<ApplicationUser> _userManager;
+    private readonly IIdentityService _identityService;
     private readonly ICurrentUserService _currentUserService;
 
     public GetUsersQueryHandler(
-        IApplicationDbContext context,
-        UserManager<ApplicationUser> userManager,
+        IIdentityService identityService,
         ICurrentUserService currentUserService)
     {
-        _context = context;
-        _userManager = userManager;
+        _identityService = identityService;
         _currentUserService = currentUserService;
     }
 
@@ -40,23 +36,21 @@ public class GetUsersQueryHandler : IRequestHandler<GetUsersQuery, List<AdminUse
             throw new ForbiddenAccessException("Admin access required.");
         }
 
-        var users = await _context.Users
-            .AsNoTracking()
-            .OrderBy(u => u.Email)
-            .ToListAsync(cancellationToken);
+        var users = await _identityService.GetUsersAsync(cancellationToken);
 
         var result = new List<AdminUserDto>();
 
         foreach (var user in users)
         {
-            var roles = await _userManager.GetRolesAsync(user);
+            var roles = await _identityService.GetRolesAsync(user, cancellationToken);
+            var isLockedOut = await _identityService.IsLockedOutAsync(user, cancellationToken);
             result.Add(new AdminUserDto(
                 user.Id,
                 user.Email ?? string.Empty,
                 user.FirstName,
                 user.LastName,
                 roles.ToList(),
-                await _userManager.IsLockedOutAsync(user)));
+                isLockedOut));
         }
 
         return result;

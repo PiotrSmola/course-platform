@@ -35,11 +35,6 @@
             <SelectDropdown v-model="level" :options="levelOptions" />
             <span v-if="errors.level" class="error">{{ errors.level }}</span>
           </div>
-          <div v-if="!isNew" class="form-group">
-            <label>Status</label>
-            <SelectDropdown v-model="status" :options="statusOptions" />
-            <span v-if="errors.status" class="error">{{ errors.status }}</span>
-          </div>
         </div>
         <div class="form-group">
           <label>Kategorie</label>
@@ -131,7 +126,7 @@ import { useQuery } from '@tanstack/vue-query'
 import { useCreateCourse, useUpdateCourse, useCourseDetails } from '@/features/courses/composables/useCourses'
 import { useCourseThumbnailUpload } from '@/features/instructor/composables/useInstructor'
 import { getCategories, getTechnologies } from '@/features/courses/api/courses.api'
-import { CourseLevel, CourseStatus } from '@/features/courses/types/course.types'
+import { CourseLevel } from '@/features/courses/types/course.types'
 import { createCourseSchema, updateCourseSchema } from '@/features/courses/schemas/course.schema'
 import CourseStructureEditor from '@/features/instructor/components/CourseStructureEditor.vue'
 import SelectDropdown from '@/shared/components/forms/SelectDropdown.vue'
@@ -140,12 +135,6 @@ const levelOptions = [
   { value: CourseLevel.Beginner, label: 'Początkujący' },
   { value: CourseLevel.Intermediate, label: 'Średni' },
   { value: CourseLevel.Advanced, label: 'Zaawansowany' }
-]
-
-const statusOptions = [
-  { value: CourseStatus.Draft, label: 'Szkic' },
-  { value: CourseStatus.Published, label: 'Opublikowany' },
-  { value: CourseStatus.Hidden, label: 'Ukryty' }
 ]
 
 const props = defineProps<{
@@ -170,7 +159,6 @@ const { handleSubmit, defineField, errors, meta, resetForm } = useForm({
     shortDescription: '',
     price: 0,
     level: CourseLevel.Beginner,
-    status: CourseStatus.Draft,
     language: 'English',
     categoryIds: [] as string[],
     technologyIds: [] as string[]
@@ -182,7 +170,6 @@ const [description] = defineField('description')
 const [shortDescription] = defineField('shortDescription')
 const [price] = defineField('price')
 const [level] = defineField('level')
-const [status] = defineField('status')
 const [language] = defineField('language')
 const [categoryIds] = defineField('categoryIds')
 const [technologyIds] = defineField('technologyIds')
@@ -230,7 +217,6 @@ watch(
         shortDescription: data.shortDescription,
         price: data.price,
         level: data.level,
-        status: data.status,
         language: data.language,
         categoryIds: data.categoryNames.map(name => {
           const cat = cats.find(c => c.name === name)
@@ -265,11 +251,8 @@ const onSubmit = handleSubmit(async (values) => {
 
   if (!props.id) return
 
-  if (values.status === undefined) return
-
   updateMutation.mutate({
     id: props.id,
-    status: values.status,
     ...basePayload
   })
 })

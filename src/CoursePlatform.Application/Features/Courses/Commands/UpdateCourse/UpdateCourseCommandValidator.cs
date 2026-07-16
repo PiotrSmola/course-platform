@@ -12,7 +12,7 @@ public class UpdateCourseCommandValidator : AbstractValidator<UpdateCourseComman
         RuleFor(x => x.Description).ValidCourseDescription();
         RuleFor(x => x.ShortDescription).ValidShortDescription();
         RuleFor(x => x.Level).IsInEnum().WithMessage("Nieprawidłowy poziom kursu.");
-        RuleFor(x => x.Status).IsInEnum().WithMessage("Nieprawidłowy status kursu.");
+        RuleFor(x => x.Status).IsInEnum().When(x => x.Status.HasValue).WithMessage("Nieprawidłowy status kursu.");
         RuleFor(x => x.Price).ValidPrice();
         RuleFor(x => x.Language).ValidLanguage();
         RuleFor(x => x.CategoryIds).NotNull().WithMessage("Kategorie nie mogą być null");

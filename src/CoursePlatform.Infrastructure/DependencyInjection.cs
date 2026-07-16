@@ -8,10 +8,13 @@ using CoursePlatform.Infrastructure.Services;
 using CoursePlatform.Infrastructure.Identity;
 using CoursePlatform.Infrastructure.Options;
 using CoursePlatform.Infrastructure.Search;
+using CoursePlatform.Infrastructure.Hubs;
 using Amazon.S3;
 using Amazon.Runtime;
 using Elastic.Clients.Elasticsearch;
 using Elastic.Transport;
+using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.SignalR;
 
 namespace CoursePlatform.Infrastructure;
 
@@ -60,7 +63,9 @@ public static class DependencyInjection
 
         services.AddScoped<IApplicationDbContext>(provider => provider.GetRequiredService<ApplicationDbContext>());
         services.AddScoped<ICurrentUserService, CurrentUserService>();
+        services.AddScoped<IIdentityService, IdentityService>();
         services.AddSingleton<IFileStorageService, MinioFileStorageService>();
+        services.AddSingleton<INotificationService, SignalRNotificationService>();
         services.AddScoped<IJwtTokenGenerator, JwtTokenGenerator>();
         services.AddSingleton<IDateTimeService, DateTimeService>();
         services.AddSingleton<IHtmlSanitizer, HtmlSanitizerWrapper>();
