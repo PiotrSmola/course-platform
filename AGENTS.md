@@ -134,6 +134,7 @@ Nie wyprzedzaj etapów — nie buduj uploadu przed ukończeniem domeny.
 
 ## Pull requests / commits
 
+- **AI nigdy nie robi commitów samodzielnie.** Agent przygotowuje zmiany, uruchamia build/testy/lint, a decyzję o commicie i treść message pozostawia deweloperowi.
 - Commit messages po angielsku, w trybie rozkazującym (`add course filtering`, `fix enrollment constraint`).
 - Jeden commit = jedna logiczna zmiana.
 - Przed commitem: build + testy + lint przechodzą.

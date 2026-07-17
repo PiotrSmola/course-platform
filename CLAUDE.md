@@ -102,3 +102,4 @@ Nie implementuj uploadu wideo (MinIO) przed ukończeniem domeny z Etapu 1.
 - Nie dodawaj komentarzy do kodu bez prośby.
 - Nie mieszaj Tailwind ani innych utility frameworków — tylko SCSS.
 - Nie używaj Options API w Vue.
+- **Nie rób commitów samodzielnie** — przygotuj zmiany i pozostaw decyzję o commicie deweloperowi.
