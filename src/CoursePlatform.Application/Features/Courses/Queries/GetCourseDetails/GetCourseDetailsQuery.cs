@@ -50,6 +50,7 @@ public class GetCourseDetailsQueryHandler : IRequestHandler<GetCourseDetailsQuer
 
         var isEnrolled = false;
         var hasUserReviewed = false;
+        Guid? userReviewId = null;
         HashSet<Guid> completedLessonIds = new();
 
         if (_currentUserService.UserId.HasValue)
@@ -58,8 +59,11 @@ public class GetCourseDetailsQueryHandler : IRequestHandler<GetCourseDetailsQuer
             isEnrolled = await _context.Enrollments
                 .AnyAsync(e => e.UserId == userId && e.CourseId == request.Id, cancellationToken);
 
-            hasUserReviewed = await _context.Reviews
-                .AnyAsync(r => r.UserId == userId && r.CourseId == request.Id, cancellationToken);
+            var userReview = await _context.Reviews
+                .AsNoTracking()
+                .FirstOrDefaultAsync(r => r.UserId == userId && r.CourseId == request.Id, cancellationToken);
+            hasUserReviewed = userReview != null;
+            userReviewId = userReview?.Id;
 
             if (isEnrolled)
             {
@@ -118,6 +122,7 @@ public class GetCourseDetailsQueryHandler : IRequestHandler<GetCourseDetailsQuer
             reviews,
             isEnrolled,
             hasUserReviewed,
-            canReview);
+            canReview,
+            userReviewId);
     }
 }

@@ -1,9 +1,11 @@
 using MediatR;
 using FluentValidation;
 using FluentValidation.Results;
+using Microsoft.Extensions.Options;
 using CoursePlatform.Domain.Entities;
 using CoursePlatform.Application.Common.Helpers;
 using CoursePlatform.Application.Common.Interfaces;
+using CoursePlatform.Application.Common.Options;
 
 namespace CoursePlatform.Application.Features.Auth.Commands.Register;
 
@@ -18,15 +20,18 @@ public class RegisterCommandHandler : IRequestHandler<RegisterCommand, AuthRespo
     private readonly IIdentityService _identityService;
     private readonly IJwtTokenGenerator _jwtTokenGenerator;
     private readonly IEmailQueue _emailQueue;
+    private readonly FrontendOptions _frontendOptions;
 
     public RegisterCommandHandler(
         IIdentityService identityService,
         IJwtTokenGenerator jwtTokenGenerator,
-        IEmailQueue emailQueue)
+        IEmailQueue emailQueue,
+        IOptions<FrontendOptions> frontendOptions)
     {
         _identityService = identityService;
         _jwtTokenGenerator = jwtTokenGenerator;
         _emailQueue = emailQueue;
+        _frontendOptions = frontendOptions.Value;
     }
 
     public async Task<AuthResponse> Handle(RegisterCommand request, CancellationToken cancellationToken)
@@ -53,12 +58,18 @@ public class RegisterCommandHandler : IRequestHandler<RegisterCommand, AuthRespo
 
         try
         {
-            var (subject, html) = EmailTemplates.Welcome(user.FirstName);
-            _emailQueue.Enqueue(new EmailMessage(user.Email!, subject, html));
+            var (welcomeSubject, welcomeHtml) = EmailTemplates.Welcome(user.FirstName);
+            _emailQueue.Enqueue(new EmailMessage(user.Email!, welcomeSubject, welcomeHtml));
+
+            var confirmToken = await _identityService.GenerateEmailConfirmationTokenAsync(user, cancellationToken);
+            var baseUrl = _frontendOptions.BaseUrl.TrimEnd('/');
+            var confirmUrl =
+                $"{baseUrl}/confirm-email?email={Uri.EscapeDataString(user.Email!)}&token={Uri.EscapeDataString(confirmToken)}";
+            var (confirmSubject, confirmHtml) = EmailTemplates.ConfirmEmail(user.FirstName, confirmUrl);
+            _emailQueue.Enqueue(new EmailMessage(user.Email!, confirmSubject, confirmHtml));
         }
         catch
         {
-            // Welcome email is best-effort and must never fail registration.
         }
 
         var roles = await _identityService.GetRolesAsync(user, cancellationToken);

@@ -61,9 +61,10 @@ import { useQuery } from '@tanstack/vue-query'
 import { getCategories, getCourses } from '@/features/courses/api/courses.api'
 import type { CategoryDto } from '@/features/courses/api/courses.api'
 import { CourseStatus } from '@/features/courses/types/course.types'
+import { queryKeys } from '@/shared/queryKeys'
 
 const { isLoading, isError, data } = useQuery<CategoryDto[]>({
-  queryKey: ['categories'],
+  queryKey: queryKeys.categories(),
   queryFn: getCategories,
   initialData: []
 })

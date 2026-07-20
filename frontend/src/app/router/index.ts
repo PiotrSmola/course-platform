@@ -36,6 +36,27 @@ const routes: RouteRecordRaw[] = [
     ]
   },
   {
+    path: '/forgot-password',
+    component: () => import('@/app/layouts/AuthLayout.vue'),
+    children: [
+      { path: '', component: () => import('@/features/auth/pages/ForgotPasswordPage.vue'), name: 'ForgotPassword', meta: { guest: true } }
+    ]
+  },
+  {
+    path: '/reset-password',
+    component: () => import('@/app/layouts/AuthLayout.vue'),
+    children: [
+      { path: '', component: () => import('@/features/auth/pages/ResetPasswordPage.vue'), name: 'ResetPassword', meta: { guest: true } }
+    ]
+  },
+  {
+    path: '/confirm-email',
+    component: () => import('@/app/layouts/AuthLayout.vue'),
+    children: [
+      { path: '', component: () => import('@/features/auth/pages/ConfirmEmailPage.vue'), name: 'ConfirmEmail' }
+    ]
+  },
+  {
     path: '/my-courses',
     component: () => import('@/app/layouts/DashboardLayout.vue'),
     beforeEnter: authGuard,
@@ -84,6 +105,23 @@ const routes: RouteRecordRaw[] = [
     beforeEnter: [authGuard, adminGuard],
     children: [
       { path: '', component: () => import('@/features/admin/pages/AdminDashboardPage.vue'), name: 'AdminDashboard' }
+    ]
+  },
+  {
+    path: '/error',
+    component: () => import('@/app/layouts/DefaultLayout.vue'),
+    children: [
+      { path: '403', component: () => import('@/features/errors/pages/ForbiddenPage.vue'), name: 'Forbidden' },
+      { path: '404', component: () => import('@/features/errors/pages/NotFoundPage.vue'), name: 'NotFound' },
+      { path: '500', component: () => import('@/features/errors/pages/ServerErrorPage.vue'), name: 'ServerError' },
+      { path: '501', component: () => import('@/features/errors/pages/NotImplementedPage.vue'), name: 'NotImplemented' }
+    ]
+  },
+  {
+    path: '/:pathMatch(.*)*',
+    component: () => import('@/app/layouts/DefaultLayout.vue'),
+    children: [
+      { path: '', component: () => import('@/features/errors/pages/NotFoundPage.vue'), name: 'NotFoundCatchAll' }
     ]
   }
 ]

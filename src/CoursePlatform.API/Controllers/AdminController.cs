@@ -2,6 +2,7 @@ using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.RateLimiting;
+using CoursePlatform.Application.Common.Authorization;
 using CoursePlatform.Application.Features.Admin.Commands.AssignUserRole;
 using CoursePlatform.Application.Features.Admin.Commands.DeleteReview;
 using CoursePlatform.Application.Features.Admin.Commands.StartReindex;
@@ -19,7 +20,7 @@ namespace CoursePlatform.API.Controllers;
 
 [ApiController]
 [Route("api/admin")]
-[Authorize(Roles = "Admin")]
+[Authorize(Policy = AuthorizationPolicies.AdminOnly)]
 [EnableRateLimiting("api")]
 public class AdminController : ControllerBase
 {

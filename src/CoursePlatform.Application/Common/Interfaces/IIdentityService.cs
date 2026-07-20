@@ -18,6 +18,11 @@ public interface IIdentityService
 
     Task<AuthPasswordVerificationResult> CheckPasswordAsync(ApplicationUser user, string password, CancellationToken cancellationToken = default);
 
+    Task<string> GeneratePasswordResetTokenAsync(ApplicationUser user, CancellationToken cancellationToken = default);
+    Task<IdentityOperationResult> ResetPasswordAsync(ApplicationUser user, string token, string newPassword, CancellationToken cancellationToken = default);
+    Task<string> GenerateEmailConfirmationTokenAsync(ApplicationUser user, CancellationToken cancellationToken = default);
+    Task<IdentityOperationResult> ConfirmEmailAsync(ApplicationUser user, string token, CancellationToken cancellationToken = default);
+
     Task<IssuedRefreshToken> CreateRefreshTokenAsync(Guid userId, CancellationToken cancellationToken = default);
     Task<RefreshToken?> GetRefreshTokenAsync(string token, CancellationToken cancellationToken = default);
     Task RevokeRefreshTokenAsync(RefreshToken token, CancellationToken cancellationToken = default);

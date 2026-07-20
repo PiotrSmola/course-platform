@@ -2,6 +2,9 @@
   <div class="login-page">
     <h2>Logowanie</h2>
     <LoginForm />
+    <p class="auth-forgot">
+      <router-link :to="{ name: 'ForgotPassword' }">Nie pamiętasz hasła?</router-link>
+    </p>
     <p class="auth-switch">
       Nie masz konta? <router-link :to="{ name: 'Register' }">Zarejestruj się</router-link>
     </p>
@@ -20,6 +23,22 @@ import LoginForm from '@/features/auth/components/LoginForm.vue'
     font-size: 1.25rem;
     margin-bottom: 24px;
     text-align: center;
+  }
+
+  .auth-forgot {
+    text-align: center;
+    margin-top: 16px;
+    font-size: 0.88rem;
+
+    a {
+      color: $color-muted;
+      font-weight: 500;
+
+      &:hover {
+        color: $color-cyan;
+        text-decoration: underline;
+      }
+    }
   }
 
   .auth-switch {

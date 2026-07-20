@@ -3,9 +3,11 @@ import { useQuery } from '@tanstack/vue-query'
 import { getBusinessPlans } from '@/features/business/api/business.api'
 import type { BusinessPlan } from '@/features/business/api/business.api'
 
+import { queryKeys } from '@/shared/queryKeys'
+
 export function useBusinessPlans() {
   return useQuery({
-    queryKey: ['business-plans'],
+    queryKey: queryKeys.businessPlans(),
     queryFn: getBusinessPlans
   })
 }

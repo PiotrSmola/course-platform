@@ -32,11 +32,15 @@ public record CourseItem(Guid Id, string Title);
 
 public class CustomWebApplicationFactory : WebApplicationFactory<Program>
 {
+    private readonly string _databaseName = $"CoursePlatformTests-{Guid.NewGuid():N}";
+
     protected override void ConfigureWebHost(IWebHostBuilder builder)
     {
         builder.UseEnvironment("Testing");
+        builder.UseSetting("Testing:DatabaseName", _databaseName);
         builder.UseSetting("Jwt:Key", "integration-test-jwt-signing-key-32chars");
         builder.UseSetting("Jwt:Issuer", "CoursePlatform");
         builder.UseSetting("Jwt:Audience", "CoursePlatform");
+        builder.UseSetting("Frontend:BaseUrl", "http://localhost:5173");
     }
 }

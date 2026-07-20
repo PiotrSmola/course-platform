@@ -94,6 +94,7 @@ export interface CourseDetailsDto {
   isEnrolled: boolean
   hasUserReviewed: boolean
   canReview: boolean
+  userReviewId: string | null
 }
 
 export interface InstructorCourseDto {

@@ -146,15 +146,26 @@ builder.Services
         };
     });
 
-builder.Services.AddAuthorization();
+builder.Services.AddAuthorization(options =>
+{
+    options.AddPolicy(CoursePlatform.Application.Common.Authorization.AuthorizationPolicies.AdminOnly,
+        policy => policy.RequireRole("Admin"));
+    options.AddPolicy(CoursePlatform.Application.Common.Authorization.AuthorizationPolicies.InstructorOrAdmin,
+        policy => policy.RequireRole("Instructor", "Admin"));
+    options.AddPolicy(CoursePlatform.Application.Common.Authorization.AuthorizationPolicies.ManageCourse,
+        policy => policy.Requirements.Add(new CoursePlatform.Application.Common.Authorization.ManageCourseRequirement()));
+});
 
 builder.Services.AddHttpContextAccessor();
+
+var corsOrigins = builder.Configuration.GetSection("Cors:Origins").Get<string[]>()
+    ?? new[] { "http://localhost:5173" };
 
 builder.Services.AddCors(options =>
 {
     options.AddPolicy("AllowFrontend", policy =>
     {
-        policy.WithOrigins("http://localhost:5173")
+        policy.WithOrigins(corsOrigins)
               .AllowAnyHeader()
               .AllowAnyMethod()
               .AllowCredentials()
@@ -278,12 +289,17 @@ app.MapHealthChecks("/health", new Microsoft.AspNetCore.Diagnostics.HealthChecks
 using (var scope = app.Services.CreateScope())
 {
     var context = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
+    var roleManager = scope.ServiceProvider.GetRequiredService<RoleManager<IdentityRole<Guid>>>();
 
-    if (!app.Environment.IsEnvironment("Testing"))
+    if (app.Environment.IsEnvironment("Testing"))
+    {
+        await context.Database.EnsureCreatedAsync();
+        await ApplicationDbContextSeed.SeedRolesAsync(roleManager);
+    }
+    else
     {
         await context.Database.MigrateAsync();
 
-        var roleManager = scope.ServiceProvider.GetRequiredService<RoleManager<IdentityRole<Guid>>>();
         await ApplicationDbContextSeed.SeedRolesAsync(roleManager);
 
         var seedEnabled = builder.Configuration.GetValue("Dev:Seed", false);

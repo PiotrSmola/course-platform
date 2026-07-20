@@ -11,6 +11,12 @@
   "Dev": {
     "Seed": true
   },
+  "Frontend": {
+    "BaseUrl": "http://localhost:5173"
+  },
+  "Cors": {
+    "Origins": [ "http://localhost:5173" ]
+  },
   "Elastic": {
     "Enabled": true,
     "Uri": "http://elasticsearch:9200",

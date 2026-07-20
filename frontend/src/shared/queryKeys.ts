@@ -7,6 +7,9 @@ export const queryKeys = {
 
   categories: () => ['categories'] as const,
   technologies: () => ['technologies'] as const,
+  learningPaths: () => ['learning-paths'] as const,
+  learningPath: (slug: string) => ['learning-paths', slug] as const,
+  businessPlans: () => ['business-plans'] as const,
 
   courses: () => ['courses'] as const,
   course: (id: string) => ['course', id] as const,

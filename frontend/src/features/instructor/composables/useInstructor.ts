@@ -12,6 +12,8 @@ import {
   presignLessonVideoPart,
   completeLessonVideoUpload,
   abortLessonVideoUpload,
+  updateCourseStatus,
+  deleteCourse,
   type CreateModuleRequest,
   type UpdateModuleRequest,
   type CreateLessonRequest,
@@ -21,6 +23,7 @@ import { presignCourseThumbnailUpload, confirmCourseThumbnailUpload } from '@/fe
 import { queryKeys } from '@/shared/queryKeys'
 import { toast } from '@/shared/toast/toast'
 import { getApiErrorMessage } from '@/shared/api/apiError'
+import type { CourseStatus } from '@/features/courses/types/course.types'
 
 export function useInstructorCourses() {
   return useQuery({
@@ -33,6 +36,39 @@ export function useInstructorDashboard() {
   return useQuery({
     queryKey: queryKeys.instructorDashboard(),
     queryFn: getInstructorDashboard
+  })
+}
+
+export function useUpdateCourseStatus() {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: ({ courseId, status }: { courseId: string; status: CourseStatus }) =>
+      updateCourseStatus(courseId, status),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.instructorCourses() })
+      queryClient.invalidateQueries({ queryKey: queryKeys.instructorDashboard() })
+      queryClient.invalidateQueries({ queryKey: queryKeys.coursesBrowseAll() })
+      queryClient.invalidateQueries({ queryKey: queryKeys.courses() })
+      toast.success('Status kursu został zaktualizowany')
+    },
+    onError: (error) => toast.error(getApiErrorMessage(error) || 'Nie udało się zaktualizować statusu')
+  })
+}
+
+export function useDeleteCourse() {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: (courseId: string) => deleteCourse(courseId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.instructorCourses() })
+      queryClient.invalidateQueries({ queryKey: queryKeys.instructorDashboard() })
+      queryClient.invalidateQueries({ queryKey: queryKeys.coursesBrowseAll() })
+      queryClient.invalidateQueries({ queryKey: queryKeys.courses() })
+      toast.success('Kurs został usunięty')
+    },
+    onError: (error) => toast.error(getApiErrorMessage(error) || 'Nie udało się usunąć kursu')
   })
 }
 

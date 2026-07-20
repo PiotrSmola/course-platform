@@ -204,18 +204,19 @@ import { getCategories, getTechnologies } from '@/features/courses/api/courses.a
 import { useCourseBrowse, type SortOption } from '@/features/courses/composables/useCourseBrowse'
 import { CourseLevel, CourseStatus } from '@/features/courses/types/course.types'
 import CourseBrowseCard from '@/features/courses/components/CourseBrowseCard.vue'
+import { queryKeys } from '@/shared/queryKeys'
 
 const route = useRoute()
 const slug = computed(() => route.params.slug as string)
 
 const { data: allCategories } = useQuery({
-  queryKey: ['categories'],
+  queryKey: queryKeys.categories(),
   queryFn: getCategories,
   initialData: []
 })
 
 const { data: technologies } = useQuery({
-  queryKey: ['technologies'],
+  queryKey: queryKeys.technologies(),
   queryFn: getTechnologies,
   initialData: []
 })

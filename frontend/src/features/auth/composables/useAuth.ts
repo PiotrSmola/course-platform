@@ -1,7 +1,13 @@
 import { useMutation, useQueryClient } from '@tanstack/vue-query'
 import { useRouter } from 'vue-router'
 import { useAuthStore } from '@/features/auth/stores/auth.store'
-import { login, register, logout as logoutRequest } from '@/features/auth/api/auth.api'
+import {
+  login,
+  register,
+  logout as logoutRequest,
+  forgotPassword,
+  resetPassword
+} from '@/features/auth/api/auth.api'
 import { toast } from '@/shared/toast/toast'
 import { getApiErrorMessage } from '@/shared/api/apiError'
 import { queryKeys } from '@/shared/queryKeys'
@@ -49,6 +55,27 @@ export function useAuth() {
     }
   })
 
+  const forgotPasswordMutation = useMutation({
+    mutationFn: forgotPassword,
+    onSuccess: () => {
+      toast.success('Jeśli konto istnieje, wysłaliśmy email')
+    },
+    onError: () => {
+      toast.success('Jeśli konto istnieje, wysłaliśmy email')
+    }
+  })
+
+  const resetPasswordMutation = useMutation({
+    mutationFn: resetPassword,
+    onSuccess: () => {
+      toast.success('Hasło zostało zmienione')
+      router.push({ name: 'Login' })
+    },
+    onError: (error) => {
+      toast.error(getApiErrorMessage(error) || 'Nie udało się zmienić hasła')
+    }
+  })
+
   const logout = async () => {
     const token = authStore.refreshToken
     if (token) {
@@ -67,6 +94,8 @@ export function useAuth() {
   return {
     login: loginMutation,
     register: registerMutation,
+    forgotPassword: forgotPasswordMutation,
+    resetPassword: resetPasswordMutation,
     logout
   }
 }

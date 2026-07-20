@@ -29,7 +29,8 @@ public static class DependencyInjection
         {
             if (environment.IsEnvironment("Testing"))
             {
-                options.UseInMemoryDatabase("CoursePlatformTests");
+                var databaseName = configuration["Testing:DatabaseName"] ?? "CoursePlatformTests";
+                options.UseInMemoryDatabase(databaseName);
             }
             else
             {
@@ -43,6 +44,8 @@ public static class DependencyInjection
         services.Configure<StripeOptions>(configuration.GetSection("Stripe"));
         services.Configure<CertificateOptions>(configuration.GetSection("Certificates"));
         services.Configure<EmailOptions>(configuration.GetSection("Email"));
+        services.Configure<CoursePlatform.Application.Common.Options.FrontendOptions>(
+            configuration.GetSection(CoursePlatform.Application.Common.Options.FrontendOptions.SectionName));
 
         services.AddSingleton<IAmazonS3>(sp =>
         {
@@ -64,6 +67,7 @@ public static class DependencyInjection
         services.AddScoped<IApplicationDbContext>(provider => provider.GetRequiredService<ApplicationDbContext>());
         services.AddScoped<ICurrentUserService, CurrentUserService>();
         services.AddScoped<IIdentityService, IdentityService>();
+        services.AddScoped<Microsoft.AspNetCore.Authorization.IAuthorizationHandler, Authorization.ManageCourseAuthorizationHandler>();
         services.AddHostedService<Identity.RefreshTokenCleanupService>();
         services.AddSingleton<IFileStorageService, MinioFileStorageService>();
         services.AddSingleton<INotificationService, SignalRNotificationService>();

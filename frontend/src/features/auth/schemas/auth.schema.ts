@@ -15,5 +15,23 @@ export const loginSchema = z.object({
     .min(1, 'Hasło jest wymagane')
 })
 
+export const forgotPasswordSchema = z.object({
+  email: sharedSchemas.email
+})
+
+export const resetPasswordSchema = z
+  .object({
+    newPassword: sharedSchemas.password,
+    confirmPassword: z
+      .string({ required_error: 'Potwierdzenie hasła jest wymagane' })
+      .min(1, 'Potwierdzenie hasła jest wymagane')
+  })
+  .refine((data) => data.newPassword === data.confirmPassword, {
+    message: 'Hasła muszą być identyczne',
+    path: ['confirmPassword']
+  })
+
 export type RegisterFormValues = z.infer<typeof registerSchema>
 export type LoginFormValues = z.infer<typeof loginSchema>
+export type ForgotPasswordFormValues = z.infer<typeof forgotPasswordSchema>
+export type ResetPasswordFormValues = z.infer<typeof resetPasswordSchema>

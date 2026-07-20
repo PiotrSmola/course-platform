@@ -118,3 +118,11 @@ export async function abortLessonVideoUpload(courseId: string, lessonId: string,
 export async function deleteLesson(courseId: string, moduleId: string, lessonId: string): Promise<void> {
   await client.delete(`/courses/${courseId}/modules/${moduleId}/lessons/${lessonId}`)
 }
+
+export async function updateCourseStatus(courseId: string, status: CourseStatus): Promise<void> {
+  await client.put(`/courses/${courseId}/status`, { courseId, status })
+}
+
+export async function deleteCourse(courseId: string): Promise<void> {
+  await client.delete(`/courses/${courseId}`)
+}

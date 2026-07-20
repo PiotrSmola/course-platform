@@ -47,6 +47,40 @@ public static class EmailTemplates
                 """));
     }
 
+    public static (string Subject, string Html) PasswordReset(string firstName, string resetUrl)
+    {
+        var name = WebUtility.HtmlEncode(firstName);
+        var url = WebUtility.HtmlEncode(resetUrl);
+        return ("Reset hasła — CoursePlatform",
+            Wrap($"""
+                <h2 style="margin:0 0 12px">Cześć {name}!</h2>
+                <p>Otrzymaliśmy prośbę o zresetowanie hasła do Twojego konta.</p>
+                <p style="margin:24px 0">
+                  <a href="{url}" style="display:inline-block;padding:12px 24px;background:{Accent};color:#fff;text-decoration:none;border-radius:8px;font-weight:600">
+                    Ustaw nowe hasło
+                  </a>
+                </p>
+                <p style="font-size:13px;color:#64748b">Link jest ważny przez ograniczony czas. Jeśli to nie Ty — zignoruj tę wiadomość.</p>
+                """));
+    }
+
+    public static (string Subject, string Html) ConfirmEmail(string firstName, string confirmUrl)
+    {
+        var name = WebUtility.HtmlEncode(firstName);
+        var url = WebUtility.HtmlEncode(confirmUrl);
+        return ("Potwierdź adres email — CoursePlatform",
+            Wrap($"""
+                <h2 style="margin:0 0 12px">Cześć {name}!</h2>
+                <p>Potwierdź adres email, aby dokończyć rejestrację w CoursePlatform.</p>
+                <p style="margin:24px 0">
+                  <a href="{url}" style="display:inline-block;padding:12px 24px;background:{Accent};color:#fff;text-decoration:none;border-radius:8px;font-weight:600">
+                    Potwierdź email
+                  </a>
+                </p>
+                <p style="font-size:13px;color:#64748b">Jeśli nie zakładałeś(-aś) konta — zignoruj tę wiadomość.</p>
+                """));
+    }
+
     private static string Wrap(string content) =>
         $"""
         <!doctype html>

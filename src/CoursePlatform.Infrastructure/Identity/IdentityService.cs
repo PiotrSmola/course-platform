@@ -93,6 +93,28 @@ public sealed class IdentityService : IIdentityService
         return AuthPasswordVerificationResult.Failed;
     }
 
+    public async Task<string> GeneratePasswordResetTokenAsync(ApplicationUser user, CancellationToken cancellationToken = default)
+    {
+        return await _userManager.GeneratePasswordResetTokenAsync(user);
+    }
+
+    public async Task<IdentityOperationResult> ResetPasswordAsync(ApplicationUser user, string token, string newPassword, CancellationToken cancellationToken = default)
+    {
+        var result = await _userManager.ResetPasswordAsync(user, token, newPassword);
+        return MapResult(result);
+    }
+
+    public async Task<string> GenerateEmailConfirmationTokenAsync(ApplicationUser user, CancellationToken cancellationToken = default)
+    {
+        return await _userManager.GenerateEmailConfirmationTokenAsync(user);
+    }
+
+    public async Task<IdentityOperationResult> ConfirmEmailAsync(ApplicationUser user, string token, CancellationToken cancellationToken = default)
+    {
+        var result = await _userManager.ConfirmEmailAsync(user, token);
+        return MapResult(result);
+    }
+
     public async Task<IssuedRefreshToken> CreateRefreshTokenAsync(Guid userId, CancellationToken cancellationToken = default)
     {
         var rawToken = GenerateRefreshToken();

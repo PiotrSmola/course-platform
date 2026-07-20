@@ -48,8 +48,27 @@ docker compose exec frontend npm run build
   ```
 - Backend startuje przez `dotnet watch run` (auto-reload), frontend przez `npm run dev -- --host 0.0.0.0` (hot reload). Oba skonfigurowane w `docker-compose.yml`.
 
-### Stan implementacji
-Szkielet stoi, ale **kod aplikacji jeszcze nie istnieje** — brak encji, handlerów, kontrolerów, komponentów. Start od Etapu 1 (sekcja 3), pierwsza rzecz wg kolejności implementacji (sekcja 11): Domain (encje + enums).
+### Stan implementacji (aktualny)
+
+**Etapy 1–3 z planu są zaimplementowane.** Aplikacja to działające MVP+ portfolio, nie pusty szkielet.
+
+| Obszar | Status |
+|--------|--------|
+| Domain + CQRS (MediatR) + FluentValidation | Gotowe |
+| Auth JWT + refresh tokens + Identity roles | Gotowe |
+| Forgot/reset password + email confirmation | Gotowe |
+| Catalog, enrollment, progress, reviews (CRUD własnej opinii) | Gotowe |
+| Instructor CMS (modules/lessons, publish/hide/delete) | Gotowe |
+| Admin (users, roles, courses, reviews, audit, reindex) | Gotowe |
+| MinIO presigned uploads (thumbnail + multipart video) | Gotowe |
+| Stripe Checkout + webhook (idempotencja) | Gotowe |
+| Certyfikaty PDF, SignalR, Redis cache, Elasticsearch | Gotowe |
+| Authorization policies (`AdminOnly`, `InstructorOrAdmin`, `ManageCourse`) | Gotowe |
+| Frontend: katalog, learning player, checkout, panele | Gotowe |
+| Strony błędów 403 / 404 / 500 / 501 + catch-all | Gotowe |
+| Testy: unit (Application/Infrastructure), integration, Vitest, Playwright smoke | Gotowe |
+
+**Nie scaffolduj od zera.** Rozszerzaj istniejący kod. Nowe feature’y według konwencji CQRS / feature-based Vue.
 
 ---
 

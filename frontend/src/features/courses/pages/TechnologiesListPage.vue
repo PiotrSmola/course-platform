@@ -61,9 +61,10 @@ import { useQuery } from '@tanstack/vue-query'
 import { getTechnologies, getCourses } from '@/features/courses/api/courses.api'
 import type { TechnologyDto } from '@/features/courses/api/courses.api'
 import { CourseStatus } from '@/features/courses/types/course.types'
+import { queryKeys } from '@/shared/queryKeys'
 
 const { isLoading, isError, data } = useQuery<TechnologyDto[]>({
-  queryKey: ['technologies'],
+  queryKey: queryKeys.technologies(),
   queryFn: getTechnologies,
   initialData: []
 })

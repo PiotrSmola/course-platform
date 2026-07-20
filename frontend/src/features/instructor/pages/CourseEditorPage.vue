@@ -130,6 +130,7 @@ import { CourseLevel } from '@/features/courses/types/course.types'
 import { createCourseSchema, updateCourseSchema } from '@/features/courses/schemas/course.schema'
 import CourseStructureEditor from '@/features/instructor/components/CourseStructureEditor.vue'
 import SelectDropdown from '@/shared/components/forms/SelectDropdown.vue'
+import { queryKeys } from '@/shared/queryKeys'
 
 const levelOptions = [
   { value: CourseLevel.Beginner, label: 'Początkujący' },
@@ -187,12 +188,12 @@ watch(selectedThumbnailFile, (file) => {
 })
 
 const categoriesQuery = useQuery({
-  queryKey: ['categories'],
+  queryKey: queryKeys.categories(),
   queryFn: getCategories
 })
 
 const technologiesQuery = useQuery({
-  queryKey: ['technologies'],
+  queryKey: queryKeys.technologies(),
   queryFn: getTechnologies
 })
 

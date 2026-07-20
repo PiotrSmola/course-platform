@@ -10,7 +10,7 @@ Platforma kursów online. Fullstack: backend ASP.NET Core 9 (Clean Architecture)
 
 ## Środowisko jest już postawione
 
-Szkielet istnieje — solucja, cztery projekty Clean Architecture, projekty testowe, projekt Vue z zainstalowanymi paczkami, pełna konfiguracja Docker. **Nie scaffolduj od zera** (`dotnet new`, `npm create vite` itp.). Twoje zadanie to dopełnianie struktury kodem. Kod aplikacji jeszcze nie istnieje — zaczynasz od Domain (encje).
+Szkielet i **działający kod aplikacji** istnieją — solucja Clean Architecture, testy, Vue, Docker, domena + CQRS + MinIO + Stripe + extras. **Nie scaffolduj od zera** (`dotnet new`, `npm create vite` itp.). Dopełniaj strukturę; aktualny status w `IMPLEMENTATION_PLAN.md` §0.
 
 ## Wszystkie komendy przez Docker
 

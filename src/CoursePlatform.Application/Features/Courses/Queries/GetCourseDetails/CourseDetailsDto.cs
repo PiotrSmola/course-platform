@@ -23,7 +23,8 @@ public record CourseDetailsDto(
     List<ReviewDto> Reviews,
     bool IsEnrolled,
     bool HasUserReviewed,
-    bool CanReview);
+    bool CanReview,
+    Guid? UserReviewId);
 
 public record ModuleDto(Guid Id, string Title, int Order, List<LessonListDto> Lessons);
 public record LessonListDto(Guid Id, string Title, string? Description, int Duration, int Order, bool IsCompleted = false, string? VideoObjectKey = null);

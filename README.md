@@ -1,6 +1,13 @@
 # Course Platform
 
-Online course platform — ASP.NET Core 9 (Clean Architecture) + Vue 3 + TypeScript.
+Online course platform — ASP.NET Core 9 (Clean Architecture) + Vue 3 + TypeScript. Portfolio / learning project with real integrations (MinIO, Stripe, Redis, Elasticsearch, SignalR).
+
+## Architecture highlights
+
+- **Backend:** Clean Architecture (API → Application → Domain; Infrastructure → Application/Domain), CQRS via MediatR, FluentValidation, EF Core + PostgreSQL, ASP.NET Identity + JWT/refresh tokens
+- **AuthZ:** role policies (`AdminOnly`, `InstructorOrAdmin`) + resource policy `ManageCourse` (owner or admin) alongside handler-level enrollment checks
+- **Frontend:** Vue 3 Composition API, Pinia (auth), TanStack Vue Query (server state), VeeValidate + Zod, SCSS (7-1)
+- **Infra:** Docker Compose — API, Vue, Postgres, MinIO, Redis, Elasticsearch, MailHog, optional Stripe CLI
 
 ## Prerequisites
 
@@ -22,8 +29,19 @@ docker compose up -d
 - API: http://localhost:8080
 - Frontend: http://localhost:5173
 - Swagger (dev only): http://localhost:8080/swagger
+- MailHog UI: http://localhost:8025 (password reset / confirm email in dev)
 
 Official local dev path is **Docker Compose**. `launchSettings.json` ports (5089/7079) are for optional IDE runs outside containers.
+
+## Features (demo checklist)
+
+| Role | Capabilities |
+|------|----------------|
+| Student | Register/login, confirm email, reset password, browse/filter courses, enroll free / Stripe checkout, learn + progress, reviews, certificates |
+| Instructor | Create/edit courses, modules/lessons, thumbnail & video upload, publish/hide/delete own courses, dashboard stats |
+| Admin | Users & roles, course status, moderate reviews, audit log, Elastic reindex |
+
+Error pages: `/error/403`, `/error/404`, `/error/500`, `/error/501` (+ SPA catch-all → 404).
 
 ## Configuration
 
@@ -38,6 +56,8 @@ JWT signing key is **not** stored in committed config files.
 | `appsettings.Development.json.example` | Template copied on first setup |
 
 ASP.NET Core configuration provider chain: environment variables override appsettings.
+
+`Frontend:BaseUrl` and `Cors:Origins` drive password-reset / confirm-email links and CORS (defaults: `http://localhost:5173`).
 
 ### Database seed
 
@@ -199,14 +219,23 @@ Without the keys the API responds to checkout attempts with a validation error (
 
 ## Development commands
 
-All commands run inside Docker containers:
+All commands run inside Docker containers (except Playwright browsers on the host):
 
 ```bash
 docker compose exec api dotnet build
 docker compose exec api dotnet test
 docker compose exec frontend npm run type-check
 docker compose exec frontend npm run lint
+docker compose exec frontend npm run test          # Vitest unit tests
 docker compose exec frontend npm run build
 ```
 
-See `IMPLEMENTATION_PLAN.md` for architecture and roadmap.
+Playwright smoke (host, stack must be up):
+
+```bash
+cd frontend
+npx playwright install
+npm run test:e2e
+```
+
+See `IMPLEMENTATION_PLAN.md` for architecture details and historical roadmap. Status of stages 1–3: **done** (plus certificates, search, realtime, auth recovery, error pages, tests).

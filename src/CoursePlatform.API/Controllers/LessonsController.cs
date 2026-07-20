@@ -46,7 +46,7 @@ public class LessonsController : ControllerBase
     }
 
     [HttpPost("{lessonId:guid}/video/uploads")]
-    [Authorize(Roles = "Instructor,Admin")]
+    [Authorize(Policy = CoursePlatform.Application.Common.Authorization.AuthorizationPolicies.InstructorOrAdmin)]
     public async Task<ActionResult<InitiateLessonVideoUploadResult>> InitiateVideoUpload(
         Guid courseId,
         Guid lessonId,
@@ -59,7 +59,7 @@ public class LessonsController : ControllerBase
     }
 
     [HttpPost("{lessonId:guid}/video/uploads/{uploadId}/parts/presign")]
-    [Authorize(Roles = "Instructor,Admin")]
+    [Authorize(Policy = CoursePlatform.Application.Common.Authorization.AuthorizationPolicies.InstructorOrAdmin)]
     public async Task<ActionResult<PresignLessonVideoPartResult>> PresignVideoPart(
         Guid courseId,
         Guid lessonId,
@@ -77,7 +77,7 @@ public class LessonsController : ControllerBase
     }
 
     [HttpPost("{lessonId:guid}/video/uploads/{uploadId}/complete")]
-    [Authorize(Roles = "Instructor,Admin")]
+    [Authorize(Policy = CoursePlatform.Application.Common.Authorization.AuthorizationPolicies.InstructorOrAdmin)]
     public async Task<ActionResult> CompleteVideoUpload(
         Guid courseId,
         Guid lessonId,
@@ -95,7 +95,7 @@ public class LessonsController : ControllerBase
     }
 
     [HttpDelete("{lessonId:guid}/video/uploads/{uploadId}")]
-    [Authorize(Roles = "Instructor,Admin")]
+    [Authorize(Policy = CoursePlatform.Application.Common.Authorization.AuthorizationPolicies.InstructorOrAdmin)]
     public async Task<ActionResult> AbortVideoUpload(
         Guid courseId,
         Guid lessonId,

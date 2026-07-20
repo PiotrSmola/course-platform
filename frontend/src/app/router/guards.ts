@@ -16,7 +16,7 @@ export async function instructorGuard(to: RouteLocationNormalized) {
     return { name: 'Login', query: { redirect: to.fullPath } }
   }
   if (!authStore.isInstructor) {
-    return { name: 'Home' }
+    return { name: 'Forbidden' }
   }
 }
 
@@ -27,6 +27,6 @@ export async function adminGuard(to: RouteLocationNormalized) {
     return { name: 'Login', query: { redirect: to.fullPath } }
   }
   if (!authStore.isAdmin) {
-    return { name: 'Home' }
+    return { name: 'Forbidden' }
   }
 }

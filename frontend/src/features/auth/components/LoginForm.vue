@@ -1,13 +1,13 @@
 <template>
   <form @submit="onSubmit" class="login-form">
     <div class="form-group">
-      <label>Email</label>
-      <input v-model="email" type="email" autocomplete="email" placeholder="twoj@email.com" />
+      <label for="email-input">Email</label>
+      <input id="email-input" v-model="email" type="email" autocomplete="email" placeholder="twoj@email.com" />
       <span v-if="errors.email" class="error">{{ errors.email }}</span>
     </div>
     <div class="form-group">
-      <label>Hasło</label>
-      <input v-model="password" type="password" autocomplete="current-password" placeholder="••••••" />
+      <label for="password-input">Hasło</label>
+      <input id="password-input" v-model="password" type="password" autocomplete="current-password" placeholder="••••••" />
       <span v-if="errors.password" class="error">{{ errors.password }}</span>
     </div>
     <button type="submit" class="btn btn-primary" :disabled="!meta.valid || isLoading">

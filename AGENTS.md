@@ -10,7 +10,7 @@ Platforma kursów online w stacku Vue 3 + ASP.NET Core 9. Fullstack portfolio pr
 
 ## Status środowiska
 
-**Środowisko jest postawione, szkielet istnieje — nie scaffolduj od zera.** Solucja, cztery projekty Clean Architecture, projekty testowe, projekt Vue z paczkami i pełna konfiguracja Docker już są. Kod aplikacji jeszcze nie istnieje — start od Domain. Szczegóły w sekcji 0 planu.
+**Środowisko i kod aplikacji istnieją — nie scaffolduj od zera.** Solucja Clean Architecture, testy, Vue, Docker oraz pełna domena (Etapy 1–3 + extras) są na miejscu. Aktualny status: sekcja 0 w `IMPLEMENTATION_PLAN.md`.
 
 **Wszystkie komendy (`dotnet`, `dotnet ef`, `npm`) odpalane wewnątrz kontenerów przez `docker compose exec`, nigdy na hoście.**
 
@@ -73,6 +73,7 @@ docker compose exec api dotnet test
 ```bash
 docker compose exec frontend npm run type-check
 docker compose exec frontend npm run lint
+docker compose exec frontend npm run test
 docker compose exec frontend npm run build
 ```
 

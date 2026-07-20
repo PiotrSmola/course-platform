@@ -2,12 +2,15 @@ using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.RateLimiting;
+using CoursePlatform.Application.Common.Authorization;
 using CoursePlatform.Application.Features.Courses.Queries.GetCourses;
 using CoursePlatform.Application.Features.Courses.Queries.GetCourseDetails;
 using CoursePlatform.Application.Features.Courses.Queries.GetCategories;
 using CoursePlatform.Application.Features.Courses.Queries.GetTechnologies;
 using CoursePlatform.Application.Features.Courses.Commands.CreateCourse;
 using CoursePlatform.Application.Features.Courses.Commands.UpdateCourse;
+using CoursePlatform.Application.Features.Courses.Commands.DeleteCourse;
+using CoursePlatform.Application.Features.Courses.Commands.UpdateCourseStatus;
 using CoursePlatform.Application.Features.Courses.Commands.ThumbnailUploads;
 using CoursePlatform.Application.Features.Courses.Queries.GetInstructorCourses;
 using CoursePlatform.Application.Features.Courses.Queries.GetInstructorDashboard;
@@ -67,7 +70,7 @@ public class CoursesController : ControllerBase
     }
 
     [HttpGet("instructor/my")]
-    [Authorize(Roles = "Instructor,Admin")]
+    [Authorize(Policy = AuthorizationPolicies.InstructorOrAdmin)]
     public async Task<ActionResult<List<InstructorCourseDto>>> GetInstructorCourses(CancellationToken cancellationToken)
     {
         var result = await _mediator.Send(new GetInstructorCoursesQuery(), cancellationToken);
@@ -75,7 +78,7 @@ public class CoursesController : ControllerBase
     }
 
     [HttpGet("instructor/dashboard")]
-    [Authorize(Roles = "Instructor,Admin")]
+    [Authorize(Policy = AuthorizationPolicies.InstructorOrAdmin)]
     public async Task<ActionResult<InstructorDashboardDto>> GetInstructorDashboard(CancellationToken cancellationToken)
     {
         var result = await _mediator.Send(new GetInstructorDashboardQuery(), cancellationToken);
@@ -91,7 +94,7 @@ public class CoursesController : ControllerBase
     }
 
     [HttpPost]
-    [Authorize(Roles = "Instructor,Admin")]
+    [Authorize(Policy = AuthorizationPolicies.InstructorOrAdmin)]
     public async Task<ActionResult<Guid>> CreateCourse(CreateCourseCommand command, CancellationToken cancellationToken)
     {
         var result = await _mediator.Send(command, cancellationToken);
@@ -99,7 +102,7 @@ public class CoursesController : ControllerBase
     }
 
     [HttpPut("{id:guid}")]
-    [Authorize(Roles = "Instructor,Admin")]
+    [Authorize(Policy = AuthorizationPolicies.InstructorOrAdmin)]
     public async Task<ActionResult> UpdateCourse(Guid id, UpdateCourseCommand command, CancellationToken cancellationToken)
     {
         if (id != command.Id) return BadRequest();
@@ -107,8 +110,25 @@ public class CoursesController : ControllerBase
         return NoContent();
     }
 
+    [HttpPut("{id:guid}/status")]
+    [Authorize(Policy = AuthorizationPolicies.ManageCourse)]
+    public async Task<ActionResult> UpdateCourseStatus(Guid id, UpdateOwnCourseStatusCommand command, CancellationToken cancellationToken)
+    {
+        if (id != command.CourseId) return BadRequest();
+        await _mediator.Send(command, cancellationToken);
+        return NoContent();
+    }
+
+    [HttpDelete("{id:guid}")]
+    [Authorize(Policy = AuthorizationPolicies.ManageCourse)]
+    public async Task<ActionResult> DeleteCourse(Guid id, CancellationToken cancellationToken)
+    {
+        await _mediator.Send(new DeleteCourseCommand(id), cancellationToken);
+        return NoContent();
+    }
+
     [HttpPost("{courseId:guid}/thumbnail/presign")]
-    [Authorize(Roles = "Instructor,Admin")]
+    [Authorize(Policy = AuthorizationPolicies.InstructorOrAdmin)]
     public async Task<ActionResult<PresignCourseThumbnailUploadResult>> PresignThumbnail(
         Guid courseId,
         [FromBody] PresignCourseThumbnailUploadBody? body,
@@ -124,7 +144,7 @@ public class CoursesController : ControllerBase
     }
 
     [HttpPost("{courseId:guid}/thumbnail/confirm")]
-    [Authorize(Roles = "Instructor,Admin")]
+    [Authorize(Policy = AuthorizationPolicies.InstructorOrAdmin)]
     public async Task<ActionResult> ConfirmThumbnail(
         Guid courseId,
         [FromBody] ConfirmCourseThumbnailUploadBody? body,

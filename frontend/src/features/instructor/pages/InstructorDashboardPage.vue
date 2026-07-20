@@ -46,6 +46,31 @@
             <router-link class="btn btn-ghost" :to="{ name: 'EditCourse', params: { id: course.id } }">
               Edytuj
             </router-link>
+            <div class="course-actions">
+              <button
+                v-if="course.status === CourseStatus.Draft || course.status === CourseStatus.Hidden"
+                class="btn btn-ghost btn-sm"
+                :disabled="updateStatus.isPending.value"
+                @click="publishCourse(course.id)"
+              >
+                Opublikuj
+              </button>
+              <button
+                v-if="course.status === CourseStatus.Published"
+                class="btn btn-ghost btn-sm"
+                :disabled="updateStatus.isPending.value"
+                @click="hideCourse(course.id)"
+              >
+                Ukryj
+              </button>
+              <button
+                class="btn btn-ghost btn-sm btn-danger"
+                :disabled="deleteCourseMutation.isPending.value"
+                @click="confirmDelete(course.id, course.title)"
+              >
+                Usuń
+              </button>
+            </div>
           </div>
         </article>
       </div>
@@ -55,12 +80,14 @@
 
 <script setup lang="ts">
 import { computed } from 'vue'
-import { useInstructorCourses, useInstructorDashboard } from '@/features/instructor/composables/useInstructor'
+import { useInstructorCourses, useInstructorDashboard, useUpdateCourseStatus, useDeleteCourse } from '@/features/instructor/composables/useInstructor'
 import { CourseStatus } from '@/features/courses/types/course.types'
 import CourseThumbnail from '@/shared/components/media/CourseThumbnail.vue'
 
 const { data, isLoading } = useInstructorCourses()
 const { data: dashboardData, isLoading: dashboardLoading } = useInstructorDashboard()
+const updateStatus = useUpdateCourseStatus()
+const deleteCourseMutation = useDeleteCourse()
 const courses = computed(() => data.value ?? [])
 const dashboard = computed(() => dashboardData.value)
 
@@ -86,6 +113,20 @@ function courseStats(courseId: string) {
 
 function formatCurrency(value: number): string {
   return new Intl.NumberFormat('pl-PL', { style: 'currency', currency: 'PLN' }).format(value)
+}
+
+function publishCourse(courseId: string) {
+  updateStatus.mutate({ courseId, status: CourseStatus.Published })
+}
+
+function hideCourse(courseId: string) {
+  updateStatus.mutate({ courseId, status: CourseStatus.Hidden })
+}
+
+function confirmDelete(courseId: string, title: string) {
+  if (window.confirm(`Czy na pewno chcesz usunąć kurs „${title}"? Tej operacji nie można cofnąć.`)) {
+    deleteCourseMutation.mutate(courseId)
+  }
 }
 </script>
 
@@ -168,6 +209,27 @@ function formatCurrency(value: number): string {
     &.published { background: rgba(74, 222, 128, 0.15); color: #4ade80; }
     &.draft { background: rgba(251, 191, 36, 0.15); color: #fbbf24; }
     &.hidden { background: rgba(248, 113, 113, 0.15); color: #f87171; }
+  }
+}
+
+.course-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 12px;
+}
+
+.btn-sm {
+  padding: 8px 16px;
+  font-size: 0.85rem;
+  height: auto;
+}
+
+.btn-danger {
+  color: #f87171;
+
+  &:hover {
+    --lg-tint: rgba(248, 113, 113, 0.12);
   }
 }
 

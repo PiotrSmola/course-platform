@@ -13,7 +13,7 @@ namespace CoursePlatform.API.Controllers;
 
 [ApiController]
 [Route("api/courses/{courseId:guid}/modules")]
-[Authorize(Roles = "Instructor,Admin")]
+[Authorize(Policy = CoursePlatform.Application.Common.Authorization.AuthorizationPolicies.InstructorOrAdmin)]
 [EnableRateLimiting("api")]
 public class ModulesController : ControllerBase
 {

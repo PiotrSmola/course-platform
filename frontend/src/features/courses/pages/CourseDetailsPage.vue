@@ -66,24 +66,63 @@
         <div class="reviews-section">
           <h2>Opinie</h2>
 
-          <form v-if="course.canReview" class="review-form glass-card" @submit.prevent="submitReview">
+          <form v-if="course.canReview" class="review-form glass-card" @submit="onCreateSubmit">
             <h3>Dodaj opinię</h3>
-            <div class="rating-row">
-              <label>Ocena</label>
-              <select v-model.number="reviewRating">
+            <div class="form-group">
+              <label for="review-rating">Ocena</label>
+              <select id="review-rating" v-model.number="createRating">
                 <option v-for="n in 5" :key="n" :value="n">{{ n }} ★</option>
               </select>
+              <span v-if="createErrors.rating" class="field-error">{{ createErrors.rating }}</span>
             </div>
-            <textarea v-model="reviewComment" rows="3" placeholder="Twoja opinia o kursie..." required />
-            <button type="submit" class="btn btn-primary" :disabled="createReview.isPending.value || !reviewComment.trim()">
+            <div class="form-group">
+              <label for="review-comment">Komentarz</label>
+              <textarea id="review-comment" v-model="createComment" rows="3" placeholder="Twoja opinia o kursie..." />
+              <span v-if="createErrors.comment" class="field-error">{{ createErrors.comment }}</span>
+            </div>
+            <button type="submit" class="btn btn-primary" :disabled="createReviewMutation.isPending.value || !createMeta.valid">
               Opublikuj opinię
             </button>
           </form>
-          <p v-else-if="course.isEnrolled && course.hasUserReviewed" class="review-note">Dodałeś już opinię do tego kursu.</p>
+
+          <form v-else-if="course.hasUserReviewed && course.userReviewId && isEditing" class="review-form glass-card" @submit="onUpdateSubmit">
+            <h3>Edytuj opinię</h3>
+            <div class="form-group">
+              <label for="edit-rating">Ocena</label>
+              <select id="edit-rating" v-model.number="editRating">
+                <option v-for="n in 5" :key="n" :value="n">{{ n }} ★</option>
+              </select>
+              <span v-if="editErrors.rating" class="field-error">{{ editErrors.rating }}</span>
+            </div>
+            <div class="form-group">
+              <label for="edit-comment">Komentarz</label>
+              <textarea id="edit-comment" v-model="editComment" rows="3" placeholder="Twoja opinia o kursie..." />
+              <span v-if="editErrors.comment" class="field-error">{{ editErrors.comment }}</span>
+            </div>
+            <div class="edit-actions">
+              <button type="submit" class="btn btn-primary" :disabled="updateReviewMutation.isPending.value || !editMeta.valid">
+                Zapisz zmiany
+              </button>
+              <button type="button" class="btn btn-ghost" @click="cancelEdit">Anuluj</button>
+            </div>
+          </form>
 
           <div class="reviews-list">
             <div v-for="review in course.reviews" :key="review.id" class="review-card glass-card">
-              <div class="stars">{{ '★'.repeat(review.rating) }}</div>
+              <div class="review-head">
+                <div class="stars">{{ '★'.repeat(review.rating) }}</div>
+                <div v-if="course.userReviewId === review.id" class="own-review-actions">
+                  <button type="button" class="btn-link" @click="startEdit(review)">Edytuj</button>
+                  <button
+                    type="button"
+                    class="btn-link btn-link-danger"
+                    :disabled="deleteReviewMutation.isPending.value"
+                    @click="confirmDeleteReview(review.id)"
+                  >
+                    Usuń
+                  </button>
+                </div>
+              </div>
               <p>{{ review.comment }}</p>
               <div class="review-author">
                 <span class="avatar">{{ review.authorName.charAt(0) }}</span>
@@ -106,14 +145,18 @@
 </template>
 
 <script setup lang="ts">
-import { computed, ref } from 'vue'
+import { computed, ref, watch } from 'vue'
 import { useRoute } from 'vue-router'
+import { useForm } from 'vee-validate'
+import { toTypedSchema } from '@vee-validate/zod'
 import { useAuthStore } from '@/features/auth/stores/auth.store'
 import { useCourseDetails } from '@/features/courses/composables/useCourses'
 import { useEnroll } from '@/features/enrollment/composables/useEnrollment'
 import { useCreateCheckout } from '@/features/payments/composables/usePayments'
-import { useCreateReview } from '@/features/reviews/composables/useReviews'
+import { useCreateReview, useUpdateReview, useDeleteReview } from '@/features/reviews/composables/useReviews'
+import { createReviewSchema, updateReviewSchema } from '@/features/reviews/schemas/review.schema'
 import { CourseLevel } from '@/features/courses/types/course.types'
+import type { ReviewDto } from '@/features/courses/types/course.types'
 import CourseThumbnail from '@/shared/components/media/CourseThumbnail.vue'
 
 const route = useRoute()
@@ -121,9 +164,40 @@ const authStore = useAuthStore()
 const courseQuery = useCourseDetails(() => route.params.id as string)
 const course = computed(() => courseQuery.data.value)
 const enrollMutation = useEnroll()
-const reviewRating = ref(5)
-const reviewComment = ref('')
-const createReview = useCreateReview(() => route.params.id as string)
+const courseId = () => route.params.id as string
+const createReviewMutation = useCreateReview(courseId)
+const updateReviewMutation = useUpdateReview(courseId)
+const deleteReviewMutation = useDeleteReview(courseId)
+const isEditing = ref(false)
+
+const {
+  handleSubmit: handleCreateSubmit,
+  defineField: defineCreateField,
+  errors: createErrors,
+  meta: createMeta,
+  resetForm: resetCreateForm
+} = useForm({
+  validationSchema: toTypedSchema(createReviewSchema),
+  initialValues: { rating: 5, comment: '' }
+})
+
+const [createRating] = defineCreateField('rating')
+const [createComment] = defineCreateField('comment')
+
+const {
+  handleSubmit: handleUpdateSubmit,
+  defineField: defineEditField,
+  errors: editErrors,
+  meta: editMeta,
+  resetForm: resetEditForm,
+  setValues: setEditValues
+} = useForm({
+  validationSchema: toTypedSchema(updateReviewSchema),
+  initialValues: { rating: 5, comment: '' }
+})
+
+const [editRating] = defineEditField('rating')
+const [editComment] = defineEditField('comment')
 
 const checkoutMutation = useCreateCheckout()
 
@@ -151,13 +225,51 @@ const buy = () => {
   checkoutMutation.mutate(course.value.id)
 }
 
-function submitReview() {
-  if (!reviewComment.value.trim()) return
-  createReview.mutate(
-    { rating: reviewRating.value, comment: reviewComment.value },
-    { onSuccess: () => { reviewComment.value = '' } }
-  )
+const onCreateSubmit = handleCreateSubmit((values) => {
+  createReviewMutation.mutate(values, {
+    onSuccess: () => {
+      resetCreateForm({ values: { rating: 5, comment: '' } })
+    }
+  })
+})
+
+function startEdit(review: ReviewDto) {
+  isEditing.value = true
+  setEditValues({ rating: review.rating, comment: review.comment })
 }
+
+function cancelEdit() {
+  isEditing.value = false
+  resetEditForm({ values: { rating: 5, comment: '' } })
+}
+
+const onUpdateSubmit = handleUpdateSubmit((values) => {
+  const reviewId = course.value?.userReviewId
+  if (!reviewId) return
+  updateReviewMutation.mutate(
+    { reviewId, ...values },
+    {
+      onSuccess: () => {
+        isEditing.value = false
+        resetEditForm({ values: { rating: 5, comment: '' } })
+      }
+    }
+  )
+})
+
+function confirmDeleteReview(reviewId: string) {
+  if (window.confirm('Czy na pewno chcesz usunąć swoją opinię?')) {
+    deleteReviewMutation.mutate(reviewId, {
+      onSuccess: () => {
+        isEditing.value = false
+      }
+    })
+  }
+}
+
+watch(() => course.value?.userReviewId, () => {
+  isEditing.value = false
+})
 </script>
 
 <style lang="scss" scoped>
@@ -270,9 +382,21 @@ function submitReview() {
     margin-bottom: 16px;
   }
 
+  .form-group {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    margin-bottom: 12px;
+
+    label {
+      font-size: 0.88rem;
+      font-weight: 600;
+      color: $color-muted;
+    }
+  }
+
   textarea {
     width: 100%;
-    margin: 12px 0 16px;
     padding: 12px;
     border-radius: 12px;
     border: none;
@@ -283,19 +407,24 @@ function submitReview() {
   }
 
   select {
-    margin-left: 12px;
+    width: fit-content;
     padding: 6px 12px;
     border-radius: 8px;
     background: rgba(255, 255, 255, 0.06);
     color: $color-ink;
     border: none;
   }
-}
 
-.review-note {
-  color: $color-muted;
-  margin-bottom: 20px;
-  font-size: 0.9rem;
+  .field-error {
+    color: #f87171;
+    font-size: 0.82rem;
+  }
+
+  .edit-actions {
+    display: flex;
+    gap: 12px;
+    flex-wrap: wrap;
+  }
 }
 
 .lesson-item.link {
@@ -386,10 +515,46 @@ function submitReview() {
 .review-card {
   padding: 24px;
 
+  .review-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    margin-bottom: 12px;
+  }
+
   .stars {
     color: #fcd34d;
     font-size: 1.1rem;
-    margin-bottom: 12px;
+  }
+
+  .own-review-actions {
+    display: flex;
+    gap: 12px;
+  }
+
+  .btn-link {
+    background: none;
+    border: none;
+    padding: 0;
+    font: inherit;
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: $color-cyan;
+    cursor: pointer;
+
+    &:hover {
+      text-decoration: underline;
+    }
+
+    &:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+  }
+
+  .btn-link-danger {
+    color: #f87171;
   }
 
   p {

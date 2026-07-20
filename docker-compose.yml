@@ -103,6 +103,8 @@ services:
       Email__Port: 1025
       Email__FromAddress: no-reply@courseplatform.local
       Certificates__VerificationBaseUrl: http://localhost:5173/certificates/verify
+      Frontend__BaseUrl: http://localhost:5173
+      Cors__Origins__0: http://localhost:5173
       OTEL_EXPORTER_OTLP_ENDPOINT: http://aspire-dashboard:18889
       OTEL_SERVICE_NAME: course-platform-api
       ConnectionStrings__Redis: redis:6379

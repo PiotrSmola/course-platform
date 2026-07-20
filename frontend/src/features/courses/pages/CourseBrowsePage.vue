@@ -314,6 +314,7 @@ import { useCourseBrowse, type SortOption } from '@/features/courses/composables
 import CourseBrowseCard from '@/features/courses/components/CourseBrowseCard.vue'
 import { CourseLevel } from '@/features/courses/types/course.types'
 import { getCategories, getTechnologies } from '@/features/courses/api/courses.api'
+import { queryKeys } from '@/shared/queryKeys'
 
 const {
   state,
@@ -335,13 +336,13 @@ const {
 } = useCourseBrowse()
 
 const { data: categories } = useQuery({
-  queryKey: ['categories'],
+  queryKey: queryKeys.categories(),
   queryFn: getCategories,
   initialData: []
 })
 
 const { data: technologies } = useQuery({
-  queryKey: ['technologies'],
+  queryKey: queryKeys.technologies(),
   queryFn: getTechnologies,
   initialData: []
 })
