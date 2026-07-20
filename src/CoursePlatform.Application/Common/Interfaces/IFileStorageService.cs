@@ -51,4 +51,8 @@ public interface IFileStorageService
         byte[] content,
         string contentType,
         CancellationToken cancellationToken = default);
+
+    Task<int> AbortStaleMultipartUploadsAsync(
+        TimeSpan olderThan,
+        CancellationToken cancellationToken = default);
 }

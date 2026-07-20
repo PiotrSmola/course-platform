@@ -5,16 +5,20 @@ using Microsoft.Extensions.Hosting;
 using CoursePlatform.Application.Common.Interfaces;
 using CoursePlatform.Infrastructure.Persistence;
 using CoursePlatform.Infrastructure.Services;
-using CoursePlatform.Infrastructure.Identity;
 using CoursePlatform.Infrastructure.Options;
+using CoursePlatform.Infrastructure.Resilience;
 using CoursePlatform.Infrastructure.Search;
 using CoursePlatform.Infrastructure.Hubs;
+using CoursePlatform.Infrastructure.Storage;
 using Amazon.S3;
 using Amazon.Runtime;
 using Elastic.Clients.Elasticsearch;
 using Elastic.Transport;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.SignalR;
+using Polly;
+using Polly.Retry;
+using StripeException = Stripe.StripeException;
 
 namespace CoursePlatform.Infrastructure;
 
@@ -66,13 +70,43 @@ public static class DependencyInjection
 
         services.AddScoped<IApplicationDbContext>(provider => provider.GetRequiredService<ApplicationDbContext>());
         services.AddScoped<ICurrentUserService, CurrentUserService>();
-        services.AddScoped<IIdentityService, IdentityService>();
+        services.AddScoped<IIdentityService, Identity.IdentityService>();
         services.AddScoped<Microsoft.AspNetCore.Authorization.IAuthorizationHandler, Authorization.ManageCourseAuthorizationHandler>();
         services.AddHostedService<Identity.RefreshTokenCleanupService>();
+        if (!environment.IsEnvironment("Testing"))
+        {
+            services.AddHostedService<StaleMultipartUploadCleanupService>();
+        }
+
+        services.AddResiliencePipeline(ResiliencePipelineNames.Outbound, builder =>
+        {
+            builder.AddRetry(new RetryStrategyOptions
+            {
+                MaxRetryAttempts = 3,
+                Delay = TimeSpan.FromMilliseconds(200),
+                BackoffType = DelayBackoffType.Exponential,
+                ShouldHandle = new PredicateBuilder()
+                    .Handle<HttpRequestException>()
+                    .Handle<IOException>()
+                    .Handle<TimeoutException>()
+                    .Handle<AmazonS3Exception>(ex =>
+                        (int)ex.StatusCode >= 500
+                        || ex.StatusCode == System.Net.HttpStatusCode.RequestTimeout
+                        || ex.StatusCode == System.Net.HttpStatusCode.ServiceUnavailable
+                        || ex.StatusCode == System.Net.HttpStatusCode.TooManyRequests)
+                    .Handle<AmazonClientException>()
+                    .Handle<StripeException>(ex =>
+                        ex.HttpStatusCode is >= System.Net.HttpStatusCode.InternalServerError
+                            or System.Net.HttpStatusCode.RequestTimeout
+                            or System.Net.HttpStatusCode.TooManyRequests)
+            });
+            builder.AddTimeout(TimeSpan.FromSeconds(15));
+        });
+
         services.AddSingleton<IFileStorageService, MinioFileStorageService>();
         services.AddSingleton<INotificationService, SignalRNotificationService>();
         services.AddScoped<IAuditLogService, AuditLogService>();
-        services.AddScoped<IJwtTokenGenerator, JwtTokenGenerator>();
+        services.AddScoped<IJwtTokenGenerator, Identity.JwtTokenGenerator>();
         services.AddSingleton<IDateTimeService, DateTimeService>();
         services.AddSingleton<IHtmlSanitizer, HtmlSanitizerWrapper>();
         services.AddSingleton<IPaymentGateway, StripePaymentGateway>();

@@ -9,4 +9,5 @@ export interface EnrollmentDto {
   totalLessons: number
   progressPercentage: number
   firstLessonId: string | null
+  continueLessonId: string | null
 }

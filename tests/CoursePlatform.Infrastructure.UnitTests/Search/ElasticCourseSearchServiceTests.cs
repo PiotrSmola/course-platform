@@ -4,10 +4,14 @@ using CoursePlatform.Application.Features.Courses.Queries.GetCourses;
 using CoursePlatform.Domain.Entities;
 using CoursePlatform.Domain.Enums;
 using CoursePlatform.Infrastructure.Options;
+using CoursePlatform.Infrastructure.Resilience;
 using CoursePlatform.Infrastructure.Search;
 using CoursePlatform.Infrastructure.UnitTests.Common;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.Extensions.Options;
+using Polly;
+using Polly.Registry;
 
 namespace CoursePlatform.Infrastructure.UnitTests.Search;
 
@@ -44,8 +48,15 @@ public class ElasticCourseSearchServiceTests : IAsyncLifetime
 
         await DeleteTestIndicesAsync();
 
+        var services = new ServiceCollection();
+        services.AddResiliencePipeline(ResiliencePipelineNames.Outbound, builder =>
+        {
+            builder.AddTimeout(TimeSpan.FromSeconds(30));
+        });
+        var provider = services.BuildServiceProvider().GetRequiredService<ResiliencePipelineProvider<string>>();
+
         var fallback = new EfCourseSearchService(_context);
-        _service = new ElasticCourseSearchService(_client, options, _context, fallback, NullLogger<ElasticCourseSearchService>.Instance);
+        _service = new ElasticCourseSearchService(_client, options, _context, fallback, NullLogger<ElasticCourseSearchService>.Instance, provider);
         _indexing = new ElasticCourseIndexingService(_client, options, _context, NullLogger<ElasticCourseIndexingService>.Instance);
     }
 

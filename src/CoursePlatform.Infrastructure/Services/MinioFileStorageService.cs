@@ -1,10 +1,13 @@
 using CoursePlatform.Application.Common.Interfaces;
 using CoursePlatform.Application.Common.Models;
 using CoursePlatform.Infrastructure.Options;
+using CoursePlatform.Infrastructure.Resilience;
 using Amazon.S3;
 using Amazon.S3.Model;
 using Amazon.Runtime;
 using Microsoft.Extensions.Options;
+using Polly;
+using Polly.Registry;
 
 namespace CoursePlatform.Infrastructure.Services;
 
@@ -14,8 +17,12 @@ public class MinioFileStorageService : IFileStorageService
     private readonly MinioOptions _options;
     private readonly IAmazonS3 _presignS3;
     private readonly Protocol _presignProtocol;
+    private readonly ResiliencePipeline _pipeline;
 
-    public MinioFileStorageService(IAmazonS3 s3, IOptions<MinioOptions> options)
+    public MinioFileStorageService(
+        IAmazonS3 s3,
+        IOptions<MinioOptions> options,
+        ResiliencePipelineProvider<string> pipelineProvider)
     {
         _s3 = s3;
         _options = options.Value;
@@ -23,6 +30,7 @@ public class MinioFileStorageService : IFileStorageService
         _presignProtocol = new Uri(_options.PublicEndpoint).Scheme.Equals(Uri.UriSchemeHttp, StringComparison.OrdinalIgnoreCase)
             ? Protocol.HTTP
             : Protocol.HTTPS;
+        _pipeline = pipelineProvider.GetPipeline(ResiliencePipelineNames.Outbound);
     }
 
     public async Task UploadAsync(
@@ -32,12 +40,16 @@ public class MinioFileStorageService : IFileStorageService
         CancellationToken cancellationToken = default)
     {
         using var stream = new MemoryStream(content);
-        await _s3.PutObjectAsync(new PutObjectRequest
+        await _pipeline.ExecuteAsync(async ct =>
         {
-            BucketName = _options.Bucket,
-            Key = objectKey,
-            InputStream = stream,
-            ContentType = contentType
+            stream.Position = 0;
+            await _s3.PutObjectAsync(new PutObjectRequest
+            {
+                BucketName = _options.Bucket,
+                Key = objectKey,
+                InputStream = stream,
+                ContentType = contentType
+            }, ct);
         }, cancellationToken);
     }
 
@@ -80,12 +92,13 @@ public class MinioFileStorageService : IFileStorageService
         string contentType,
         CancellationToken cancellationToken = default)
     {
-        var response = await _s3.InitiateMultipartUploadAsync(new InitiateMultipartUploadRequest
-        {
-            BucketName = _options.Bucket,
-            Key = objectKey,
-            ContentType = contentType
-        }, cancellationToken);
+        var response = await _pipeline.ExecuteAsync(async ct =>
+            await _s3.InitiateMultipartUploadAsync(new InitiateMultipartUploadRequest
+            {
+                BucketName = _options.Bucket,
+                Key = objectKey,
+                ContentType = contentType
+            }, ct), cancellationToken);
 
         return response.UploadId;
     }
@@ -122,12 +135,15 @@ public class MinioFileStorageService : IFileStorageService
             .Select(p => new PartETag(p.PartNumber, p.ETag.Trim('"')))
             .ToList();
 
-        await _s3.CompleteMultipartUploadAsync(new CompleteMultipartUploadRequest
+        await _pipeline.ExecuteAsync(async ct =>
         {
-            BucketName = _options.Bucket,
-            Key = objectKey,
-            UploadId = uploadId,
-            PartETags = partEtags
+            await _s3.CompleteMultipartUploadAsync(new CompleteMultipartUploadRequest
+            {
+                BucketName = _options.Bucket,
+                Key = objectKey,
+                UploadId = uploadId,
+                PartETags = partEtags
+            }, ct);
         }, cancellationToken);
     }
 
@@ -136,11 +152,14 @@ public class MinioFileStorageService : IFileStorageService
         string uploadId,
         CancellationToken cancellationToken = default)
     {
-        await _s3.AbortMultipartUploadAsync(new AbortMultipartUploadRequest
+        await _pipeline.ExecuteAsync(async ct =>
         {
-            BucketName = _options.Bucket,
-            Key = objectKey,
-            UploadId = uploadId
+            await _s3.AbortMultipartUploadAsync(new AbortMultipartUploadRequest
+            {
+                BucketName = _options.Bucket,
+                Key = objectKey,
+                UploadId = uploadId
+            }, ct);
         }, cancellationToken);
     }
 
@@ -148,11 +167,12 @@ public class MinioFileStorageService : IFileStorageService
     {
         try
         {
-            var meta = await _s3.GetObjectMetadataAsync(new GetObjectMetadataRequest
-            {
-                BucketName = _options.Bucket,
-                Key = objectKey
-            }, cancellationToken);
+            var meta = await _pipeline.ExecuteAsync(async ct =>
+                await _s3.GetObjectMetadataAsync(new GetObjectMetadataRequest
+                {
+                    BucketName = _options.Bucket,
+                    Key = objectKey
+                }, ct), cancellationToken);
 
             return new StoredObjectStat(meta.ContentLength, meta.Headers.ContentType);
         }
@@ -164,19 +184,66 @@ public class MinioFileStorageService : IFileStorageService
 
     public async Task DeleteObjectAsync(string objectKey, CancellationToken cancellationToken = default)
     {
-        await _s3.DeleteObjectAsync(new DeleteObjectRequest
+        await _pipeline.ExecuteAsync(async ct =>
         {
-            BucketName = _options.Bucket,
-            Key = objectKey
+            await _s3.DeleteObjectAsync(new DeleteObjectRequest
+            {
+                BucketName = _options.Bucket,
+                Key = objectKey
+            }, ct);
         }, cancellationToken);
+    }
+
+    public async Task<int> AbortStaleMultipartUploadsAsync(
+        TimeSpan olderThan,
+        CancellationToken cancellationToken = default)
+    {
+        var cutoff = DateTime.UtcNow - olderThan;
+        var aborted = 0;
+        string? keyMarker = null;
+        string? uploadIdMarker = null;
+
+        ListMultipartUploadsResponse response;
+        do
+        {
+            response = await _pipeline.ExecuteAsync(async ct =>
+                await _s3.ListMultipartUploadsAsync(new ListMultipartUploadsRequest
+                {
+                    BucketName = _options.Bucket,
+                    KeyMarker = keyMarker,
+                    UploadIdMarker = uploadIdMarker
+                }, ct), cancellationToken);
+
+            foreach (var upload in response.MultipartUploads)
+            {
+                var initiated = upload.Initiated?.ToUniversalTime() ?? DateTime.MinValue;
+                if (initiated > cutoff)
+                {
+                    continue;
+                }
+
+                try
+                {
+                    await AbortMultipartUploadAsync(upload.Key, upload.UploadId, cancellationToken);
+                    aborted++;
+                }
+                catch (AmazonS3Exception)
+                {
+                }
+            }
+
+            keyMarker = response.NextKeyMarker;
+            uploadIdMarker = response.NextUploadIdMarker;
+        }
+        while (response.IsTruncated == true);
+
+        return aborted;
     }
 
     private static IAmazonS3 CreatePresignClient(MinioOptions options)
     {
         var publicEndpoint = new Uri(options.PublicEndpoint);
-
         var credentials = new BasicAWSCredentials(options.AccessKey, options.SecretKey);
-
         var config = new AmazonS3Config
         {
             ServiceURL = publicEndpoint.ToString().TrimEnd('/'),

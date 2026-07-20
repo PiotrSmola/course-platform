@@ -1,7 +1,10 @@
 using CoursePlatform.Application.Common.Exceptions;
 using CoursePlatform.Application.Common.Interfaces;
 using CoursePlatform.Infrastructure.Options;
+using CoursePlatform.Infrastructure.Resilience;
 using Microsoft.Extensions.Options;
+using Polly;
+using Polly.Registry;
 using Stripe;
 using Stripe.Checkout;
 
@@ -11,13 +14,17 @@ internal sealed class StripePaymentGateway : IPaymentGateway
 {
     private readonly StripeOptions _options;
     private readonly StripeClient? _client;
+    private readonly ResiliencePipeline _pipeline;
 
-    public StripePaymentGateway(IOptions<StripeOptions> options)
+    public StripePaymentGateway(
+        IOptions<StripeOptions> options,
+        ResiliencePipelineProvider<string> pipelineProvider)
     {
         _options = options.Value;
         _client = string.IsNullOrWhiteSpace(_options.SecretKey)
             ? null
             : new StripeClient(_options.SecretKey);
+        _pipeline = pipelineProvider.GetPipeline(ResiliencePipelineNames.Outbound);
     }
 
     public bool IsConfigured =>
@@ -77,7 +84,8 @@ internal sealed class StripePaymentGateway : IPaymentGateway
         };
 
         var service = new SessionService(_client);
-        var session = await service.CreateAsync(sessionOptions, cancellationToken: cancellationToken);
+        var session = await _pipeline.ExecuteAsync(async ct =>
+            await service.CreateAsync(sessionOptions, cancellationToken: ct), cancellationToken);
 
         return new CheckoutSession(session.Id, session.Url, _options.Currency);
     }

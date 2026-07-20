@@ -2,12 +2,15 @@ using CoursePlatform.Application.Common.Interfaces;
 using CoursePlatform.Application.Features.Courses.Queries.GetCourses;
 using CoursePlatform.Domain.Enums;
 using CoursePlatform.Infrastructure.Options;
+using CoursePlatform.Infrastructure.Resilience;
 using Elastic.Clients.Elasticsearch;
 using Elastic.Clients.Elasticsearch.Core.Search;
 using Elastic.Clients.Elasticsearch.QueryDsl;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
+using Polly;
+using Polly.Registry;
 
 namespace CoursePlatform.Infrastructure.Search;
 
@@ -18,19 +21,22 @@ public sealed class ElasticCourseSearchService : ICourseSearchService
     private readonly IApplicationDbContext _db;
     private readonly EfCourseSearchService _fallback;
     private readonly ILogger<ElasticCourseSearchService> _logger;
+    private readonly ResiliencePipeline _pipeline;
 
     public ElasticCourseSearchService(
         ElasticsearchClient client,
         IOptions<ElasticOptions> options,
         IApplicationDbContext db,
         EfCourseSearchService fallback,
-        ILogger<ElasticCourseSearchService> logger)
+        ILogger<ElasticCourseSearchService> logger,
+        ResiliencePipelineProvider<string> pipelineProvider)
     {
         _client = client;
         _options = options.Value;
         _db = db;
         _fallback = fallback;
         _logger = logger;
+        _pipeline = pipelineProvider.GetPipeline(ResiliencePipelineNames.Outbound);
     }
 
     public async Task<CourseSearchPage> SearchAsync(CourseSearchCriteria criteria, CancellationToken cancellationToken)
@@ -42,7 +48,9 @@ public sealed class ElasticCourseSearchService : ICourseSearchService
 
         try
         {
-            return await SearchElasticAsync(criteria, cancellationToken);
+            return await _pipeline.ExecuteAsync(
+                async ct => await SearchElasticAsync(criteria, ct),
+                cancellationToken);
         }
         catch (Exception ex)
         {

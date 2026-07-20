@@ -16,7 +16,8 @@ public record EnrollmentDto(
     int CompletedLessons,
     int TotalLessons,
     double ProgressPercentage,
-    Guid? FirstLessonId);
+    Guid? FirstLessonId,
+    Guid? ContinueLessonId);
 
 public record GetMyEnrollmentsQuery : IRequest<List<EnrollmentDto>>;
 
@@ -59,8 +60,14 @@ public class GetMyEnrollmentsQueryHandler : IRequestHandler<GetMyEnrollmentsQuer
                 .SelectMany(m => m.Lessons.OrderBy(l => l.Order))
                 .ToList();
             var totalLessons = orderedLessons.Count;
-            var completedLessons = progress.Count(p => orderedLessons.Any(l => l.Id == p.LessonId) && p.IsCompleted);
+            var completedIds = progress
+                .Where(p => p.IsCompleted && orderedLessons.Any(l => l.Id == p.LessonId))
+                .Select(p => p.LessonId)
+                .ToHashSet();
+            var completedLessons = completedIds.Count;
             var firstLessonId = orderedLessons.FirstOrDefault()?.Id;
+            var continueLessonId = orderedLessons.FirstOrDefault(l => !completedIds.Contains(l.Id))?.Id
+                ?? firstLessonId;
             result.Add(new EnrollmentDto(
                 e.Id,
                 e.CourseId,
@@ -71,7 +78,8 @@ public class GetMyEnrollmentsQueryHandler : IRequestHandler<GetMyEnrollmentsQuer
                 completedLessons,
                 totalLessons,
                 totalLessons > 0 ? (double)completedLessons / totalLessons * 100 : 0,
-                firstLessonId));
+                firstLessonId,
+                continueLessonId));
         }
 
         return result;
