@@ -18,10 +18,13 @@ public interface IIdentityService
 
     Task<AuthPasswordVerificationResult> CheckPasswordAsync(ApplicationUser user, string password, CancellationToken cancellationToken = default);
 
-    Task<RefreshToken> CreateRefreshTokenAsync(Guid userId, CancellationToken cancellationToken = default);
+    Task<IssuedRefreshToken> CreateRefreshTokenAsync(Guid userId, CancellationToken cancellationToken = default);
     Task<RefreshToken?> GetRefreshTokenAsync(string token, CancellationToken cancellationToken = default);
     Task RevokeRefreshTokenAsync(RefreshToken token, CancellationToken cancellationToken = default);
+    Task RevokeAllRefreshTokensAsync(Guid userId, CancellationToken cancellationToken = default);
 }
+
+public sealed record IssuedRefreshToken(RefreshToken Entity, string RawToken);
 
 public sealed record IdentityOperationResult(bool Succeeded, IReadOnlyList<string> Errors)
 {

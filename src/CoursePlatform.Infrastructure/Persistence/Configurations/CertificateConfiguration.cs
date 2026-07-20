@@ -31,6 +31,6 @@ public class CertificateConfiguration : IEntityTypeConfiguration<Certificate>
         builder.HasOne(c => c.Course)
             .WithMany()
             .HasForeignKey(c => c.CourseId)
-            .OnDelete(DeleteBehavior.Cascade);
+            .OnDelete(DeleteBehavior.Restrict);
     }
 }

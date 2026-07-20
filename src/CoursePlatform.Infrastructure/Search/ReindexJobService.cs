@@ -22,6 +22,10 @@ public sealed class ReindexJobService : IReindexJobService
     private CancellationTokenSource? _jobCts;
     private long _lastPushTicks;
 
+    // Serializes pushes so the client always receives frames in order and the forced
+    // terminal frame is never overtaken by an earlier throttled progress frame.
+    private readonly SemaphoreSlim _pushLock = new(1, 1);
+
     public ReindexJobService(
         IServiceScopeFactory scopeFactory,
         INotificationService notifications,
@@ -50,6 +54,7 @@ public sealed class ReindexJobService : IReindexJobService
 
     private async Task PushStateCoreAsync(ReindexJobState snapshot)
     {
+        await _pushLock.WaitAsync();
         try
         {
             await _notifications.NotifyReindexAsync(snapshot, CancellationToken.None);
@@ -57,6 +62,10 @@ public sealed class ReindexJobService : IReindexJobService
         catch (Exception ex)
         {
             _logger.LogWarning(ex, "Failed to push reindex state for job {JobId}.", snapshot.JobId);
+        }
+        finally
+        {
+            _pushLock.Release();
         }
     }
 

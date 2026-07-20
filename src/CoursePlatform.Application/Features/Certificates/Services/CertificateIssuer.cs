@@ -68,17 +68,19 @@ public class CertificateIssuer : ICertificateIssuer
         _logger.LogInformation("Certificate {Number} issued for user {UserId}, course {CourseId}.",
             certificate.Number, userId, courseId);
 
+        // Certificate is already committed; notifications are best-effort and must not be tied to the
+        // request lifetime — a client disconnect must not skip telling the user they earned a certificate.
         try
         {
             var courseTitle = await _context.Courses
                 .Where(c => c.Id == courseId)
                 .Select(c => c.Title)
-                .FirstOrDefaultAsync(cancellationToken) ?? "kurs";
+                .FirstOrDefaultAsync(CancellationToken.None) ?? "kurs";
 
             var holder = await _context.Users
                 .Where(u => u.Id == userId)
                 .Select(u => new { u.Email, u.FirstName })
-                .FirstOrDefaultAsync(cancellationToken);
+                .FirstOrDefaultAsync(CancellationToken.None);
 
             if (holder?.Email != null)
             {
@@ -93,7 +95,7 @@ public class CertificateIssuer : ICertificateIssuer
                     "Certyfikat wystawiony",
                     $"Gratulacje! Ukończyłeś kurs „{courseTitle}” — certyfikat czeka w Twoim profilu.",
                     "/profile"),
-                cancellationToken);
+                CancellationToken.None);
         }
         catch (Exception ex)
         {
@@ -104,5 +106,5 @@ public class CertificateIssuer : ICertificateIssuer
     }
 
     private static string GenerateNumber() =>
-        $"CERT-{DateTime.UtcNow:yyyy}-{Guid.NewGuid().ToString("N")[..10].ToUpperInvariant()}";
+        $"CERT-{DateTime.UtcNow:yyyy}-{Guid.NewGuid():N}".ToUpperInvariant();
 }

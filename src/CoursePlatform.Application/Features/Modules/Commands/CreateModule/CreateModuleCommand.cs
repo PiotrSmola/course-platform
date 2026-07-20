@@ -22,13 +22,16 @@ public class CreateModuleCommandHandler : IRequestHandler<CreateModuleCommand, G
 {
     private readonly IApplicationDbContext _context;
     private readonly ICurrentUserService _currentUserService;
+    private readonly IAppCache _cache;
 
     public CreateModuleCommandHandler(
         IApplicationDbContext context,
-        ICurrentUserService currentUserService)
+        ICurrentUserService currentUserService,
+        IAppCache cache)
     {
         _context = context;
         _currentUserService = currentUserService;
+        _cache = cache;
     }
 
     public async Task<Guid> Handle(CreateModuleCommand request, CancellationToken cancellationToken)
@@ -45,6 +48,7 @@ public class CreateModuleCommandHandler : IRequestHandler<CreateModuleCommand, G
 
         _context.Modules.Add(module);
         await _context.SaveChangesAsync(cancellationToken);
+        await _cache.InvalidateTagAsync("courses", cancellationToken);
         return module.Id;
     }
 }

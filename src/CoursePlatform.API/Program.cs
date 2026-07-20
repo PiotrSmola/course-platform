@@ -74,20 +74,20 @@ if (!string.IsNullOrEmpty(otelEndpoint))
 }
 
 var healthChecks = builder.Services.AddHealthChecks()
-    .AddCheck<CoursePlatform.API.HealthChecks.ElasticsearchHealthCheck>("elasticsearch")
-    .AddCheck<CoursePlatform.API.HealthChecks.MinioHealthCheck>("minio")
-    .AddCheck<CoursePlatform.API.HealthChecks.StripeHealthCheck>("stripe");
+    .AddCheck<CoursePlatform.API.HealthChecks.ElasticsearchHealthCheck>("elasticsearch", tags: new[] { "ready" })
+    .AddCheck<CoursePlatform.API.HealthChecks.MinioHealthCheck>("minio", tags: new[] { "ready" })
+    .AddCheck<CoursePlatform.API.HealthChecks.StripeHealthCheck>("stripe", tags: new[] { "ready" });
 
 var healthDbConnection = builder.Configuration.GetConnectionString("DefaultConnection");
 if (!string.IsNullOrEmpty(healthDbConnection))
 {
-    healthChecks.AddNpgSql(healthDbConnection, name: "postgres");
+    healthChecks.AddNpgSql(healthDbConnection, name: "postgres", tags: new[] { "ready" });
 }
 
 var healthRedisConnection = builder.Configuration.GetConnectionString("Redis");
 if (!string.IsNullOrEmpty(healthRedisConnection))
 {
-    healthChecks.AddRedis(healthRedisConnection, name: "redis");
+    healthChecks.AddRedis(healthRedisConnection, name: "redis", tags: new[] { "ready" });
 }
 
 builder.Services.AddIdentity<ApplicationUser, IdentityRole<Guid>>(options =>
@@ -201,6 +201,20 @@ builder.Services.AddRateLimiter(options =>
             AutoReplenishment = true
         });
     });
+
+    // Stricter IP-partitioned budget for the anonymous certificate-verification endpoint to curb enumeration.
+    options.AddPolicy("verify", httpContext =>
+    {
+        var partitionKey = httpContext.Connection.RemoteIpAddress?.ToString() ?? "unknown";
+        return RateLimitPartition.GetFixedWindowLimiter(partitionKey, _ => new FixedWindowRateLimiterOptions
+        {
+            PermitLimit = 20,
+            Window = TimeSpan.FromMinutes(1),
+            QueueProcessingOrder = QueueProcessingOrder.OldestFirst,
+            QueueLimit = 0,
+            AutoReplenishment = true
+        });
+    });
 });
 
 var app = builder.Build();
@@ -212,7 +226,21 @@ if (app.Environment.IsDevelopment())
 }
 
 app.UseMiddleware<CoursePlatform.API.Middleware.SecurityHeadersMiddleware>();
-app.UseSerilogRequestLogging();
+app.UseSerilogRequestLogging(options =>
+{
+    // The SignalR handshake carries the JWT as ?access_token=...; keep those requests out of the
+    // request log so live bearer tokens are never written to log sinks or the OTLP exporter.
+    options.GetLevel = (httpContext, _, ex) =>
+    {
+        if (httpContext.Request.Path.StartsWithSegments("/hubs"))
+        {
+            return Serilog.Events.LogEventLevel.Verbose;
+        }
+        return ex != null || httpContext.Response.StatusCode >= 500
+            ? Serilog.Events.LogEventLevel.Error
+            : Serilog.Events.LogEventLevel.Information;
+    };
+});
 app.UseRateLimiter();
 app.UseCors("AllowFrontend");
 app.UseAuthentication();
@@ -222,6 +250,15 @@ app.UseMiddleware<CoursePlatform.API.Middleware.ExceptionHandlingMiddleware>();
 
 app.MapControllers();
 app.MapHub<NotificationHub>("/hubs/notifications");
+
+// Liveness: process is up. No dependency round-trips, so a transient MinIO/ES blip can't flap the container.
+app.MapHealthChecks("/health/live", new Microsoft.AspNetCore.Diagnostics.HealthChecks.HealthCheckOptions
+{
+    Predicate = _ => false
+}).DisableRateLimiting();
+
+// Readiness: full dependency check. Public payload carries only component names + status (no exception
+// detail, no connection strings) to avoid leaking internals to anonymous callers.
 app.MapHealthChecks("/health", new Microsoft.AspNetCore.Diagnostics.HealthChecks.HealthCheckOptions
 {
     ResponseWriter = async (context, report) =>
@@ -233,15 +270,10 @@ app.MapHealthChecks("/health", new Microsoft.AspNetCore.Diagnostics.HealthChecks
             totalDurationMs = Math.Round(report.TotalDuration.TotalMilliseconds, 1),
             entries = report.Entries.ToDictionary(
                 e => e.Key,
-                e => new
-                {
-                    status = e.Value.Status.ToString(),
-                    description = e.Value.Description,
-                    durationMs = Math.Round(e.Value.Duration.TotalMilliseconds, 1)
-                })
+                e => new { status = e.Value.Status.ToString() })
         });
     }
-});
+}).DisableRateLimiting();
 
 using (var scope = app.Services.CreateScope())
 {

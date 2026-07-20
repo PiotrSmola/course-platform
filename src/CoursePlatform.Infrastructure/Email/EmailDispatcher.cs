@@ -7,6 +7,8 @@ namespace CoursePlatform.Infrastructure.Email;
 public sealed class EmailDispatcher : BackgroundService
 {
     private const int MaxAttempts = 3;
+    private static readonly TimeSpan SendTimeout = TimeSpan.FromSeconds(30);
+    private static readonly TimeSpan[] Backoff = { TimeSpan.FromSeconds(5), TimeSpan.FromSeconds(15) };
 
     private readonly ChannelEmailQueue _queue;
     private readonly IEmailSender _sender;
@@ -31,9 +33,13 @@ public sealed class EmailDispatcher : BackgroundService
     {
         for (var attempt = 1; attempt <= MaxAttempts; attempt++)
         {
+            // Per-message timeout so a single unresponsive SMTP host can't head-of-line block the queue.
+            using var timeoutCts = CancellationTokenSource.CreateLinkedTokenSource(stoppingToken);
+            timeoutCts.CancelAfter(SendTimeout);
+
             try
             {
-                await _sender.SendAsync(message, stoppingToken);
+                await _sender.SendAsync(message, timeoutCts.Token);
                 _logger.LogInformation("Email '{Subject}' sent to {To}.", message.Subject, message.To);
                 return;
             }
@@ -45,14 +51,14 @@ public sealed class EmailDispatcher : BackgroundService
             {
                 if (attempt == MaxAttempts)
                 {
-                    _logger.LogWarning(ex, "Email '{Subject}' to {To} failed after {Attempts} attempts. Dropping.",
+                    _logger.LogError(ex, "Email '{Subject}' to {To} failed after {Attempts} attempts. Dropping (no dead-letter).",
                         message.Subject, message.To, MaxAttempts);
                     return;
                 }
 
                 try
                 {
-                    await Task.Delay(TimeSpan.FromSeconds(Math.Pow(2, attempt)), stoppingToken);
+                    await Task.Delay(Backoff[attempt - 1], stoppingToken);
                 }
                 catch (OperationCanceledException)
                 {

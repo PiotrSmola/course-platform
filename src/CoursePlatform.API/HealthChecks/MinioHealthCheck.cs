@@ -1,5 +1,4 @@
 using Amazon.S3;
-using Amazon.S3.Model;
 using CoursePlatform.Infrastructure.Options;
 using Microsoft.Extensions.Diagnostics.HealthChecks;
 using Microsoft.Extensions.Options;
@@ -21,12 +20,8 @@ public class MinioHealthCheck : IHealthCheck
     {
         try
         {
-            await _s3.ListObjectsV2Async(new ListObjectsV2Request
-            {
-                BucketName = _options.Bucket,
-                MaxKeys = 1
-            }, cancellationToken);
-
+            // Cheap connectivity probe — no bucket enumeration, just a metadata round-trip.
+            await _s3.GetBucketLocationAsync(_options.Bucket, cancellationToken);
             return HealthCheckResult.Healthy();
         }
         catch (Exception ex)

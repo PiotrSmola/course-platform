@@ -27,13 +27,20 @@ internal sealed class SmtpEmailSender : IEmailSender
             return;
         }
 
+        if (!MailboxAddress.TryParse(message.To, out var recipient))
+        {
+            // Permanent failure — do not let the retry loop waste attempts on an unfixable address.
+            _logger.LogWarning("Invalid email recipient '{To}', dropping '{Subject}'.", message.To, message.Subject);
+            return;
+        }
+
         var mime = new MimeMessage();
         mime.From.Add(new MailboxAddress(_options.FromName, _options.FromAddress));
-        mime.To.Add(MailboxAddress.Parse(message.To));
+        mime.To.Add(recipient);
         mime.Subject = message.Subject;
         mime.Body = new BodyBuilder { HtmlBody = message.HtmlBody }.ToMessageBody();
 
-        using var client = new SmtpClient();
+        using var client = new SmtpClient { Timeout = 15_000 };
         await client.ConnectAsync(_options.Host, _options.Port, SecureSocketOptions.Auto, cancellationToken);
         await client.SendAsync(mime, cancellationToken);
         await client.DisconnectAsync(true, cancellationToken);

@@ -37,6 +37,6 @@ public class LoginCommandHandler : IRequestHandler<LoginCommand, AuthResponse>
         var token = _jwtTokenGenerator.GenerateToken(user, roles);
         var refreshToken = await _identityService.CreateRefreshTokenAsync(user.Id, cancellationToken);
 
-        return new AuthResponse(user.Id, user.Email, user.FirstName, user.LastName, token, refreshToken.Token, roles.ToList());
+        return new AuthResponse(user.Id, user.Email, user.FirstName, user.LastName, token, refreshToken.RawToken, roles.ToList());
     }
 }

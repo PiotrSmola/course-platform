@@ -24,6 +24,7 @@ public class DeleteLessonCommandHandler : IRequestHandler<DeleteLessonCommand>
 {
     private readonly IApplicationDbContext _context;
     private readonly ICurrentUserService _currentUserService;
+    private readonly IAppCache _cache;
     private readonly IFileStorageService _fileStorage;
     private readonly ILogger<DeleteLessonCommandHandler> _logger;
 
@@ -31,10 +32,12 @@ public class DeleteLessonCommandHandler : IRequestHandler<DeleteLessonCommand>
         IApplicationDbContext context,
         ICurrentUserService currentUserService,
         IFileStorageService fileStorage,
-        ILogger<DeleteLessonCommandHandler> logger)
+        ILogger<DeleteLessonCommandHandler> logger,
+        IAppCache cache)
     {
         _context = context;
         _currentUserService = currentUserService;
+        _cache = cache;
         _fileStorage = fileStorage;
         _logger = logger;
     }
@@ -56,6 +59,7 @@ public class DeleteLessonCommandHandler : IRequestHandler<DeleteLessonCommand>
 
         _context.Lessons.Remove(lesson);
         await _context.SaveChangesAsync(cancellationToken);
+        await _cache.InvalidateTagAsync("courses", cancellationToken);
 
         if (!string.IsNullOrWhiteSpace(videoObjectKey))
         {

@@ -30,13 +30,16 @@ public class CreateLessonCommandHandler : IRequestHandler<CreateLessonCommand, G
 {
     private readonly IApplicationDbContext _context;
     private readonly ICurrentUserService _currentUserService;
+    private readonly IAppCache _cache;
 
     public CreateLessonCommandHandler(
         IApplicationDbContext context,
-        ICurrentUserService currentUserService)
+        ICurrentUserService currentUserService,
+        IAppCache cache)
     {
         _context = context;
         _currentUserService = currentUserService;
+        _cache = cache;
     }
 
     public async Task<Guid> Handle(CreateLessonCommand request, CancellationToken cancellationToken)
@@ -55,6 +58,7 @@ public class CreateLessonCommandHandler : IRequestHandler<CreateLessonCommand, G
 
         _context.Lessons.Add(lesson);
         await _context.SaveChangesAsync(cancellationToken);
+        await _cache.InvalidateTagAsync("courses", cancellationToken);
         return lesson.Id;
     }
 }

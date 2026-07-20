@@ -1,5 +1,6 @@
 using System.Diagnostics;
 using MediatR;
+using CoursePlatform.Application.Common.Exceptions;
 
 namespace CoursePlatform.Application.Common.Behaviours;
 
@@ -21,8 +22,23 @@ public class TracingBehaviour<TRequest, TResponse> : IPipelineBehavior<TRequest,
         }
         catch (Exception ex)
         {
-            activity?.SetStatus(ActivityStatusCode.Error, ex.Message);
+            // Expected client-side failures (validation, not found, forbidden) are not server faults —
+            // tagging them Error inflates error rates and leaks input-shaped messages into telemetry.
+            if (IsExpected(ex))
+            {
+                activity?.SetTag("outcome", ex.GetType().Name);
+            }
+            else
+            {
+                activity?.SetStatus(ActivityStatusCode.Error);
+                activity?.AddException(ex);
+            }
             throw;
         }
     }
+
+    private static bool IsExpected(Exception ex) =>
+        ex is FluentValidation.ValidationException
+            or NotFoundException
+            or ForbiddenAccessException;
 }

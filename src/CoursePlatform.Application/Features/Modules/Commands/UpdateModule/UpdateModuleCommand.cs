@@ -22,13 +22,16 @@ public class UpdateModuleCommandHandler : IRequestHandler<UpdateModuleCommand>
 {
     private readonly IApplicationDbContext _context;
     private readonly ICurrentUserService _currentUserService;
+    private readonly IAppCache _cache;
 
     public UpdateModuleCommandHandler(
         IApplicationDbContext context,
-        ICurrentUserService currentUserService)
+        ICurrentUserService currentUserService,
+        IAppCache cache)
     {
         _context = context;
         _currentUserService = currentUserService;
+        _cache = cache;
     }
 
     public async Task Handle(UpdateModuleCommand request, CancellationToken cancellationToken)
@@ -41,5 +44,6 @@ public class UpdateModuleCommandHandler : IRequestHandler<UpdateModuleCommand>
         module.MarkUpdated();
 
         await _context.SaveChangesAsync(cancellationToken);
+        await _cache.InvalidateTagAsync("courses", cancellationToken);
     }
 }

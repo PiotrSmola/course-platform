@@ -39,7 +39,7 @@ public class CreateModuleCommandTests
         currentUser.Setup(x => x.UserId).Returns(instructorId);
         currentUser.Setup(x => x.IsAdmin).Returns(false);
 
-        var handler = new CreateModuleCommandHandler(context, currentUser.Object);
+        var handler = new CreateModuleCommandHandler(context, currentUser.Object, new PassThroughAppCache());
 
         var moduleId = await handler.Handle(new CreateModuleCommand(course.Id, "Module 1", 0), CancellationToken.None);
 

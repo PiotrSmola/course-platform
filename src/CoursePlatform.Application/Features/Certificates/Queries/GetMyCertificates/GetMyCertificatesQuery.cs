@@ -39,20 +39,7 @@ public class GetMyCertificatesQueryHandler : IRequestHandler<GetMyCertificatesQu
 
         var userId = _currentUserService.UserId.Value;
 
-        var enrolledCourseIds = await _context.Enrollments
-            .Where(e => e.UserId == userId)
-            .Select(e => e.CourseId)
-            .ToListAsync(cancellationToken);
-
-        var certifiedCourseIds = await _context.Certificates
-            .Where(c => c.UserId == userId)
-            .Select(c => c.CourseId)
-            .ToListAsync(cancellationToken);
-
-        foreach (var courseId in enrolledCourseIds.Except(certifiedCourseIds))
-        {
-            await _certificateIssuer.IssueIfCompletedAsync(userId, courseId, cancellationToken);
-        }
+        await BackfillCompletedCoursesAsync(userId, cancellationToken);
 
         return await _context.Certificates
             .AsNoTracking()
@@ -65,5 +52,34 @@ public class GetMyCertificatesQueryHandler : IRequestHandler<GetMyCertificatesQu
                 c.Course.Title,
                 c.IssuedAt))
             .ToListAsync(cancellationToken);
+    }
+
+    // Certificates are normally issued on lesson completion (UpdateProgressCommand). This backfill
+    // only covers courses completed before that flow existed (e.g. seeded data). One aggregate query
+    // finds fully-completed uncertified courses instead of probing each enrolled course individually.
+    private async Task BackfillCompletedCoursesAsync(Guid userId, CancellationToken cancellationToken)
+    {
+        var certifiedCourseIds = await _context.Certificates
+            .Where(c => c.UserId == userId)
+            .Select(c => c.CourseId)
+            .ToListAsync(cancellationToken);
+
+        var completedCourseIds = await _context.Enrollments
+            .Where(e => e.UserId == userId && !certifiedCourseIds.Contains(e.CourseId))
+            .Select(e => new
+            {
+                e.CourseId,
+                TotalLessons = _context.Lessons.Count(l => l.Module.CourseId == e.CourseId),
+                CompletedLessons = _context.LessonProgresses.Count(p =>
+                    p.UserId == userId && p.IsCompleted && p.Lesson.Module.CourseId == e.CourseId)
+            })
+            .Where(x => x.TotalLessons > 0 && x.CompletedLessons == x.TotalLessons)
+            .Select(x => x.CourseId)
+            .ToListAsync(cancellationToken);
+
+        foreach (var courseId in completedCourseIds)
+        {
+            await _certificateIssuer.IssueIfCompletedAsync(userId, courseId, cancellationToken);
+        }
     }
 }

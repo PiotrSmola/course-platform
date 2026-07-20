@@ -122,7 +122,7 @@ services:
         condition: service_healthy
     mem_limit: 2g
     healthcheck:
-      test: ["CMD-SHELL", "curl -fs http://localhost:8080/health || exit 1"]
+      test: ["CMD-SHELL", "curl -fs http://localhost:8080/health/live || exit 1"]
       interval: 30s
       timeout: 10s
       retries: 5
@@ -144,8 +144,10 @@ services:
     container_name: cp_aspire
     environment:
       DOTNET_DASHBOARD_UNSECURED_ALLOW_ANONYMOUS: "true"
+      DOTNET_DASHBOARD_OTLP_ENDPOINT_URL: http://0.0.0.0:18889
     ports:
       - "127.0.0.1:18888:18888"
+      - "127.0.0.1:18889:18889"
 
   mailhog:
     image: mailhog/mailhog:latest

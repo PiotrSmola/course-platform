@@ -16,6 +16,13 @@ internal sealed class QuestPdfCertificateGenerator : ICertificatePdfGenerator
 
     private readonly CertificateOptions _options;
 
+    static QuestPdfCertificateGenerator()
+    {
+        // Co-located with usage so generation can never run without the license being set,
+        // regardless of how the service is wired up.
+        QuestPDF.Settings.License = LicenseType.Community;
+    }
+
     public QuestPdfCertificateGenerator(IOptions<CertificateOptions> options)
     {
         _options = options.Value;

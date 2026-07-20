@@ -93,25 +93,27 @@ public sealed class IdentityService : IIdentityService
         return AuthPasswordVerificationResult.Failed;
     }
 
-    public async Task<RefreshToken> CreateRefreshTokenAsync(Guid userId, CancellationToken cancellationToken = default)
+    public async Task<IssuedRefreshToken> CreateRefreshTokenAsync(Guid userId, CancellationToken cancellationToken = default)
     {
+        var rawToken = GenerateRefreshToken();
         var refreshToken = new RefreshToken
         {
             UserId = userId,
-            Token = GenerateRefreshToken(),
+            TokenHash = HashToken(rawToken),
             ExpiresAt = DateTime.UtcNow.AddDays(7)
         };
 
         _context.RefreshTokens.Add(refreshToken);
         await _context.SaveChangesAsync(cancellationToken);
-        return refreshToken;
+        return new IssuedRefreshToken(refreshToken, rawToken);
     }
 
     public async Task<RefreshToken?> GetRefreshTokenAsync(string token, CancellationToken cancellationToken = default)
     {
+        var hash = HashToken(token);
         return await _context.RefreshTokens
             .Include(rt => rt.User)
-            .FirstOrDefaultAsync(rt => rt.Token == token, cancellationToken);
+            .FirstOrDefaultAsync(rt => rt.TokenHash == hash, cancellationToken);
     }
 
     public async Task RevokeRefreshTokenAsync(RefreshToken token, CancellationToken cancellationToken = default)
@@ -120,11 +122,33 @@ public sealed class IdentityService : IIdentityService
         await _context.SaveChangesAsync(cancellationToken);
     }
 
+    public async Task RevokeAllRefreshTokensAsync(Guid userId, CancellationToken cancellationToken = default)
+    {
+        var active = await _context.RefreshTokens
+            .Where(rt => rt.UserId == userId && !rt.IsRevoked)
+            .ToListAsync(cancellationToken);
+
+        if (active.Count == 0) return;
+
+        foreach (var token in active)
+        {
+            token.IsRevoked = true;
+        }
+
+        await _context.SaveChangesAsync(cancellationToken);
+    }
+
     private static string GenerateRefreshToken()
     {
         var bytes = new byte[32];
         RandomNumberGenerator.Fill(bytes);
         return Convert.ToBase64String(bytes);
+    }
+
+    private static string HashToken(string token)
+    {
+        var hash = SHA256.HashData(System.Text.Encoding.UTF8.GetBytes(token));
+        return Convert.ToHexString(hash);
     }
 
     private static IdentityOperationResult MapResult(IdentityResult result)

@@ -63,6 +63,10 @@ public class AssignUserRoleCommandHandler : IRequestHandler<AssignUserRoleComman
             throw new ValidationException(result.Errors.Select(e => new ValidationFailure(string.Empty, e)));
         }
 
+        // Force the user to re-authenticate so the role change (especially a demotion) takes effect
+        // on their next refresh instead of lingering until the current JWT expires.
+        await _identityService.RevokeAllRefreshTokensAsync(user.Id, cancellationToken);
+
         await _auditLog.LogAsync(
             "AssignUserRole",
             "User",

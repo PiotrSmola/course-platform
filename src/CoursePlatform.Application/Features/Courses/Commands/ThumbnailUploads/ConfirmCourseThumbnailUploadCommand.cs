@@ -24,15 +24,21 @@ public class ConfirmCourseThumbnailUploadCommandHandler : IRequestHandler<Confir
     private readonly IApplicationDbContext _context;
     private readonly ICurrentUserService _currentUserService;
     private readonly IFileStorageService _fileStorage;
+    private readonly ICourseIndexingService _courseIndexing;
+    private readonly IAppCache _cache;
 
     public ConfirmCourseThumbnailUploadCommandHandler(
         IApplicationDbContext context,
         ICurrentUserService currentUserService,
-        IFileStorageService fileStorage)
+        IFileStorageService fileStorage,
+        ICourseIndexingService courseIndexing,
+        IAppCache cache)
     {
         _context = context;
         _currentUserService = currentUserService;
         _fileStorage = fileStorage;
+        _courseIndexing = courseIndexing;
+        _cache = cache;
     }
 
     public async Task Handle(ConfirmCourseThumbnailUploadCommand request, CancellationToken cancellationToken)
@@ -62,6 +68,8 @@ public class ConfirmCourseThumbnailUploadCommandHandler : IRequestHandler<Confir
         course.ThumbnailObjectKey = request.ObjectKey;
         course.MarkUpdated();
         await _context.SaveChangesAsync(cancellationToken);
+        await _courseIndexing.IndexCourseAsync(course.Id, cancellationToken);
+        await _cache.InvalidateTagAsync("courses", cancellationToken);
     }
 }
 

@@ -33,13 +33,16 @@ public class UpdateLessonCommandHandler : IRequestHandler<UpdateLessonCommand>
 {
     private readonly IApplicationDbContext _context;
     private readonly ICurrentUserService _currentUserService;
+    private readonly IAppCache _cache;
 
     public UpdateLessonCommandHandler(
         IApplicationDbContext context,
-        ICurrentUserService currentUserService)
+        ICurrentUserService currentUserService,
+        IAppCache cache)
     {
         _context = context;
         _currentUserService = currentUserService;
+        _cache = cache;
     }
 
     public async Task Handle(UpdateLessonCommand request, CancellationToken cancellationToken)
@@ -62,5 +65,6 @@ public class UpdateLessonCommandHandler : IRequestHandler<UpdateLessonCommand>
         lesson.MarkUpdated();
 
         await _context.SaveChangesAsync(cancellationToken);
+        await _cache.InvalidateTagAsync("courses", cancellationToken);
     }
 }

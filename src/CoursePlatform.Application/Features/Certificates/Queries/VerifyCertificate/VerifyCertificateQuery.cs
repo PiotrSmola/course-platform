@@ -36,22 +36,38 @@ public class VerifyCertificateQueryHandler : IRequestHandler<VerifyCertificateQu
     {
         var normalized = request.Number.Trim().ToUpperInvariant();
 
-        var certificate = await _context.Certificates
+        var raw = await _context.Certificates
             .AsNoTracking()
             .Where(c => c.Number == normalized)
-            .Select(c => new CertificateVerificationDto(
+            .Select(c => new
+            {
                 c.Number,
-                $"{c.User.FirstName} {c.User.LastName}",
-                c.Course.Title,
-                $"{c.Course.Instructor.FirstName} {c.Course.Instructor.LastName}",
-                c.IssuedAt))
+                c.User.FirstName,
+                c.User.LastName,
+                CourseTitle = c.Course.Title,
+                InstructorFirst = c.Course.Instructor.FirstName,
+                InstructorLast = c.Course.Instructor.LastName,
+                c.IssuedAt
+            })
             .FirstOrDefaultAsync(cancellationToken);
 
-        if (certificate == null)
+        if (raw == null)
         {
             throw new NotFoundException("Certificate not found.");
         }
 
-        return certificate;
+        // Public endpoint: mask the holder's surname so a certificate number can't be used to harvest
+        // full legal names, while still letting a verifier confirm the holder's identity.
+        var holderName = $"{raw.FirstName} {MaskSurname(raw.LastName)}".Trim();
+
+        return new CertificateVerificationDto(
+            raw.Number,
+            holderName,
+            raw.CourseTitle,
+            $"{raw.InstructorFirst} {raw.InstructorLast}",
+            raw.IssuedAt);
     }
+
+    private static string MaskSurname(string surname) =>
+        string.IsNullOrEmpty(surname) ? string.Empty : $"{surname[0]}.";
 }

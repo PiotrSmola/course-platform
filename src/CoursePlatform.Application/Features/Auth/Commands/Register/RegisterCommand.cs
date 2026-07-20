@@ -51,13 +51,20 @@ public class RegisterCommandHandler : IRequestHandler<RegisterCommand, AuthRespo
             throw new ValidationException(roleResult.Errors.Select(e => new ValidationFailure(string.Empty, e)));
         }
 
-        var (subject, html) = EmailTemplates.Welcome(user.FirstName);
-        _emailQueue.Enqueue(new EmailMessage(user.Email!, subject, html));
+        try
+        {
+            var (subject, html) = EmailTemplates.Welcome(user.FirstName);
+            _emailQueue.Enqueue(new EmailMessage(user.Email!, subject, html));
+        }
+        catch
+        {
+            // Welcome email is best-effort and must never fail registration.
+        }
 
         var roles = await _identityService.GetRolesAsync(user, cancellationToken);
         var token = _jwtTokenGenerator.GenerateToken(user, roles);
         var refreshToken = await _identityService.CreateRefreshTokenAsync(user.Id, cancellationToken);
 
-        return new AuthResponse(user.Id, user.Email, user.FirstName, user.LastName, token, refreshToken.Token, roles.ToList());
+        return new AuthResponse(user.Id, user.Email, user.FirstName, user.LastName, token, refreshToken.RawToken, roles.ToList());
     }
 }

@@ -30,6 +30,7 @@ public class CertificatesController : ControllerBase
 
     [HttpGet("verify/{number}")]
     [AllowAnonymous]
+    [EnableRateLimiting("verify")]
     public async Task<ActionResult<CertificateVerificationDto>> Verify(string number, CancellationToken cancellationToken)
     {
         var result = await _mediator.Send(new VerifyCertificateQuery(number), cancellationToken);

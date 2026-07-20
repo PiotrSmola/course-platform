@@ -64,6 +64,7 @@ public static class DependencyInjection
         services.AddScoped<IApplicationDbContext>(provider => provider.GetRequiredService<ApplicationDbContext>());
         services.AddScoped<ICurrentUserService, CurrentUserService>();
         services.AddScoped<IIdentityService, IdentityService>();
+        services.AddHostedService<Identity.RefreshTokenCleanupService>();
         services.AddSingleton<IFileStorageService, MinioFileStorageService>();
         services.AddSingleton<INotificationService, SignalRNotificationService>();
         services.AddScoped<IAuditLogService, AuditLogService>();
@@ -72,7 +73,6 @@ public static class DependencyInjection
         services.AddSingleton<IHtmlSanitizer, HtmlSanitizerWrapper>();
         services.AddSingleton<IPaymentGateway, StripePaymentGateway>();
 
-        QuestPDF.Settings.License = QuestPDF.Infrastructure.LicenseType.Community;
         services.AddSingleton<ICertificatePdfGenerator, QuestPdfCertificateGenerator>();
 
         services.AddSingleton<Email.ChannelEmailQueue>();

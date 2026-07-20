@@ -22,6 +22,7 @@ public class DeleteModuleCommandHandler : IRequestHandler<DeleteModuleCommand>
 {
     private readonly IApplicationDbContext _context;
     private readonly ICurrentUserService _currentUserService;
+    private readonly IAppCache _cache;
     private readonly IFileStorageService _fileStorage;
     private readonly ILogger<DeleteModuleCommandHandler> _logger;
 
@@ -29,10 +30,12 @@ public class DeleteModuleCommandHandler : IRequestHandler<DeleteModuleCommand>
         IApplicationDbContext context,
         ICurrentUserService currentUserService,
         IFileStorageService fileStorage,
-        ILogger<DeleteModuleCommandHandler> logger)
+        ILogger<DeleteModuleCommandHandler> logger,
+        IAppCache cache)
     {
         _context = context;
         _currentUserService = currentUserService;
+        _cache = cache;
         _fileStorage = fileStorage;
         _logger = logger;
     }
@@ -49,6 +52,7 @@ public class DeleteModuleCommandHandler : IRequestHandler<DeleteModuleCommand>
 
         _context.Modules.Remove(module);
         await _context.SaveChangesAsync(cancellationToken);
+        await _cache.InvalidateTagAsync("courses", cancellationToken);
 
         foreach (var objectKey in videoObjectKeys)
         {

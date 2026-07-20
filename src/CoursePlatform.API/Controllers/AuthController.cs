@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.RateLimiting;
 using CoursePlatform.Application.Features.Auth;
 using CoursePlatform.Application.Features.Auth.Commands.Login;
+using CoursePlatform.Application.Features.Auth.Commands.Logout;
 using CoursePlatform.Application.Features.Auth.Commands.RefreshToken;
 using CoursePlatform.Application.Features.Auth.Commands.Register;
 using CoursePlatform.Application.Features.Auth.Queries.GetCurrentUser;
@@ -47,6 +48,14 @@ public class AuthController : ControllerBase
     {
         var result = await _mediator.Send(command, cancellationToken);
         return Ok(result);
+    }
+
+    [HttpPost("logout")]
+    [Authorize]
+    public async Task<IActionResult> Logout(LogoutCommand command, CancellationToken cancellationToken)
+    {
+        await _mediator.Send(command, cancellationToken);
+        return NoContent();
     }
 
     [HttpGet("me")]

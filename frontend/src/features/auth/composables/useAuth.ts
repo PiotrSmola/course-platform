@@ -1,7 +1,7 @@
 import { useMutation, useQueryClient } from '@tanstack/vue-query'
 import { useRouter } from 'vue-router'
 import { useAuthStore } from '@/features/auth/stores/auth.store'
-import { login, register } from '@/features/auth/api/auth.api'
+import { login, register, logout as logoutRequest } from '@/features/auth/api/auth.api'
 import { toast } from '@/shared/toast/toast'
 import { getApiErrorMessage } from '@/shared/api/apiError'
 import { queryKeys } from '@/shared/queryKeys'
@@ -49,7 +49,15 @@ export function useAuth() {
     }
   })
 
-  const logout = () => {
+  const logout = async () => {
+    const token = authStore.refreshToken
+    if (token) {
+      try {
+        await logoutRequest(token)
+      } catch {
+        // Server-side revocation is best-effort; always clear local state regardless.
+      }
+    }
     authStore.logout()
     queryClient.clear()
     toast.info('Wylogowano')
