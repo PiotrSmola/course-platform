@@ -17,6 +17,8 @@ public static class ApplicationDbContextSeed
         await SeedEnrollmentsAsync(context);
         await SeedReviewsAsync(context);
         await SeedLessonProgressAsync(context);
+        await SeedLessonDiscussionsAsync(context);
+        await SeedCouponsAsync(context);
         await SeedLearningPathsAsync(context);
         await SeedBusinessPlansAsync(context);
     }
@@ -1174,6 +1176,68 @@ public static class ApplicationDbContextSeed
         }
 
         context.LessonProgresses.AddRange(progressEntries);
+        await context.SaveChangesAsync();
+    }
+
+    private static async Task SeedLessonDiscussionsAsync(ApplicationDbContext context)
+    {
+        if (await context.LessonQuestions.AnyAsync()) return;
+
+        var course = await context.Courses
+            .Include(c => c.Modules)
+                .ThenInclude(m => m.Lessons)
+            .Include(c => c.Instructor)
+            .FirstOrDefaultAsync(c => c.Title == "Vue 3 Fundamentals — Composition API i TypeScript");
+
+        var student = await context.Users
+            .FirstOrDefaultAsync(u => u.Email == "piotr.nowak@courseplatform.com");
+
+        if (course == null || student == null) return;
+
+        var lesson = course.Modules
+            .SelectMany(m => m.Lessons)
+            .OrderBy(l => l.Order)
+            .FirstOrDefault();
+
+        if (lesson == null) return;
+
+        var question = new LessonQuestion
+        {
+            LessonId = lesson.Id,
+            AuthorId = student.Id,
+            Body = "Czy ref() i reactive() można mieszać w jednym composable bez problemów z reaktywnością?"
+        };
+
+        context.LessonQuestions.Add(question);
+        await context.SaveChangesAsync();
+
+        context.LessonAnswers.Add(new LessonAnswer
+        {
+            QuestionId = question.Id,
+            AuthorId = course.InstructorId,
+            Body = "Tak — ważne, żeby destrukturyzować reactive przez toRefs, a ref odczytywać przez .value. W Composition API to standardowa praktyka.",
+            IsInstructorAnswer = true
+        });
+
+        await context.SaveChangesAsync();
+    }
+
+    private static async Task SeedCouponsAsync(ApplicationDbContext context)
+    {
+        if (await context.Coupons.AnyAsync()) return;
+
+        context.Coupons.Add(new Coupon
+        {
+            Code = "PROMO20",
+            DiscountType = DiscountType.Percentage,
+            Value = 20,
+            StartsAt = DateTime.UtcNow.AddDays(-1),
+            ExpiresAt = DateTime.UtcNow.AddYears(1),
+            MaxRedemptions = 1000,
+            RedeemedCount = 0,
+            IsActive = true
+        });
+
         await context.SaveChangesAsync();
     }
 }

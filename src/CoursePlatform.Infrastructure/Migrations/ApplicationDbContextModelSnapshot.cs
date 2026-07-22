@@ -334,6 +334,70 @@ namespace CoursePlatform.Infrastructure.Migrations
                     b.ToTable("Certificates");
                 });
 
+            modelBuilder.Entity("CoursePlatform.Domain.Entities.Coupon", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("Code")
+                        .IsRequired()
+                        .HasMaxLength(64)
+                        .HasColumnType("character varying(64)");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<int>("DiscountType")
+                        .HasColumnType("integer");
+
+                    b.Property<DateTime?>("ExpiresAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<bool>("IsActive")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("boolean")
+                        .HasDefaultValue(true);
+
+                    b.Property<int?>("MaxRedemptions")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("RedeemedCount")
+                        .HasColumnType("integer");
+
+                    b.Property<DateTime>("StartsAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<decimal>("Value")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("numeric(18,2)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("Code")
+                        .IsUnique();
+
+                    b.ToTable("Coupons");
+                });
+
+            modelBuilder.Entity("CoursePlatform.Domain.Entities.CouponCourse", b =>
+                {
+                    b.Property<Guid>("CouponId")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("CourseId")
+                        .HasColumnType("uuid");
+
+                    b.HasKey("CouponId", "CourseId");
+
+                    b.HasIndex("CourseId");
+
+                    b.ToTable("CouponCourses");
+                });
+
             modelBuilder.Entity("CoursePlatform.Domain.Entities.Course", b =>
                 {
                     b.Property<Guid>("Id")
@@ -556,6 +620,48 @@ namespace CoursePlatform.Infrastructure.Migrations
                     b.ToTable("Lessons");
                 });
 
+            modelBuilder.Entity("CoursePlatform.Domain.Entities.LessonAnswer", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("AuthorId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("Body")
+                        .IsRequired()
+                        .HasMaxLength(2000)
+                        .HasColumnType("character varying(2000)");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<bool>("IsDeleted")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("boolean")
+                        .HasDefaultValue(false);
+
+                    b.Property<bool>("IsInstructorAnswer")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("boolean")
+                        .HasDefaultValue(false);
+
+                    b.Property<Guid>("QuestionId")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("AuthorId");
+
+                    b.HasIndex("QuestionId", "CreatedAt");
+
+                    b.ToTable("LessonAnswers");
+                });
+
             modelBuilder.Entity("CoursePlatform.Domain.Entities.LessonProgress", b =>
                 {
                     b.Property<Guid>("UserId")
@@ -575,6 +681,43 @@ namespace CoursePlatform.Infrastructure.Migrations
                     b.HasIndex("LessonId");
 
                     b.ToTable("LessonProgresses");
+                });
+
+            modelBuilder.Entity("CoursePlatform.Domain.Entities.LessonQuestion", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("AuthorId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("Body")
+                        .IsRequired()
+                        .HasMaxLength(2000)
+                        .HasColumnType("character varying(2000)");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<bool>("IsDeleted")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("boolean")
+                        .HasDefaultValue(false);
+
+                    b.Property<Guid>("LessonId")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("AuthorId");
+
+                    b.HasIndex("LessonId", "CreatedAt");
+
+                    b.ToTable("LessonQuestions");
                 });
 
             modelBuilder.Entity("CoursePlatform.Domain.Entities.Module", b =>
@@ -623,6 +766,9 @@ namespace CoursePlatform.Infrastructure.Migrations
                     b.Property<DateTime?>("CompletedAt")
                         .HasColumnType("timestamp with time zone");
 
+                    b.Property<Guid?>("CouponId")
+                        .HasColumnType("uuid");
+
                     b.Property<Guid>("CourseId")
                         .HasColumnType("uuid");
 
@@ -633,6 +779,14 @@ namespace CoursePlatform.Infrastructure.Migrations
                         .IsRequired()
                         .HasMaxLength(3)
                         .HasColumnType("character varying(3)");
+
+                    b.Property<decimal>("DiscountAmount")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("numeric(18,2)");
+
+                    b.Property<decimal>("OriginalAmount")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("numeric(18,2)");
 
                     b.Property<int>("Status")
                         .HasColumnType("integer");
@@ -650,6 +804,8 @@ namespace CoursePlatform.Infrastructure.Migrations
                     b.HasKey("Id");
 
                     b.HasIndex("ApplicationUserId");
+
+                    b.HasIndex("CouponId");
 
                     b.HasIndex("CourseId");
 
@@ -687,6 +843,169 @@ namespace CoursePlatform.Infrastructure.Migrations
                         .IsUnique();
 
                     b.ToTable("ProcessedStripeEvents");
+                });
+
+            modelBuilder.Entity("CoursePlatform.Domain.Entities.Quiz", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid>("LessonId")
+                        .HasColumnType("uuid");
+
+                    b.Property<int>("PassThresholdPercent")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("Title")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("LessonId")
+                        .IsUnique();
+
+                    b.ToTable("Quizzes");
+                });
+
+            modelBuilder.Entity("CoursePlatform.Domain.Entities.QuizAttempt", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<bool>("Passed")
+                        .HasColumnType("boolean");
+
+                    b.Property<Guid>("QuizId")
+                        .HasColumnType("uuid");
+
+                    b.Property<int>("ScorePercent")
+                        .HasColumnType("integer");
+
+                    b.Property<DateTime>("SubmittedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid>("UserId")
+                        .HasColumnType("uuid");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("UserId");
+
+                    b.HasIndex("QuizId", "UserId", "SubmittedAt");
+
+                    b.ToTable("QuizAttempts");
+                });
+
+            modelBuilder.Entity("CoursePlatform.Domain.Entities.QuizAttemptAnswer", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("AttemptId")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid>("QuestionId")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("SelectedOptionId")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("QuestionId");
+
+                    b.HasIndex("SelectedOptionId");
+
+                    b.HasIndex("AttemptId", "QuestionId")
+                        .IsUnique();
+
+                    b.ToTable("QuizAttemptAnswers");
+                });
+
+            modelBuilder.Entity("CoursePlatform.Domain.Entities.QuizOption", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<bool>("IsCorrect")
+                        .HasColumnType("boolean");
+
+                    b.Property<int>("Order")
+                        .HasColumnType("integer");
+
+                    b.Property<Guid>("QuestionId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("Text")
+                        .IsRequired()
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("QuestionId", "Order");
+
+                    b.ToTable("QuizOptions");
+                });
+
+            modelBuilder.Entity("CoursePlatform.Domain.Entities.QuizQuestion", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<int>("Order")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("Prompt")
+                        .IsRequired()
+                        .HasMaxLength(1000)
+                        .HasColumnType("character varying(1000)");
+
+                    b.Property<Guid>("QuizId")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("QuizId", "Order");
+
+                    b.ToTable("QuizQuestions");
                 });
 
             modelBuilder.Entity("CoursePlatform.Domain.Entities.RefreshToken", b =>
@@ -995,6 +1314,25 @@ namespace CoursePlatform.Infrastructure.Migrations
                     b.Navigation("User");
                 });
 
+            modelBuilder.Entity("CoursePlatform.Domain.Entities.CouponCourse", b =>
+                {
+                    b.HasOne("CoursePlatform.Domain.Entities.Coupon", "Coupon")
+                        .WithMany("CouponCourses")
+                        .HasForeignKey("CouponId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("CoursePlatform.Domain.Entities.Course", "Course")
+                        .WithMany()
+                        .HasForeignKey("CourseId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Coupon");
+
+                    b.Navigation("Course");
+                });
+
             modelBuilder.Entity("CoursePlatform.Domain.Entities.Course", b =>
                 {
                     b.HasOne("CoursePlatform.Domain.Entities.ApplicationUser", "Instructor")
@@ -1055,6 +1393,25 @@ namespace CoursePlatform.Infrastructure.Migrations
                     b.Navigation("Module");
                 });
 
+            modelBuilder.Entity("CoursePlatform.Domain.Entities.LessonAnswer", b =>
+                {
+                    b.HasOne("CoursePlatform.Domain.Entities.ApplicationUser", "Author")
+                        .WithMany("LessonAnswers")
+                        .HasForeignKey("AuthorId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("CoursePlatform.Domain.Entities.LessonQuestion", "Question")
+                        .WithMany("Answers")
+                        .HasForeignKey("QuestionId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Author");
+
+                    b.Navigation("Question");
+                });
+
             modelBuilder.Entity("CoursePlatform.Domain.Entities.LessonProgress", b =>
                 {
                     b.HasOne("CoursePlatform.Domain.Entities.Lesson", "Lesson")
@@ -1074,6 +1431,25 @@ namespace CoursePlatform.Infrastructure.Migrations
                     b.Navigation("User");
                 });
 
+            modelBuilder.Entity("CoursePlatform.Domain.Entities.LessonQuestion", b =>
+                {
+                    b.HasOne("CoursePlatform.Domain.Entities.ApplicationUser", "Author")
+                        .WithMany("LessonQuestions")
+                        .HasForeignKey("AuthorId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("CoursePlatform.Domain.Entities.Lesson", "Lesson")
+                        .WithMany("Questions")
+                        .HasForeignKey("LessonId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Author");
+
+                    b.Navigation("Lesson");
+                });
+
             modelBuilder.Entity("CoursePlatform.Domain.Entities.Module", b =>
                 {
                     b.HasOne("CoursePlatform.Domain.Entities.Course", "Course")
@@ -1091,6 +1467,11 @@ namespace CoursePlatform.Infrastructure.Migrations
                         .WithMany("Payments")
                         .HasForeignKey("ApplicationUserId");
 
+                    b.HasOne("CoursePlatform.Domain.Entities.Coupon", "Coupon")
+                        .WithMany("Payments")
+                        .HasForeignKey("CouponId")
+                        .OnDelete(DeleteBehavior.SetNull);
+
                     b.HasOne("CoursePlatform.Domain.Entities.Course", "Course")
                         .WithMany()
                         .HasForeignKey("CourseId")
@@ -1103,9 +1484,90 @@ namespace CoursePlatform.Infrastructure.Migrations
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
+                    b.Navigation("Coupon");
+
                     b.Navigation("Course");
 
                     b.Navigation("User");
+                });
+
+            modelBuilder.Entity("CoursePlatform.Domain.Entities.Quiz", b =>
+                {
+                    b.HasOne("CoursePlatform.Domain.Entities.Lesson", "Lesson")
+                        .WithOne("Quiz")
+                        .HasForeignKey("CoursePlatform.Domain.Entities.Quiz", "LessonId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Lesson");
+                });
+
+            modelBuilder.Entity("CoursePlatform.Domain.Entities.QuizAttempt", b =>
+                {
+                    b.HasOne("CoursePlatform.Domain.Entities.Quiz", "Quiz")
+                        .WithMany("Attempts")
+                        .HasForeignKey("QuizId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("CoursePlatform.Domain.Entities.ApplicationUser", "User")
+                        .WithMany("QuizAttempts")
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Quiz");
+
+                    b.Navigation("User");
+                });
+
+            modelBuilder.Entity("CoursePlatform.Domain.Entities.QuizAttemptAnswer", b =>
+                {
+                    b.HasOne("CoursePlatform.Domain.Entities.QuizAttempt", "Attempt")
+                        .WithMany("Answers")
+                        .HasForeignKey("AttemptId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("CoursePlatform.Domain.Entities.QuizQuestion", "Question")
+                        .WithMany()
+                        .HasForeignKey("QuestionId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("CoursePlatform.Domain.Entities.QuizOption", "SelectedOption")
+                        .WithMany()
+                        .HasForeignKey("SelectedOptionId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("Attempt");
+
+                    b.Navigation("Question");
+
+                    b.Navigation("SelectedOption");
+                });
+
+            modelBuilder.Entity("CoursePlatform.Domain.Entities.QuizOption", b =>
+                {
+                    b.HasOne("CoursePlatform.Domain.Entities.QuizQuestion", "Question")
+                        .WithMany("Options")
+                        .HasForeignKey("QuestionId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Question");
+                });
+
+            modelBuilder.Entity("CoursePlatform.Domain.Entities.QuizQuestion", b =>
+                {
+                    b.HasOne("CoursePlatform.Domain.Entities.Quiz", "Quiz")
+                        .WithMany("Questions")
+                        .HasForeignKey("QuizId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Quiz");
                 });
 
             modelBuilder.Entity("CoursePlatform.Domain.Entities.RefreshToken", b =>
@@ -1210,9 +1672,15 @@ namespace CoursePlatform.Infrastructure.Migrations
 
                     b.Navigation("Enrollments");
 
+                    b.Navigation("LessonAnswers");
+
                     b.Navigation("LessonProgresses");
 
+                    b.Navigation("LessonQuestions");
+
                     b.Navigation("Payments");
+
+                    b.Navigation("QuizAttempts");
 
                     b.Navigation("RefreshTokens");
 
@@ -1222,6 +1690,13 @@ namespace CoursePlatform.Infrastructure.Migrations
             modelBuilder.Entity("CoursePlatform.Domain.Entities.BusinessPlan", b =>
                 {
                     b.Navigation("Features");
+                });
+
+            modelBuilder.Entity("CoursePlatform.Domain.Entities.Coupon", b =>
+                {
+                    b.Navigation("CouponCourses");
+
+                    b.Navigation("Payments");
                 });
 
             modelBuilder.Entity("CoursePlatform.Domain.Entities.Course", b =>
@@ -1241,11 +1716,37 @@ namespace CoursePlatform.Infrastructure.Migrations
             modelBuilder.Entity("CoursePlatform.Domain.Entities.Lesson", b =>
                 {
                     b.Navigation("LessonProgresses");
+
+                    b.Navigation("Questions");
+
+                    b.Navigation("Quiz");
+                });
+
+            modelBuilder.Entity("CoursePlatform.Domain.Entities.LessonQuestion", b =>
+                {
+                    b.Navigation("Answers");
                 });
 
             modelBuilder.Entity("CoursePlatform.Domain.Entities.Module", b =>
                 {
                     b.Navigation("Lessons");
+                });
+
+            modelBuilder.Entity("CoursePlatform.Domain.Entities.Quiz", b =>
+                {
+                    b.Navigation("Attempts");
+
+                    b.Navigation("Questions");
+                });
+
+            modelBuilder.Entity("CoursePlatform.Domain.Entities.QuizAttempt", b =>
+                {
+                    b.Navigation("Answers");
+                });
+
+            modelBuilder.Entity("CoursePlatform.Domain.Entities.QuizQuestion", b =>
+                {
+                    b.Navigation("Options");
                 });
 #pragma warning restore 612, 618
         }

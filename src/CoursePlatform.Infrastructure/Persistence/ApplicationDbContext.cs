@@ -19,7 +19,18 @@ public class ApplicationDbContext : IdentityDbContext<ApplicationUser, IdentityR
     public DbSet<Enrollment> Enrollments => Set<Enrollment>();
     public DbSet<LessonProgress> LessonProgresses => Set<LessonProgress>();
     public DbSet<Review> Reviews => Set<Review>();
+    public DbSet<LessonQuestion> LessonQuestions => Set<LessonQuestion>();
+    public DbSet<LessonAnswer> LessonAnswers => Set<LessonAnswer>();
+    public DbSet<Quiz> Quizzes => Set<Quiz>();
+    public DbSet<QuizQuestion> QuizQuestions => Set<QuizQuestion>();
+    public DbSet<QuizOption> QuizOptions => Set<QuizOption>();
+    public DbSet<QuizAttempt> QuizAttempts => Set<QuizAttempt>();
+    public DbSet<QuizAttemptAnswer> QuizAttemptAnswers => Set<QuizAttemptAnswer>();
+    public DbSet<Coupon> Coupons => Set<Coupon>();
+    public DbSet<CouponCourse> CouponCourses => Set<CouponCourse>();
     public DbSet<LearningPath> LearningPaths => Set<LearningPath>();
+
+
     public DbSet<LearningPathCourse> LearningPathCourses => Set<LearningPathCourse>();
     public DbSet<BusinessPlan> BusinessPlans => Set<BusinessPlan>();
     public DbSet<BusinessPlanFeature> BusinessPlanFeatures => Set<BusinessPlanFeature>();

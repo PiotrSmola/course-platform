@@ -13,14 +13,40 @@
           </div>
           <div class="actions" v-if="!isInstructor">
             <template v-if="authStore.isAuthenticated && !isEnrolled">
-              <button
-                v-if="isPaid"
-                class="btn btn-primary"
-                :disabled="checkoutMutation.isPending.value"
-                @click="buy"
-              >
-                {{ checkoutMutation.isPending.value ? 'Przekierowujemy...' : `Kup teraz — ${course.price} zł` }}
-              </button>
+              <div v-if="isPaid" class="checkout-box">
+                <div class="coupon-row">
+                  <input
+                    v-model="couponCode"
+                    type="text"
+                    placeholder="Kod rabatowy"
+                    :disabled="checkoutMutation.isPending.value || previewCouponMutation.isPending.value"
+                  />
+                  <button
+                    type="button"
+                    class="btn btn-ghost"
+                    :disabled="!couponCode.trim() || previewCouponMutation.isPending.value"
+                    @click="applyCoupon"
+                  >
+                    Zastosuj
+                  </button>
+                </div>
+                <p v-if="couponPreview" class="coupon-preview">
+                  Cena: {{ couponPreview.originalAmount }} zł →
+                  {{ couponPreview.finalAmount }} zł
+                  (−{{ couponPreview.discountAmount }} zł)
+                </p>
+                <button
+                  class="btn btn-primary"
+                  :disabled="checkoutMutation.isPending.value"
+                  @click="buy"
+                >
+                  {{
+                    checkoutMutation.isPending.value
+                      ? 'Przekierowujemy...'
+                      : `Kup teraz — ${displayPrice} zł`
+                  }}
+                </button>
+              </div>
               <button v-else class="btn btn-primary" @click="enroll">Zapisz się</button>
             </template>
             <router-link class="btn btn-primary" :to="{ name: 'MyCourses' }" v-else-if="authStore.isAuthenticated && isEnrolled">Przejdź do kursu</router-link>
@@ -152,7 +178,7 @@ import { toTypedSchema } from '@vee-validate/zod'
 import { useAuthStore } from '@/features/auth/stores/auth.store'
 import { useCourseDetails } from '@/features/courses/composables/useCourses'
 import { useEnroll } from '@/features/enrollment/composables/useEnrollment'
-import { useCreateCheckout } from '@/features/payments/composables/usePayments'
+import { useCreateCheckout, usePreviewCoupon } from '@/features/payments/composables/usePayments'
 import { useCreateReview, useUpdateReview, useDeleteReview } from '@/features/reviews/composables/useReviews'
 import { createReviewSchema, updateReviewSchema } from '@/features/reviews/schemas/review.schema'
 import { CourseLevel } from '@/features/courses/types/course.types'
@@ -200,10 +226,21 @@ const [editRating] = defineEditField('rating')
 const [editComment] = defineEditField('comment')
 
 const checkoutMutation = useCreateCheckout()
+const previewCouponMutation = usePreviewCoupon()
+const couponCode = ref('')
+const couponPreview = ref<{
+  originalAmount: number
+  discountAmount: number
+  finalAmount: number
+  code: string
+} | null>(null)
 
 const isInstructor = computed(() => authStore.user?.id === course.value?.instructorId)
 const isEnrolled = computed(() => course.value?.isEnrolled ?? false)
 const isPaid = computed(() => (course.value?.price ?? 0) > 0)
+const displayPrice = computed(
+  () => couponPreview.value?.finalAmount ?? course.value?.price ?? 0
+)
 
 const levelLabel = computed(() => {
   if (!course.value) return ''
@@ -220,9 +257,20 @@ const enroll = () => {
   enrollMutation.mutate(course.value.id)
 }
 
+const applyCoupon = async () => {
+  if (!course.value || !couponCode.value.trim()) return
+  couponPreview.value = await previewCouponMutation.mutateAsync({
+    courseId: course.value.id,
+    couponCode: couponCode.value.trim()
+  })
+}
+
 const buy = () => {
   if (!course.value) return
-  checkoutMutation.mutate(course.value.id)
+  checkoutMutation.mutate({
+    courseId: course.value.id,
+    couponCode: couponPreview.value?.code ?? (couponCode.value.trim() || null)
+  })
 }
 
 const onCreateSubmit = handleCreateSubmit((values) => {
@@ -343,6 +391,34 @@ watch(() => course.value?.userReviewId, () => {
 
 .actions .btn {
   padding: 14px 32px;
+}
+
+.checkout-box {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  align-items: flex-start;
+}
+
+.coupon-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+
+  input {
+    min-width: 180px;
+    border-radius: 12px;
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    background: rgba(255, 255, 255, 0.04);
+    color: inherit;
+    padding: 10px 12px;
+  }
+}
+
+.coupon-preview {
+  margin: 0;
+  color: $color-muted;
+  font-size: 0.9rem;
 }
 
 .hero-visual {

@@ -5,6 +5,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using CoursePlatform.Application.Common.Exceptions;
 using CoursePlatform.Application.Common.Interfaces;
+using CoursePlatform.Application.Features.Coupons;
 using CoursePlatform.Domain.Entities;
 using CoursePlatform.Domain.Enums;
 
@@ -12,13 +13,16 @@ namespace CoursePlatform.Application.Features.Payments.Commands.CreateCheckoutSe
 
 public record CheckoutSessionDto(string? RedirectUrl, bool Enrolled);
 
-public record CreateCheckoutSessionCommand(Guid CourseId) : IRequest<CheckoutSessionDto>;
+public record CreateCheckoutSessionCommand(Guid CourseId, string? CouponCode = null) : IRequest<CheckoutSessionDto>;
 
 public class CreateCheckoutSessionCommandValidator : AbstractValidator<CreateCheckoutSessionCommand>
 {
     public CreateCheckoutSessionCommandValidator()
     {
         RuleFor(x => x.CourseId).NotEmpty();
+        RuleFor(x => x.CouponCode)
+            .MaximumLength(64)
+            .When(x => !string.IsNullOrWhiteSpace(x.CouponCode));
     }
 }
 
@@ -81,9 +85,16 @@ public class CreateCheckoutSessionCommandHandler : IRequestHandler<CreateCheckou
             throw new ForbiddenAccessException("User not found.");
         }
 
-        if (course.Price <= 0)
+        var pricing = await CouponPricing.ResolveAsync(
+            _context,
+            course.Id,
+            course.Price,
+            request.CouponCode,
+            cancellationToken);
+
+        if (pricing.FinalAmount <= 0)
         {
-            return await EnrollForFreeAsync(userId, course, cancellationToken);
+            return await EnrollForFreeAsync(userId, course, pricing, cancellationToken);
         }
 
         if (!_paymentGateway.IsConfigured)
@@ -95,7 +106,10 @@ public class CreateCheckoutSessionCommandHandler : IRequestHandler<CreateCheckou
         {
             UserId = userId,
             CourseId = course.Id,
-            Amount = course.Price,
+            Amount = pricing.FinalAmount,
+            OriginalAmount = pricing.OriginalAmount,
+            DiscountAmount = pricing.DiscountAmount,
+            CouponId = pricing.Coupon?.Id,
             Currency = string.Empty,
             Status = PaymentStatus.Pending,
             StripeSessionId = null
@@ -111,7 +125,7 @@ public class CreateCheckoutSessionCommandHandler : IRequestHandler<CreateCheckou
                 payment.Id,
                 course.Id,
                 course.Title,
-                course.Price,
+                pricing.FinalAmount,
                 user.Email ?? string.Empty,
                 cancellationToken);
         }
@@ -134,13 +148,20 @@ public class CreateCheckoutSessionCommandHandler : IRequestHandler<CreateCheckou
         return new CheckoutSessionDto(session.RedirectUrl, false);
     }
 
-    private async Task<CheckoutSessionDto> EnrollForFreeAsync(Guid userId, Course course, CancellationToken cancellationToken)
+    private async Task<CheckoutSessionDto> EnrollForFreeAsync(
+        Guid userId,
+        Course course,
+        CouponPricingResult pricing,
+        CancellationToken cancellationToken)
     {
         var payment = new Payment
         {
             UserId = userId,
             CourseId = course.Id,
             Amount = 0,
+            OriginalAmount = pricing.OriginalAmount,
+            DiscountAmount = pricing.DiscountAmount,
+            CouponId = pricing.Coupon?.Id,
             Currency = _paymentGateway.DefaultCurrency,
             Status = PaymentStatus.Completed,
             CompletedAt = DateTime.UtcNow,
@@ -148,6 +169,14 @@ public class CreateCheckoutSessionCommandHandler : IRequestHandler<CreateCheckou
         };
 
         _context.Payments.Add(payment);
+
+        if (pricing.Coupon != null)
+        {
+            var coupon = await _context.Coupons
+                .FirstAsync(c => c.Id == pricing.Coupon.Id, cancellationToken);
+            coupon.RedeemedCount += 1;
+            coupon.MarkUpdated();
+        }
 
         _context.Enrollments.Add(new Enrollment
         {

@@ -12,6 +12,10 @@ public class Payment : BaseEntity
     public Course Course { get; set; } = null!;
 
     public decimal Amount { get; set; }
+    public decimal OriginalAmount { get; set; }
+    public decimal DiscountAmount { get; set; }
+    public Guid? CouponId { get; set; }
+    public Coupon? Coupon { get; set; }
     public string Currency { get; set; } = string.Empty;
     public PaymentStatus Status { get; set; } = PaymentStatus.Pending;
     public string? StripeSessionId { get; set; }

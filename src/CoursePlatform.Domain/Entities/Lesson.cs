@@ -14,4 +14,8 @@ public class Lesson : BaseEntity
     public Module Module { get; set; } = null!;
 
     public ICollection<LessonProgress> LessonProgresses { get; set; } = new List<LessonProgress>();
+    public ICollection<LessonQuestion> Questions { get; set; } = new List<LessonQuestion>();
+    public Quiz? Quiz { get; set; }
 }
+
+

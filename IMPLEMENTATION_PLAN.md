@@ -67,6 +67,9 @@ docker compose exec frontend npm run build
 | Frontend: katalog, learning player, checkout, panele | Gotowe |
 | Strony błędów 403 / 404 / 500 / 501 + catch-all | Gotowe |
 | Testy: unit (Application/Infrastructure), integration, Vitest, Playwright smoke | Gotowe |
+| **Etap 4 — Q&A / komentarze pod lekcjami** | Gotowe |
+| **Etap 5 — Quizy MCQ z auto-sprawdzaniem** | Gotowe |
+| **Etap 6 — Kupony rabatowe (admin + Stripe checkout)** | Gotowe |
 
 **Nie scaffolduj od zera.** Rozszerzaj istniejący kod. Nowe feature’y według konwencji CQRS / feature-based Vue.
 

@@ -11,6 +11,7 @@
         <button type="button" class="glass no-warp" :class="{ active: tab === 'courses' }" @click="tab = 'courses'">Kursy</button>
         <button type="button" class="glass no-warp" :class="{ active: tab === 'reviews' }" @click="tab = 'reviews'">Recenzje</button>
         <button type="button" class="glass no-warp" :class="{ active: tab === 'audit' }" @click="tab = 'audit'">Audit log</button>
+        <button type="button" class="glass no-warp" :class="{ active: tab === 'coupons' }" @click="tab = 'coupons'">Kupony</button>
         <button type="button" class="glass no-warp" :class="{ active: tab === 'search' }" @click="tab = 'search'">Wyszukiwarka</button>
       </div>
 
@@ -171,6 +172,10 @@
         </div>
       </section>
 
+      <section v-else-if="tab === 'coupons'" class="panel glass-card">
+        <CouponsAdminPanel />
+      </section>
+
       <section v-else class="panel search-panel">
         <SearchAdminPanel />
       </section>
@@ -183,8 +188,9 @@ import { computed, ref } from 'vue'
 import { useAdminUsers, useAdminCourses, useAdminReviews, useAdminAuditLogs, useAdminMutations } from '@/features/admin/composables/useAdmin'
 import { CourseStatus } from '@/features/courses/types/course.types'
 import SearchAdminPanel from '@/features/admin/components/SearchAdminPanel.vue'
+import CouponsAdminPanel from '@/features/admin/components/CouponsAdminPanel.vue'
 
-type AdminTab = 'users' | 'courses' | 'reviews' | 'audit' | 'search'
+type AdminTab = 'users' | 'courses' | 'reviews' | 'audit' | 'coupons' | 'search'
 const tab = ref<AdminTab>('users')
 
 const { data: usersData, isLoading: usersLoading } = useAdminUsers()

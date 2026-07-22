@@ -77,6 +77,29 @@ export async function getAdminAuditLogs(pageNumber = 1, pageSize = 50): Promise<
   return response.data
 }
 
+export async function getAdminCoupons(): Promise<import('@/features/admin/types/coupon.types').CouponDto[]> {
+  const response = await client.get('/coupons')
+  return response.data
+}
+
+export async function createAdminCoupon(
+  data: import('@/features/admin/types/coupon.types').CreateCouponRequest
+): Promise<string> {
+  const response = await client.post('/coupons', data)
+  return response.data
+}
+
+export async function updateAdminCoupon(
+  couponId: string,
+  data: import('@/features/admin/types/coupon.types').UpdateCouponRequest
+): Promise<void> {
+  await client.put(`/coupons/${couponId}`, data)
+}
+
+export async function deleteAdminCoupon(couponId: string): Promise<void> {
+  await client.delete(`/coupons/${couponId}`)
+}
+
 export async function startReindex(): Promise<StartReindexResult> {
   const response = await client.post('/admin/search/reindex')
   return response.data

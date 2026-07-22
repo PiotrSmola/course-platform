@@ -118,6 +118,18 @@ public class ProcessPaymentWebhookCommandHandler : IRequestHandler<ProcessPaymen
         payment.CompletedAt = DateTime.UtcNow;
         payment.MarkUpdated();
 
+        if (payment.CouponId.HasValue)
+        {
+            var coupon = await _context.Coupons
+                .FirstOrDefaultAsync(c => c.Id == payment.CouponId.Value, cancellationToken);
+
+            if (coupon != null)
+            {
+                coupon.RedeemedCount += 1;
+                coupon.MarkUpdated();
+            }
+        }
+
         var enrollment = new Enrollment
         {
             UserId = payment.UserId,

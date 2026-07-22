@@ -45,6 +45,8 @@
             </button>
           </div>
         </div>
+        <LessonQuizPanel :course-id="courseId" :lesson-id="lessonId" />
+        <LessonDiscussionPanel :course-id="courseId" :lesson-id="lessonId" />
       </div>
     </div>
   </div>
@@ -66,6 +68,8 @@ import { useRouter } from 'vue-router'
 import { useLesson, useCompleteLesson, useLessonVideoUrl } from '@/features/learning/composables/useLearning'
 import { useCourseDetails } from '@/features/courses/composables/useCourses'
 import CourseSidebar from '@/features/learning/components/CourseSidebar.vue'
+import LessonDiscussionPanel from '@/features/lesson-discussion/components/LessonDiscussionPanel.vue'
+import LessonQuizPanel from '@/features/quizzes/components/LessonQuizPanel.vue'
 import { toast } from '@/shared/toast/toast'
 import type { ModuleDto, LessonListDto } from '@/features/courses/types/course.types'
 

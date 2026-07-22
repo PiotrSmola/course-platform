@@ -1,6 +1,6 @@
 import { computed, readonly, ref, toValue, type MaybeRefOrGetter } from 'vue'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/vue-query'
-import { createCheckoutSession, getPaymentStatus, getMyPurchases } from '@/features/payments/api/payments.api'
+import { createCheckoutSession, getPaymentStatus, getMyPurchases, previewCoupon } from '@/features/payments/api/payments.api'
 import { PaymentStatus } from '@/features/payments/types/payment.types'
 import { toast } from '@/shared/toast/toast'
 import { getApiErrorMessage } from '@/shared/api/apiError'
@@ -9,11 +9,12 @@ import { queryKeys } from '@/shared/queryKeys'
 export function useCreateCheckout() {
   const queryClient = useQueryClient()
   return useMutation({
-    mutationFn: createCheckoutSession,
-    onSuccess: (data, courseId) => {
+    mutationFn: ({ courseId, couponCode }: { courseId: string; couponCode?: string | null }) =>
+      createCheckoutSession(courseId, couponCode),
+    onSuccess: (data, variables) => {
       if (data.enrolled) {
         queryClient.invalidateQueries({ queryKey: queryKeys.enrollments() })
-        queryClient.invalidateQueries({ queryKey: queryKeys.course(courseId) })
+        queryClient.invalidateQueries({ queryKey: queryKeys.course(variables.courseId) })
         toast.success('Zapisano na kurs')
       } else if (data.redirectUrl) {
         window.location.href = data.redirectUrl
@@ -21,6 +22,16 @@ export function useCreateCheckout() {
     },
     onError: (error) => {
       toast.error(getApiErrorMessage(error) || 'Nie udało się rozpocząć płatności')
+    }
+  })
+}
+
+export function usePreviewCoupon() {
+  return useMutation({
+    mutationFn: ({ courseId, couponCode }: { courseId: string; couponCode: string }) =>
+      previewCoupon(courseId, couponCode),
+    onError: (error) => {
+      toast.error(getApiErrorMessage(error) || 'Nieprawidłowy kod rabatowy')
     }
   })
 }

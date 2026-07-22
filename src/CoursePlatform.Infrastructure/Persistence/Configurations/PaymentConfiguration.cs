@@ -13,6 +13,12 @@ public class PaymentConfiguration : IEntityTypeConfiguration<Payment>
         builder.Property(p => p.Amount)
             .HasPrecision(18, 2);
 
+        builder.Property(p => p.OriginalAmount)
+            .HasPrecision(18, 2);
+
+        builder.Property(p => p.DiscountAmount)
+            .HasPrecision(18, 2);
+
         builder.Property(p => p.Currency)
             .IsRequired()
             .HasMaxLength(3);
@@ -34,5 +40,10 @@ public class PaymentConfiguration : IEntityTypeConfiguration<Payment>
             .WithMany()
             .HasForeignKey(p => p.CourseId)
             .OnDelete(DeleteBehavior.Restrict);
+
+        builder.HasOne(p => p.Coupon)
+            .WithMany(c => c.Payments)
+            .HasForeignKey(p => p.CouponId)
+            .OnDelete(DeleteBehavior.SetNull);
     }
 }

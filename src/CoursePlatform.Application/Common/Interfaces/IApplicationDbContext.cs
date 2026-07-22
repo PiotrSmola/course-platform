@@ -14,7 +14,17 @@ public interface IApplicationDbContext
     DbSet<Enrollment> Enrollments { get; }
     DbSet<LessonProgress> LessonProgresses { get; }
     DbSet<Review> Reviews { get; }
+    DbSet<LessonQuestion> LessonQuestions { get; }
+    DbSet<LessonAnswer> LessonAnswers { get; }
+    DbSet<Quiz> Quizzes { get; }
+    DbSet<QuizQuestion> QuizQuestions { get; }
+    DbSet<QuizOption> QuizOptions { get; }
+    DbSet<QuizAttempt> QuizAttempts { get; }
+    DbSet<QuizAttemptAnswer> QuizAttemptAnswers { get; }
+    DbSet<Coupon> Coupons { get; }
+    DbSet<CouponCourse> CouponCourses { get; }
     DbSet<LearningPath> LearningPaths { get; }
+
     DbSet<LearningPathCourse> LearningPathCourses { get; }
     DbSet<BusinessPlan> BusinessPlans { get; }
     DbSet<BusinessPlanFeature> BusinessPlanFeatures { get; }

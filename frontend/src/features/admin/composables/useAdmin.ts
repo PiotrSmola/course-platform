@@ -7,12 +7,20 @@ import {
   updateCourseStatus,
   deleteReview,
   getAdminReviews,
-  getAdminAuditLogs
+  getAdminAuditLogs,
+  getAdminCoupons,
+  createAdminCoupon,
+  updateAdminCoupon,
+  deleteAdminCoupon
 } from '@/features/admin/api/admin.api'
 import { queryKeys } from '@/shared/queryKeys'
 import { toast } from '@/shared/toast/toast'
 import { getApiErrorMessage } from '@/shared/api/apiError'
 import type { CourseStatus } from '@/features/courses/types/course.types'
+import type {
+  CreateCouponRequest,
+  UpdateCouponRequest
+} from '@/features/admin/types/coupon.types'
 
 export function useAdminUsers() {
   return useQuery({
@@ -39,6 +47,13 @@ export function useAdminAuditLogs(pageNumber: MaybeRefOrGetter<number> = 1, page
   return useQuery({
     queryKey: computed(() => queryKeys.adminAuditLogs(toValue(pageNumber), toValue(pageSize))),
     queryFn: () => getAdminAuditLogs(toValue(pageNumber), toValue(pageSize))
+  })
+}
+
+export function useAdminCoupons() {
+  return useQuery({
+    queryKey: queryKeys.adminCoupons(),
+    queryFn: getAdminCoupons
   })
 }
 
@@ -77,5 +92,40 @@ export function useAdminMutations() {
     onError: (error) => toast.error(getApiErrorMessage(error) || 'Nie udało się usunąć recenzji')
   })
 
-  return { assignRole, setCourseStatus, removeReview }
+  const createCoupon = useMutation({
+    mutationFn: (data: CreateCouponRequest) => createAdminCoupon(data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.adminCoupons() })
+      toast.success('Kupon utworzony')
+    },
+    onError: (error) => toast.error(getApiErrorMessage(error) || 'Nie udało się utworzyć kuponu')
+  })
+
+  const updateCoupon = useMutation({
+    mutationFn: ({ couponId, data }: { couponId: string; data: UpdateCouponRequest }) =>
+      updateAdminCoupon(couponId, data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.adminCoupons() })
+      toast.success('Kupon zaktualizowany')
+    },
+    onError: (error) => toast.error(getApiErrorMessage(error) || 'Nie udało się zaktualizować kuponu')
+  })
+
+  const removeCoupon = useMutation({
+    mutationFn: (couponId: string) => deleteAdminCoupon(couponId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.adminCoupons() })
+      toast.success('Kupon usunięty')
+    },
+    onError: (error) => toast.error(getApiErrorMessage(error) || 'Nie udało się usunąć kuponu')
+  })
+
+  return {
+    assignRole,
+    setCourseStatus,
+    removeReview,
+    createCoupon,
+    updateCoupon,
+    removeCoupon
+  }
 }
