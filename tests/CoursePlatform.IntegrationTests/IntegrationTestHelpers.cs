@@ -11,18 +11,37 @@ namespace CoursePlatform.IntegrationTests;
 
 internal static class IntegrationTestHelpers
 {
-    public static async Task<AuthResponse> RegisterAsync(HttpClient client, string? email = null)
+    public static async Task<AuthResponse> RegisterAndLoginAsync(
+        HttpClient client,
+        CustomWebApplicationFactory factory,
+        string? email = null,
+        string password = "Student123!")
     {
         email ??= $"user-{Guid.NewGuid():N}@example.com";
-        var response = await client.PostAsJsonAsync("/api/auth/register", new
+        var registerResponse = await client.PostAsJsonAsync("/api/auth/register", new
         {
             Email = email,
-            Password = "Student123!",
+            Password = password,
             FirstName = "Test",
             LastName = "User"
         });
-        response.EnsureSuccessStatusCode();
-        return (await response.Content.ReadFromJsonAsync<AuthResponse>())!;
+        registerResponse.EnsureSuccessStatusCode();
+
+        using (var scope = factory.Services.CreateScope())
+        {
+            var userManager = scope.ServiceProvider.GetRequiredService<UserManager<ApplicationUser>>();
+            var user = await userManager.FindByEmailAsync(email);
+            user.Should().NotBeNull();
+            var token = await userManager.GenerateEmailConfirmationTokenAsync(user!);
+            var confirmResponse = await client.PostAsJsonAsync("/api/auth/confirm-email", new
+            {
+                Email = email,
+                Token = token
+            });
+            confirmResponse.EnsureSuccessStatusCode();
+        }
+
+        return await LoginAsync(client, email, password);
     }
 
     public static async Task<AuthResponse> LoginAsync(HttpClient client, string email, string password = "Student123!")

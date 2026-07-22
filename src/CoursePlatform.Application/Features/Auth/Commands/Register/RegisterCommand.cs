@@ -13,28 +13,32 @@ public record RegisterCommand(
     string Email,
     string Password,
     string FirstName,
-    string LastName) : IRequest<AuthResponse>;
+    string LastName) : IRequest<RegisterResponse>;
 
-public class RegisterCommandHandler : IRequestHandler<RegisterCommand, AuthResponse>
+public record RegisterResponse(
+    Guid Id,
+    string? Email,
+    string FirstName,
+    string LastName,
+    string Message);
+
+public class RegisterCommandHandler : IRequestHandler<RegisterCommand, RegisterResponse>
 {
     private readonly IIdentityService _identityService;
-    private readonly IJwtTokenGenerator _jwtTokenGenerator;
     private readonly IEmailQueue _emailQueue;
     private readonly FrontendOptions _frontendOptions;
 
     public RegisterCommandHandler(
         IIdentityService identityService,
-        IJwtTokenGenerator jwtTokenGenerator,
         IEmailQueue emailQueue,
         IOptions<FrontendOptions> frontendOptions)
     {
         _identityService = identityService;
-        _jwtTokenGenerator = jwtTokenGenerator;
         _emailQueue = emailQueue;
         _frontendOptions = frontendOptions.Value;
     }
 
-    public async Task<AuthResponse> Handle(RegisterCommand request, CancellationToken cancellationToken)
+    public async Task<RegisterResponse> Handle(RegisterCommand request, CancellationToken cancellationToken)
     {
         var user = new ApplicationUser
         {
@@ -72,10 +76,11 @@ public class RegisterCommandHandler : IRequestHandler<RegisterCommand, AuthRespo
         {
         }
 
-        var roles = await _identityService.GetRolesAsync(user, cancellationToken);
-        var token = _jwtTokenGenerator.GenerateToken(user, roles);
-        var refreshToken = await _identityService.CreateRefreshTokenAsync(user.Id, cancellationToken);
-
-        return new AuthResponse(user.Id, user.Email, user.FirstName, user.LastName, token, refreshToken.RawToken, roles.ToList());
+        return new RegisterResponse(
+            user.Id,
+            user.Email,
+            user.FirstName,
+            user.LastName,
+            "Konto utworzone. Potwierdź adres email, zanim się zalogujesz.");
     }
 }

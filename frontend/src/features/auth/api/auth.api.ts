@@ -1,5 +1,5 @@
 import client from '@/shared/api/client'
-import type { AuthResponse, CurrentUser } from '@/features/auth/types/auth.types'
+import type { AuthResponse, CurrentUser, RegisterResponse } from '@/features/auth/types/auth.types'
 
 export interface LoginRequest {
   email: string
@@ -31,7 +31,7 @@ export async function login(data: LoginRequest): Promise<AuthResponse> {
   return response.data
 }
 
-export async function register(data: RegisterRequest): Promise<AuthResponse> {
+export async function register(data: RegisterRequest): Promise<RegisterResponse> {
   const response = await client.post('/auth/register', data)
   return response.data
 }

@@ -1,7 +1,6 @@
 using MediatR;
 using FluentValidation;
 using FluentValidation.Results;
-using CoursePlatform.Domain.Entities;
 using CoursePlatform.Application.Common.Interfaces;
 
 namespace CoursePlatform.Application.Features.Auth.Commands.Login;
@@ -28,6 +27,22 @@ public class LoginCommandHandler : IRequestHandler<LoginCommand, AuthResponse>
         }
 
         var result = await _identityService.CheckPasswordAsync(user, request.Password, cancellationToken);
+        if (result == AuthPasswordVerificationResult.NotAllowed)
+        {
+            throw new ValidationException(new[]
+            {
+                new ValidationFailure("Email", "Potwierdź adres email przed zalogowaniem.")
+            });
+        }
+
+        if (result == AuthPasswordVerificationResult.LockedOut)
+        {
+            throw new ValidationException(new[]
+            {
+                new ValidationFailure("Email", "Konto jest tymczasowo zablokowane. Spróbuj ponownie później.")
+            });
+        }
+
         if (result != AuthPasswordVerificationResult.Success)
         {
             throw new ValidationException(new[] { new ValidationFailure("Password", "Invalid email or password.") });

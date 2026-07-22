@@ -221,9 +221,9 @@ Auth to nie tylko token. Course Platform w `Program.cs` dokłada:
   `localStorage` — to OK lokalnie; cookie `HttpOnly` to krok produkcyjny (🔴, niżej).
 - **Forgot/reset password** — `POST /api/auth/forgot-password` wysyła link resetujący (MailHog w dev); reset
   unieważnia wszystkie refresh tokeny usera.
-- **Confirm email** — po rejestracji idzie mail z linkiem potwierdzającym (token Identity); endpoint
-  `POST /api/auth/confirm-email`. Login **nie** wymaga jeszcze `EmailConfirmed` (świadomy kompromis demo) —
-  warto wiedzieć, że Identity umie to wymusić (`RequireConfirmedAccount`).
+- **Confirm email** — po rejestracji idzie mail z linkiem; endpoint `POST /api/auth/confirm-email`.
+  Identity ma `SignIn.RequireConfirmedAccount = true`, więc login przed potwierdzeniem kończy się błędem
+  (komunikat o konieczności potwierdzenia). Rejestracja **nie** wydaje JWT — tokeny dopiero po confirm + login.
 - **HTML sanitization** — treści od userów (opisy, recenzje) są czyszczone z niebezpiecznego HTML (`IHtmlSanitizer`),
   żeby uniknąć XSS.
 

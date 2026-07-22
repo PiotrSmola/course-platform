@@ -8,6 +8,14 @@ export interface AuthResponse {
   roles: string[]
 }
 
+export interface RegisterResponse {
+  id: string
+  email: string | null
+  firstName: string
+  lastName: string
+  message: string
+}
+
 export interface CurrentUser {
   id: string
   email: string | null
