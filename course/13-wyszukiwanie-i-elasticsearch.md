@@ -6,8 +6,9 @@
 
 Wyszukiwanie to funkcja, która „jakoś działa" na `LIKE`, a potem — przy wzroście danych i wymagań — okazuje się
 za słaba. Musisz wiedzieć, jak wygląda ścieżka: **SQL `LIKE` → Postgres Full Text Search → Elasticsearch**, i
-kiedy zrobić kolejny krok. Course Platform jest na pierwszym etapie tej ścieżki — pokażę, co robi teraz i dokąd
-to skaluje.
+kiedy zrobić kolejny krok. Course Platform ma **dual-mode search** przez `ICourseSearchService`: gdy
+`Elastic:Enabled=true` (domyślnie w Compose), działa `ElasticCourseSearchService`; w przeciwnym razie fallback
+to `EfCourseSearchService` (`LIKE` + `ToLower()` w PostgreSQL).
 
 ## Mostek z tego, co już znasz
 
@@ -17,10 +18,11 @@ trafności i funkcjami, których SQL nie ma.
 
 ---
 
-## Etap 1: `LIKE` + `ToLower()` (jak w Course Platform dziś)
+## Etap 1: `LIKE` + `ToLower()` — fallback (`EfCourseSearchService`)
 
-Course Platform wyszukuje kursy w [GetCoursesQuery](../src/CoursePlatform.Application/Features/Courses/Queries/GetCourses/GetCoursesQuery.cs)
-przez EF i `EF.Functions.Like`, z `ToLower()` po obu stronach dla **niewrażliwości na wielkość liter**:
+Gdy Elasticsearch jest wyłączony (`Elastic:Enabled=false`) albo jako ścieżka awaryjna, wyszukiwanie idzie przez
+[EfCourseSearchService](../src/CoursePlatform.Infrastructure/Search/EfCourseSearchService.cs) — EF i
+`EF.Functions.Like`, z `ToLower()` po obu stronach dla **niewrażliwości na wielkość liter**:
 
 ```csharp
 var search = $"%{request.SearchTerm.Trim().ToLower()}%";
@@ -31,6 +33,8 @@ query = query.Where(c =>
     c.Categories.Any(cat => EF.Functions.Like(cat.Name.ToLower(), search)) ||
     c.Technologies.Any(tech => EF.Functions.Like(tech.Name.ToLower(), search)));
 ```
+
+`GetCoursesQuery` deleguje wyszukiwanie do `ICourseSearchService` — handler nie wie, czy pod spodem jest ES czy EF.
 
 `c.Title.ToLower()` tłumaczy się na SQL `lower("Title")`, więc „vue" znajdzie „Vue 3". To poprawne i wystarczające
 na małą/średnią skalę.
@@ -140,7 +144,8 @@ także do logów, [11](./11-logowanie-serilog.md)). Znać różnicę „SQL sear
 
 | Sytuacja | Wybór |
 |----------|-------|
-| Mała/średnia baza, proste szukanie | `LIKE` + `ToLower()` (Course Platform dziś) |
+| Mała/średnia baza, proste szukanie, ES wyłączony | `LIKE` + `ToLower()` (`EfCourseSearchService`) |
+| Dev Compose z `Elastic:Enabled=true` | **Elasticsearch** (`ElasticCourseSearchService`) + fallback EF |
 | Rosnąca baza, potrzebny ranking/wydajność, jedna baza | **PostgreSQL FTS** |
 | Fuzzy, synonimy, facety, ogromna skala, analityka | **Elasticsearch** |
 
@@ -160,8 +165,8 @@ także do logów, [11](./11-logowanie-serilog.md)). Znać różnicę „SQL sear
 
 ## Ćwiczenia
 
-1. 🟢 **Prześledź szukanie.** W `GetCoursesQuery` wskaż, po których polach szuka `SearchTerm` i jak osiągnięto
-   niewrażliwość na wielkość liter.
+1. 🟢 **Prześledź dual-mode.** Otwórz `ICourseSearchService`, `DependencyInjection.cs` (rejestracja ES vs EF) i
+   `GetCoursesQueryHandler`. Wskaż, po których polach szuka `SearchTerm` i kiedy używany jest który backend.
 2. 🟢 **Test na danych.** Uruchom projekt z seedem i zawołaj `GET /api/courses?searchTerm=vue` oraz `?searchTerm=VUE`.
    Czy wyniki są takie same? Dlaczego?
 3. 🟡 **Granice LIKE.** Wypisz 3 rzeczy, których obecne wyszukiwanie nie potrafi (ranking, fuzzy, facety…) i podaj
@@ -171,7 +176,8 @@ także do logów, [11](./11-logowanie-serilog.md)). Znać różnicę „SQL sear
 
 ## Pytania kontrolne
 
-1. Jak Course Platform osiąga wyszukiwanie niewrażliwe na wielkość liter i na jaki SQL się to tłumaczy?
+1. Jak Course Platform osiąga wyszukiwanie niewrażliwe na wielkość liter w ścieżce EF (`EfCourseSearchService`)
+   i na jaki SQL się to tłumaczy? Kiedy używany jest Elasticsearch zamiast EF?
 2. Dlaczego migracja z kolacją nie zadziałała i jak problem rozwiązano?
 3. Wymień 3 ograniczenia `LIKE` jako mechanizmu wyszukiwania.
 4. Czym jest PostgreSQL FTS i kiedy wybrać go zamiast Elasticsearch?
@@ -181,8 +187,9 @@ także do logów, [11](./11-logowanie-serilog.md)). Znać różnicę „SQL sear
 <details>
 <summary>Rozwiązania</summary>
 
-1. Przez `EF.Functions.Like(c.Title.ToLower(), "%term%")` — `ToLower()` tłumaczy się na SQL `lower(...)`, więc
-   porównanie ignoruje wielkość liter.
+1. W ścieżce EF: `EF.Functions.Like(c.Title.ToLower(), "%term%")` → SQL `lower(...) LIKE lower(...)`. Gdy
+   `Elastic:Enabled=true`, `GetCoursesQuery` idzie przez `ElasticCourseSearchService` (multi-match, fuzzy); EF
+   zostaje fallbackiem przy wyłączonym ES.
 2. Kolacja `und-x-icu` była deterministyczna, a `LIKE` na niej pozostawał case-sensitive (a niedeterministyczne
    kolacje nie współpracują z `LIKE`). Cofnięto migrację i użyto `ToLower()`.
 3. Wolne na dużych tabelach (full scan), brak rankingu trafności, brak fuzzy/synonimów/facetów.

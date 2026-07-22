@@ -170,8 +170,10 @@ connection.on('ReviewAdded', (payload) => { /* zaktualizuj UI */ })
 > **Auth w SignalR:** token często idzie w query string / przez `accessTokenFactory`, bo WebSocket nie zawsze
 > przenosi nagłówki jak `fetch`.
 
-**Gdzie w Course Platform by pasowało:** live licznik studentów na kursie, powiadomienie instruktora o nowej
-recenzji. Dziś front odświeża przez Vue Query (pull), nie push — i to jest OK na obecnym etapie.
+**Gdzie w Course Platform:** `NotificationHub` pod `/hubs/notifications`
+([Infrastructure/Hubs/NotificationHub.cs](../src/CoursePlatform.Infrastructure/Hubs/NotificationHub.cs)) — user
+dołącza do grupy `user:{id}`, admin do `admins`. Powiadomienia wysyła `SignalRNotificationService` (np. po nowej
+recenzji). Front: composable `useRealtime()` w `App.vue` łączy się z hubem i odbiera eventy (Vue Query invalidation).
 
 ---
 
@@ -221,8 +223,8 @@ Pakiet `Gridify`. Popularne w mniejszych API.
    GraphQL. Wskaż, gdzie GraphQL wygrywa (over/under-fetching).
 2. 🟢 **Dobór narzędzia.** Do każdego scenariusza dobierz technologię: (a) czat na żywo, (b) wewnętrzne wołanie
    Payments→Courses, (c) publiczne proste API, (d) mobilny klient chcący różne kształty danych.
-3. 🟡 **SignalR (projekt).** Zaprojektuj powiadomienie instruktora o nowej recenzji: jaki hub, jaka grupa, skąd
-   wywołasz `SendAsync` (który handler), jak klient Vue się podłączy.
+3. 🟡 **Prześledź SignalR w CP.** Otwórz `NotificationHub`, `SignalRNotificationService` i `useRealtime.ts`.
+   Opisz: jakie grupy, skąd leci `SendAsync`, jak front się podłącza i co robi po evencie.
 4. 🔴 **GraphQL bezpieczeństwo.** Wyjaśnij, czemu potrzebny jest depth/complexity limiting i jak DataLoader
    rozwiązuje N+1.
 

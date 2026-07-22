@@ -245,7 +245,7 @@ Handler lekcji woła to i rzuca `ForbiddenAccessException` (→ 403), jeśli bra
 | **Repository** | Abstrakcja nad `DbSet` | Zbędny — `DbContext` już jest abstrakcją + UoW |
 | **Unit of Work** | Grupuje zapisy w transakcję | To robi `DbContext.SaveChanges` |
 | **Mediator** | Rozłącza nadawcę od handlera | MediatR ✅ |
-| **Polly** | Retry / circuit breaker przy wołaniu zewn. API | (przyda się w płatnościach) |
+| **Polly** | Retry / circuit breaker przy wołaniu zewn. API | ✅ outbound resilience (MinIO, Stripe, Elasticsearch) |
 
 ### 🔴 Outbox i Saga — tylko „istnieje, kiedy"
 

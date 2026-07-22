@@ -185,8 +185,8 @@ public class StripePaymentClient(HttpClient http) : IPaymentClient
 }
 ```
 
-Fabryka zarządza pulą połączeń i ich cyklem życia. Course Platform (etap 1) nie woła zewnętrznych API, ale to
-wiedza „na rozmowę i na płatności w etapie 3".
+Fabryka zarządza pulą połączeń i ich cyklem życia. Course Platform woła zewnętrzne API (MinIO, Stripe,
+Elasticsearch) — klienty HTTP mają resilience przez **Polly** (retry przy chwilowych błędach sieci).
 
 ---
 

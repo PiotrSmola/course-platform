@@ -155,11 +155,12 @@ cache'owało sensowne kształty), a nie surowe encje ([05](./05-kontrolery-minim
 
 ---
 
-## SignalR + Vue (gdy potrzebny real-time)
+## SignalR + Vue (real-time w Course Platform)
 
-Jeśli kiedyś dojdzie push (powiadomienia, live licznik) — z frontu podłączasz się `@microsoft/signalr` do huba,
-z tokenem przez `accessTokenFactory` (szczegóły w [14](./14-komunikacja-graphql-grpc-signalr.md)). Dziś Course
-Platform odświeża dane przez Vue Query (pull), co jest OK.
+Push jest już podpięty: composable **`useRealtime()`** ([frontend/src/shared/composables/useRealtime.ts](../frontend/src/shared/composables/useRealtime.ts))
+łączy się z `NotificationHub` (`/hubs/notifications`) przez `@microsoft/signalr`, przekazuje JWT przez
+`accessTokenFactory` i reaguje na eventy (invalidacja Vue Query). Wołany z `App.vue` przy starcie aplikacji.
+Szczegóły huba po stronie backendu: [14](./14-komunikacja-graphql-grpc-signalr.md).
 
 ---
 

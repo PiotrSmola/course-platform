@@ -48,8 +48,9 @@ Globalna mapa poziomów:
 20               Spięcie: plan nauki, indeks ćwiczeń, checklist, słownik
 ```
 
-Nie przeskakuj rozdziałów 🟡 — one się na sobie opierają. Rozdziały 🔴 i „panorama" (Redis, SignalR, GraphQL,
-Kubernetes…) możesz przelecieć pobieżnie i wrócić, gdy pojawią się w pracy.
+Nie przeskakuj rozdziałów 🟡 — one się na sobie opierają. Rozdziały 🔴 i „panorama" (GraphQL, Hangfire, Kafka,
+Kubernetes…) możesz przelecieć pobieżnie i wrócić, gdy pojawią się w pracy — część z nich (Redis, Elasticsearch,
+SignalR, MinIO) **już działa w Course Platform**, ale nie musisz od razu zgłębiać każdego detalu implementacji.
 
 ---
 
@@ -80,16 +81,23 @@ w Dockerze.
 ```bash
 # w katalogu repozytorium
 cp .env.example .env          # uzupełnij sekrety (Jwt:Key min. 32 znaki itp.)
-docker compose up -d          # wstaje db + api + frontend
+docker compose up -d          # wstaje pełny stack (db, api, frontend, redis, ES, MinIO…)
 ```
 
-Co dostajesz:
+Co dostajesz (rdzeń dev):
 
 | Kontener | Usługa (Compose) | Port (host) | Co to |
 |----------|------------------|-------------|-------|
 | `cp_api` | `api` | **8080** | Backend ASP.NET Core 9 (`dotnet watch run` — auto-reload) |
 | `cp_frontend` | `frontend` | **5173** | Frontend Vue 3 (Vite, hot reload) |
 | `cp_db` | `db` | **5432** | PostgreSQL 16 |
+| `cp_redis` | `redis` | **6379** | Redis 7 (HybridCache / distributed cache) |
+| `cp_elasticsearch` | `elasticsearch` | **9200** | Elasticsearch 8 (wyszukiwanie kursów, gdy `Elastic:Enabled`) |
+| `cp_minio` | `minio` | **9000** / **9001** | MinIO (S3-compatible storage: wideo, miniatury, PDF certyfikatów) |
+| `cp_minio_init` | `minio_init` | — | Jednorazowa inicjalizacja bucketu MinIO |
+| `cp_mailhog` | `mailhog` | **8025** | Przechwytywanie maili dev (UI w przeglądarce) |
+| `cp_aspire` | `aspire-dashboard` | **18888** / **18889** | OpenTelemetry / Aspire Dashboard (logi, trace) |
+| `cp_stripe_cli` | `stripe_cli` | — | Opcjonalny profil `stripe` — forward webhooków Stripe do API |
 
 Komendy .NET/EF/npm odpalasz **wewnątrz kontenerów**:
 
@@ -145,10 +153,10 @@ Dapr…) traktuję jednozdaniową wzmianką.
 | 26 | DI Containers | 08 | ✅ built-in |
 | 27 | Microsoft.Extensions | 08 | ✅ |
 | 28 | Scoped/Transient/Singleton | 08 | ✅ |
-| 29 | Memory Cache | 12 | — |
-| 30 | Distributed Cache | 12 | — |
-| 31 | Redis | 12 | — |
-| 32 | Elasticsearch | 13 | — (dziś `ToLower`+`Like`) |
+| 29 | Memory Cache | 12 | ✅ HybridCache (`IAppCache`) |
+| 30 | Distributed Cache | 12 | ✅ HybridCache + Redis |
+| 31 | Redis | 12 | ✅ (`cp_redis`) |
+| 32 | Elasticsearch | 13 | ✅ dual-mode (`Elastic:Enabled` → ES, fallback `LIKE`) |
 | 33 | SQL Server | 07 | — (PostgreSQL) |
 | 34 | Relational | 06, 07 | ✅ |
 | 35 | DynamoDB | 06 | — (wzmianka) |
@@ -156,9 +164,9 @@ Dapr…) traktuję jednozdaniową wzmianką.
 | 37 | Serilog | 11 | ✅ |
 | 38 | Gridify | 14 | — |
 | 39 | HotChocolate | 14 | — |
-| 40 | SignalR Core | 14 | — |
+| 40 | SignalR Core | 14 | ✅ `NotificationHub` + `useRealtime` |
 | 41 | Manual Mapping | 09 | ✅ `Select()` |
-| 42 | Native Background Service | 15 | — |
+| 42 | Native Background Service | 15 | ✅ EmailDispatcher, RefreshTokenCleanup, StaleMultipartUploadCleanup |
 | 43 | Hangfire | 15 | — |
 | 44 | xUnit | 16 | ✅ |
 | 45 | Shouldly | 16 | ❌ (projekt: FluentAssertions 8.0.0) |
@@ -166,7 +174,7 @@ Dapr…) traktuję jednozdaniową wzmianką.
 | 47 | AutoFixture | 16 | — |
 | 48 | WebApplicationFactory | 16 | ✅ |
 | 49 | Testcontainers | 16 | wzmianka |
-| 50 | Playwright | 16 | — |
+| 50 | Playwright | 16 | ✅ smoke E2E w `frontend/` (Vitest + Playwright) |
 | 51 | SpecFlow | 16 | — |
 | 52 | RabbitMQ | 15 | — |
 | 53 | MassTransit | 15 | — |

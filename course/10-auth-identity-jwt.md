@@ -130,7 +130,7 @@ To middleware `UseAuthentication()` przy każdym żądaniu odczytuje token, wery
 2. LoginCommandHandler:
      UserManager.FindByEmailAsync → SignInManager.CheckPasswordSignInAsync (sprawdza hash, lockout)
      UserManager.GetRolesAsync → JwtTokenGenerator.GenerateToken(user, roles)
-3. odpowiedź: { id, email, firstName, lastName, token, roles }
+3. odpowiedź: { id, email, firstName, lastName, token, refreshToken, roles }
 4. Vue zapisuje token → dokłada go w axios: Authorization: Bearer <token>
 5. Każde kolejne żądanie: UseAuthentication weryfikuje token → HttpContext.User
 6. [Authorize] / handler sprawdza uprawnienia → 200 / 401 / 403
@@ -166,13 +166,21 @@ var token = _jwtTokenGenerator.GenerateToken(user, roles);
 public async Task<ActionResult<CurrentUserDto?>> GetCurrentUser(CancellationToken ct) { /* ... */ }
 ```
 
-### 2. Czy ma rolę (`[Authorize(Roles=...)]`)
+### 2. Czy ma rolę lub politykę (`[Authorize(Roles=...)]`, `[Authorize(Policy=...)]`)
 
 ```csharp
 [HttpPost]
-[Authorize(Roles = "Instructor,Admin")]   // zalogowany, ale bez roli → 403
+[Authorize(Policy = AuthorizationPolicies.InstructorOrAdmin)]   // Instructor lub Admin
 public async Task<ActionResult<Guid>> CreateCourse(CreateCourseCommand command, CancellationToken ct) { /* ... */ }
+
+[HttpPut("{id}")]
+[Authorize(Policy = AuthorizationPolicies.ManageCourse)]        // właściciel kursu lub Admin (resource-based)
+public async Task<ActionResult> UpdateCourse(Guid id, UpdateCourseCommand command, CancellationToken ct) { /* ... */ }
 ```
+
+Polityki `InstructorOrAdmin` i `ManageCourse` ([AuthorizationPolicies](../src/CoursePlatform.Application/Common/Authorization/AuthorizationPolicies.cs))
+to warstwa „czy w ogóle wolno" — ale **dostęp do konkretnej treści** (np. lekcji) nadal weryfują handlery
+(resource-based, niżej).
 
 ### 3. Resource-based — czy ma dostęp do KONKRETNEGO zasobu (najważniejsze)
 
@@ -208,21 +216,32 @@ Auth to nie tylko token. Course Platform w `Program.cs` dokłada:
 - **Security headers** (`SecurityHeadersMiddleware`) — CSP, `X-Content-Type-Options` itd.
 - **Walidacja konfiguracji JWT przy starcie** — klucz min. 32 bajty, nie placeholder ([03](./03-pierwsza-aplikacja-host-program-cs.md)).
 - **Lockout** — blokada konta po 5 nieudanych logowaniach.
+- **Refresh tokens** — login/rejestracja zwracają `refreshToken`; endpoint `POST /api/auth/refresh` wymienia go na
+  nową parę access+refresh (rotacja, unieważnianie przy logout/reset hasła). Front trzyma oba tokeny w
+  `localStorage` — to OK lokalnie; cookie `HttpOnly` to krok produkcyjny (🔴, niżej).
+- **Forgot/reset password** — `POST /api/auth/forgot-password` wysyła link resetujący (MailHog w dev); reset
+  unieważnia wszystkie refresh tokeny usera.
+- **Confirm email** — po rejestracji idzie mail z linkiem potwierdzającym (token Identity); endpoint
+  `POST /api/auth/confirm-email`. Login **nie** wymaga jeszcze `EmailConfirmed` (świadomy kompromis demo) —
+  warto wiedzieć, że Identity umie to wymusić (`RequireConfirmedAccount`).
 - **HTML sanitization** — treści od userów (opisy, recenzje) są czyszczone z niebezpiecznego HTML (`IHtmlSanitizer`),
   żeby uniknąć XSS.
 
 ---
 
-## 🔴 Refresh tokens i cookies — dokąd to idzie
+## 🔴 Refresh tokens — co jest, a co jeszcze 🔴
 
-Course Platform trzyma jeden JWT (ważny np. 120 min) i front trzyma go w `localStorage`. To praktyczne lokalnie,
-ale przy publicznym serwerze rozważa się:
+Course Platform **ma już** refresh tokeny: login/rejestracja zwracają parę `token` + `refreshToken`, a
+`POST /api/auth/refresh` ([RefreshTokenCommand](../src/CoursePlatform.Application/Features/Auth/Commands/RefreshToken/RefreshTokenCommand.cs))
+wymienia ważny refresh na nową parę (rotacja — stary token jest unieważniany). Access JWT żyje np. 120 min;
+refresh dłużej (domyślnie 7 dni). Front trzyma oba w `localStorage` i woła refresh, gdy access wygaśnie.
 
-- **Krótki access token + refresh token** — access żyje kilka minut, refresh (dłuższy) służy do cichego odnawiania.
+To, co nadal jest tematem produkcyjnym (🔴):
+
 - **Token w cookie `HttpOnly; Secure; SameSite`** zamiast `localStorage` — bo `localStorage` jest dostępny dla
   JS, więc XSS może wykraść token. `HttpOnly` cookie nie jest widoczne dla JS.
 
-To temat produkcyjny (🔴), nie fundament — ale warto go znać, bo pada na rozmowach o bezpieczeństwie.
+Wiedz, co już działa w projekcie, a co to świadomy kompromis dev — to pada na rozmowach o bezpieczeństwie.
 
 ---
 
@@ -248,8 +267,9 @@ To temat produkcyjny (🔴), nie fundament — ale warto go znać, bo pada na ro
    do zwrócenia tokenu.
 4. 🟡 **Resource-based w akcji.** Jako Student **niezapisany** na kurs zawołaj `GET /api/courses/{id}/lessons/{id}`.
    Jaki kod? Który fragment kodu go zwrócił? Potem zapisz się (`POST /enroll`) i spróbuj ponownie.
-5. 🔴 **Projekt refresh.** Naszkicuj (na papierze) dodanie refresh tokenów: jakie endpointy, gdzie trzymać
-   refresh, jak odnawiać access, jak unieważnić. Jakie ryzyka `localStorage` vs cookie `HttpOnly`?
+5. 🔴 **Prześledź refresh.** Otwórz `RefreshTokenCommandHandler` i opisz flow: skąd bierze się `refreshToken` przy
+   loginie, co robi `/auth/refresh`, kiedy token jest unieważniany (logout, reset hasła). Porównaj z ryzykiem
+   `localStorage` vs cookie `HttpOnly`.
 
 ## Pytania kontrolne
 

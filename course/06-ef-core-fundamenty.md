@@ -248,8 +248,9 @@ liczą się relacje i transakcje (enrollmenty, płatności). W Course Platform r
 3. 🟡 **Nowe pole + migracja.** Dodaj do `Course` property `Subtitle` (string, opcjonalny, max 300). Skonfiguruj
    w `CourseConfiguration`, wygeneruj migrację i zaaplikuj. *Done, gdy* `dotnet ef database update` przechodzi, a
    w bazie jest nowa kolumna.
-4. 🟡 **Nowa encja.** Zaprojektuj encję `Certificate` (user + kurs + data wydania) z unikalnym constraintem
-   „jeden certyfikat na parę user+kurs". Napisz encję + konfigurację (bez pełnej integracji z API).
+4. 🟡 **Prześledź encję Certificate.** Otwórz istniejącą encję `Certificate`, `CertificateConfiguration` i
+   `CertificateIssuer`. Wypisz relacje (user, kurs), unikalny constraint i pola (`Number`, `IssuedAt`, `PdfObjectKey`).
+   Porównaj z tym, co sam byś zaprojektował.
 5. 🔴 **Kaskady.** Prześledź, co się stanie z `Module` i `Lesson` przy usunięciu `Course` (sprawdź `OnDelete` w
    konfiguracjach). Czy to bezpieczne? Co byś zmienił i dlaczego?
 

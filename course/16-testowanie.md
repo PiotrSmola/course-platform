@@ -6,7 +6,9 @@
 
 Testy to nie „miły dodatek" — to sposób, by zmieniać kod bez strachu i by na rozmowie pokazać, że rozumiesz
 jakość. Junior, który umie napisać sensowny test handlera i walidatora, wyróżnia się. Course Platform ma realne
-testy (xUnit + FluentAssertions + Moq + WebApplicationFactory) — prześledzimy je i nauczysz się dokładać własne.
+testy (xUnit + FluentAssertions + Moq + WebApplicationFactory) — plus **ArchitectureTests** (NetArchTest:
+reguły Clean Architecture) i testy integracyjne API (`AuthApiTests`, `LessonAccessApiTests`). Front ma **Vitest**
+(unit) i **Playwright** (smoke E2E). Prześledzimy je i nauczysz się dokładać własne.
 
 ## Mostek z tego, co już znasz
 
@@ -191,15 +193,16 @@ await db.StartAsync();
 ```
 
 Zalety: łapiesz błędy, których InMemory nie widzi (np. naruszenie unikalnego indeksu z [06](./06-ef-core-fundamenty.md)).
-Koszt: wolniejsze, wymaga dostępu do Dockera z procesu testów. To „niebieskie" na roadmapie i realny standard w
-poważniejszych projektach — Course Platform go nie ma (InMemory), ale to naturalny kolejny krok jakości.
+Koszt: wolniejsze, wymaga dostępu do Dockera z procesu testów. Course Platform ma **PostgreSqlTestFixture** w
+`Infrastructure.UnitTests` (Testcontainers dla testów search) — pełne Testcontainers w `IntegrationTests` to
+opcjonalny kolejny krok (paczka jest w projekcie, ale główny harness integracyjny używa InMemory).
 
 ---
 
 ## E2E i BDD (wzmianka)
 
-- **Playwright** (🔵) — automatyzacja przeglądarki: testuje **cały** system (Vue + API) jak użytkownik. Dominuje w
-  .NET E2E nad Cypress/Puppeteer.
+- **Playwright** (🔵) — automatyzacja przeglądarki: testuje **cały** system (Vue + API) jak użytkownik. Course
+  Platform ma smoke E2E w `frontend/` (`npm run test:e2e`). Dominuje w .NET E2E nad Cypress/Puppeteer.
   ```csharp
   await page.GotoAsync("http://localhost:5173/login");
   await page.FillAsync("[data-testid=email]", "student@test.com");
@@ -215,7 +218,9 @@ poważniejszych projektach — Course Platform go nie ma (InMemory), ale to natu
 
 - **Walidatory** — reguły wejścia (`CreateCourseCommandValidator`) — łatwe, szybkie, wartościowe.
 - **Handlery** — logika biznesowa z InMemory + Moq (np. „non-admin widzi tylko Published", „brak dostępu → 403").
-- **1–2 testy integracyjne** na kluczowe endpointy (że w ogóle wstają i zwracają sensowny kod).
+- **1–2 testy integracyjne** na kluczowe endpointy — np. `LessonAccessApiTests` (403 bez enrollmentu) i
+  `AuthApiTests` (login, refresh).
+- **ArchitectureTests** — reguły zależności warstw (Domain nie zależy od Infrastructure itd.).
 - **Nie testuj frameworka** — czy ASP.NET routuje albo EF generuje SQL to robota Microsoftu, nie twoja.
 
 Dobre testy handlera Course Platform to np.: „instruktor widzi lekcję własnego kursu bez enrollmentu", „admin

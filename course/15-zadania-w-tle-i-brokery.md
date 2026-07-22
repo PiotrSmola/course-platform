@@ -71,8 +71,9 @@ To najczęstszy błąd juniora przy pracy w tle — zapamiętaj.
 `IHostedService` to niższy poziom (`StartAsync`/`StopAsync`); `BackgroundService` to wygodna baza z pętlą
 `ExecuteAsync`.
 
-> Course Platform robi drobne „przy starcie" rzeczy w `Program.cs` (migracje, seed ról) właśnie w ręcznie
-> utworzonym scope — ta sama zasada.
+> Course Platform ma trzy `BackgroundService`/`IHostedService`: **EmailDispatcher** (kolejka maili),
+> **RefreshTokenCleanupService** (usuwa wygasłe refresh tokeny) i **StaleMultipartUploadCleanupService** (czyści
+> niedokończone uploady MinIO). Ta sama zasada scope co niżej.
 
 ---
 
@@ -200,12 +201,12 @@ Umiejętność powiedzenia „tego jeszcze nie potrzebujemy" to też kompetencja
 
 ## Ćwiczenia
 
-1. 🟢 **Zidentyfikuj kandydatów.** Wypisz 3 operacje w Course Platform, które warto by przenieść do tła
-   (podpowiedź: maile, reindeks, czyszczenie). Uzasadnij.
+1. 🟢 **Prześledź istniejące serwisy.** Otwórz `EmailDispatcher`, `RefreshTokenCleanupService` i
+   `StaleMultipartUploadCleanupService`. Dla każdego opisz: co robi, jak tworzy scope, jaki interwał/cykl.
 2. 🟢 **Scope w tle.** Wyjaśnij, dlaczego w `BackgroundService` nie można wstrzyknąć `DbContext` do konstruktora i
-   jak to obejść.
-3. 🟡 **Projekt joba.** Zaprojektuj `BackgroundService`, który raz na dobę czyści wygasłe dane (np. tokeny).
-   Napisz szkielet z pętlą, `Task.Delay` i ręcznym scope. Kiedy wolałbyś tu Hangfire?
+   jak to obejść (pokaż na przykładzie `RefreshTokenCleanupService`).
+3. 🟡 **Rozszerzenie.** Porównaj `RefreshTokenCleanupService` z tym, co dałby Hangfire (cron, dashboard, retry).
+   Kiedy wolałbyś Hangfire zamiast własnej pętli?
 4. 🔴 **Event po enrollmencie.** Naszkicuj przepływ „po `EnrollCommand` wyślij mail" przez MassTransit+RabbitMQ:
    event, publikacja w handlerze, consumer. Gdzie i po co dołożyłbyś outbox?
 

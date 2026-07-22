@@ -39,8 +39,9 @@ komuś przy tablicy?"**. Jak nie — wróć do ćwiczeń.
 
 ### Tydzień 11 — Rozszerzenia pod pracę 🟡/🔴
 - Rozdziały: [12](./12-cache-memory-redis.md) (cache), [13](./13-wyszukiwanie-i-elasticsearch.md) (search), [14](./14-komunikacja-graphql-grpc-signalr.md) (komunikacja), [15](./15-zadania-w-tle-i-brokery.md) (tło/brokery).
-- Cel: wiesz, kiedy sięgnąć po Redis/ES/SignalR/broker i jaki jest koszt. (Teoria + mini-szkice, nie wdrożenia.)
-- Kamień milowy: dodaj Memory Cache do `GetCategoriesQuery` z inwalidacją.
+- Cel: rozumiesz istniejące implementacje (HybridCache, dual-mode search, SignalR, BackgroundServices) i wiesz,
+  kiedy sięgnąć po alternatywy (Hangfire, broker) oraz jaki jest koszt.
+- Kamień milowy: prześledź `IAppCache` w `GetCategoriesQuery` i `HybridAppCache` — opisz hit/miss i inwalidację tagów.
 
 ### Tydzień 12 — Jakość i produkcja 🟡
 - Rozdziały: [16](./16-testowanie.md) (testy), [17](./17-docker-cicd-produkcja.md) (Docker/CI/CD), [18](./18-integracja-z-frontendem-vue.md) (front), [19](./19-git-jakosc-stylecop.md) (Git/jakość).
@@ -48,8 +49,9 @@ komuś przy tablicy?"**. Jak nie — wróć do ćwiczeń.
 - Kamień milowy: dopisz 2 testy (walidator + handler) i uruchom `docker compose exec api dotnet test` na zielono.
 
 ### Po 12 tygodniach
-Wracaj do tematów 🔴 (keyed services, Outbox/Saga, refresh tokens, Testcontainers, K8s) „na żądanie" — gdy pojawią
-się w pracy lub na konkretnej rozmowie. Nie ucz się ich „na zapas".
+Wracaj do tematów 🔴 (keyed services, Outbox/Saga, cookie `HttpOnly` zamiast `localStorage`, pełne Testcontainers
+w IntegrationTests, K8s) „na żądanie" — gdy pojawią się w pracy lub na konkretnej rozmowie. Refresh tokeny **już
+są w projekcie** — zostało głównie hardening produkcyjny.
 
 ---
 
@@ -68,12 +70,12 @@ Każdy rozdział ma ćwiczenia (🟢→🔴) na końcu. Rekomendowana ścieżka 
 | [07](./07-ef-core-zapytania-i-wydajnosc.md) | Napraw N+1 (Include vs Select) |
 | [08](./08-dependency-injection.md) | Diagnoza buga captive dependency |
 | [09](./09-architektura-clean-cqrs-mediatr.md) | Nowy przypadek użycia (command+handler+walidator) |
-| [10](./10-auth-identity-jwt.md) | Resource-based: 403 bez enrollmentu, 200 po zapisie |
+| [10](./10-auth-identity-jwt.md) | Resource-based: 403 bez enrollmentu; prześledź refresh flow |
 | [11](./11-logowanie-serilog.md) | Dodać strukturalny log do handlera |
-| [12](./12-cache-memory-redis.md) | Memory Cache dla kategorii + inwalidacja |
-| [13](./13-wyszukiwanie-i-elasticsearch.md) | Test case-insensitivity na danych (`vue` vs `VUE`) |
-| [14](./14-komunikacja-graphql-grpc-signalr.md) | Dobór narzędzia do 4 scenariuszy |
-| [15](./15-zadania-w-tle-i-brokery.md) | `BackgroundService` z ręcznym scope |
+| [12](./12-cache-memory-redis.md) | Prześledź `IAppCache` / `HybridAppCache` w kategoriach |
+| [13](./13-wyszukiwanie-i-elasticsearch.md) | Prześledź `ICourseSearchService` dual-mode + test `vue`/`VUE` |
+| [14](./14-komunikacja-graphql-grpc-signalr.md) | Prześledź `NotificationHub` + `useRealtime` |
+| [15](./15-zadania-w-tle-i-brokery.md) | Prześledź istniejące BackgroundServices + scope |
 | [16](./16-testowanie.md) | Dopisać test walidatora + handlera |
 | [17](./17-docker-cicd-produkcja.md) | Szkic pipeline GitHub Actions (build+test) |
 | [18](./18-integracja-z-frontendem-vue.md) | Prześledzić żądanie end-to-end w DevTools |
@@ -113,23 +115,24 @@ Po kursie powinieneś umieć **wytłumaczyć** (nie tylko rozpoznać):
 - [ ] Manual mapping vs AutoMapper/Mapperly (+ licencje)
 
 **Bezpieczeństwo**
-- [ ] JWT flow od loginu do `[Authorize]`; co gwarantuje podpis
-- [ ] **Resource-based authorization** (dlaczego rola nie wystarcza)
+- [ ] JWT + refresh token flow; `/auth/refresh`; co gwarantuje podpis
+- [ ] **Resource-based authorization** (dlaczego rola/polityka nie wystarcza)
 - [ ] CORS (dlaczego front go potrzebuje); rate limiting
 
 **Jakość i produkcja**
-- [ ] Piramida testów; unit (handler/walidator) vs integracyjny (WebApplicationFactory)
+- [ ] Piramida testów; unit (handler/walidator) vs integracyjny (`AuthApiTests`, `LessonAccessApiTests`);
+  ArchitectureTests (NetArchTest); Vitest + Playwright smoke na froncie
 - [ ] FluentAssertions vs Shouldly (+ kwestia licencji FA 8)
 - [ ] Docker: obraz vs kontener; multi-stage; host `db` w Compose
 - [ ] CI/CD: co łapie PR check
 - [ ] Git: feature branch, PR, `.gitignore`, EditorConfig/analyzery
 
 **Świadomość (znać nazwy i „kiedy")**
-- [ ] Memory Cache vs Redis; cache invalidation
-- [ ] LIKE/FTS vs Elasticsearch; kto jest źródłem prawdy
-- [ ] REST vs GraphQL vs gRPC; SignalR vs polling
-- [ ] BackgroundService vs Hangfire; broker (RabbitMQ/MassTransit); Outbox
-- [ ] 🔴 refresh tokens/cookies, keyed services, Testcontainers, Kubernetes
+- [ ] Memory Cache vs Redis; `IAppCache` / HybridCache; cache invalidation (tagi)
+- [ ] `ICourseSearchService` dual-mode (ES vs EF `LIKE`); kto jest źródłem prawdy
+- [ ] REST vs GraphQL vs gRPC; SignalR (`NotificationHub`, `useRealtime`) vs polling
+- [ ] BackgroundService w CP (EmailDispatcher, cleanup tokenów/uploadów) vs Hangfire; broker; Outbox
+- [ ] 🔴 cookie `HttpOnly`, keyed services, pełne Testcontainers w IntegrationTests, Kubernetes
 
 ---
 

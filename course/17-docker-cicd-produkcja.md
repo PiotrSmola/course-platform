@@ -21,13 +21,20 @@ uruchamiania Course Platform — tutaj zrozumiesz, **jak** to działa i jak wygl
 Problem „u mnie działa" bierze się z różnic środowisk (wersja .NET, biblioteki systemowe, konfiguracja). Docker
 pakuje aplikację + jej środowisko w **obraz** — ten sam obraz uruchamiasz na dev, stage i prod.
 
-Course Platform w dev to trzy kontenery (Compose):
+Course Platform w dev to pełny stack Compose (nie tylko rdzeń):
 
 | Kontener | Usługa | Port | Rola |
 |----------|--------|------|------|
 | `cp_api` | `api` | 8080 | Backend (`dotnet watch run` — auto-reload w dev) |
 | `cp_frontend` | `frontend` | 5173 | Frontend Vue (Vite) |
 | `cp_db` | `db` | 5432 | PostgreSQL 16 |
+| `cp_redis` | `redis` | 6379 | Redis (HybridCache) |
+| `cp_elasticsearch` | `elasticsearch` | 9200 | Elasticsearch (search, gdy włączony) |
+| `cp_minio` | `minio` | 9000/9001 | Object storage (wideo, miniatury, certyfikaty) |
+| `cp_minio_init` | `minio_init` | — | Inicjalizacja bucketu |
+| `cp_mailhog` | `mailhog` | 8025 | Maile dev |
+| `cp_aspire` | `aspire-dashboard` | 18888/18889 | OpenTelemetry / Aspire Dashboard |
+| `cp_stripe_cli` | `stripe_cli` | — | Opcjonalny profil `stripe` (webhook forward) |
 
 Kluczowa rzecz (znasz z [00](./00-jak-korzystac-z-kursu-i-mapa.md)): z kontenera `api` host bazy to **`db`** (nazwa
 usługi Compose), nie `localhost` — bo każdy kontener to osobny „komputer" w sieci Compose.

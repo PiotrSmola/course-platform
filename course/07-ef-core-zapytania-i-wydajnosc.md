@@ -49,9 +49,9 @@ var items = await query.Skip(...).Take(...).Select(...).ToListAsync(ct);  // dru
 
 Filtry doklejają się warunkowo, a do bazy idą **dwa** zapytania (liczba + strona), nie tysiąc.
 
-> **`EF.Functions.Like` + `ToLower()`** to sposób Course Platform na wyszukiwanie **niewrażliwe na wielkość
-> liter** — `ToLower()` tłumaczy się na SQL `lower(...)`, więc „vue" znajdzie „Vue 3". Szczegóły i alternatywy
-> (Postgres FTS, Elasticsearch) w [13](./13-wyszukiwanie-i-elasticsearch.md).
+> **`EF.Functions.Like` + `ToLower()`** to fallback w `EfCourseSearchService` — wyszukiwanie **niewrażliwe na
+> wielkość liter** (`ToLower()` → SQL `lower(...)`). Domyślnie w Compose działa Elasticsearch przez
+> `ICourseSearchService`; szczegóły dual-mode w [13](./13-wyszukiwanie-i-elasticsearch.md).
 
 ---
 

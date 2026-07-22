@@ -6,8 +6,8 @@
 
 Baza i sieć są wolne w porównaniu z pamięcią. Jeśli **często** czytasz te same, rzadko zmieniające się dane
 (lista kategorii, konfiguracja, popularne kursy), cache potrafi zmniejszyć obciążenie bazy o rzędy wielkości. To
-temat „pod pracę i skalę". Course Platform **nie** ma jeszcze cache — więc pokażę koncepcje solidnie, z
-realistycznym kodem, i wskażę, gdzie w projekcie by pasował.
+temat „pod pracę i skalę". Course Platform **ma już** cache — `HybridCache` + Redis przez abstrakcję `IAppCache`
+(`HybridAppCache` w Infrastructure). Pokażę koncepcje solidnie i wskażę, gdzie w projekcie to widać.
 
 ## Mostek z tego, co już znasz
 
@@ -73,8 +73,10 @@ Wzorzec **cache-aside**: „sprawdź cache → jak pusto, policz i zapisz → zw
 
 Dla małej aplikacji na jednej instancji — idealny. Dla skali poziomej — potrzebujesz cache rozproszonego.
 
-> **Gdzie w Course Platform:** `GetCategoriesQuery`/`GetTechnologiesQuery` to idealni kandydaci — czytane często,
-> zmieniane rzadko. Dziś bez cache (świadomie, etap 1) — dobre ćwiczenie na przyszłość (patrz niżej).
+> **Gdzie w Course Platform:** `GetCategoriesQuery` i `GetTechnologiesQuery` używają `IAppCache.GetOrCreateAsync`
+> (klucze `cp:categories`, `cp:technologies`, TTL 1 h). Implementacja `HybridAppCache` łączy `IMemoryCache` z
+> Redis (`IDistributedCache`) — lokalna szybkość + współdzielenie między instancjami. Inwalidacja przez tagi
+> (`InvalidateTagAsync`) przy zmianach kategorii/technologii.
 
 ---
 
@@ -179,13 +181,14 @@ Strategie:
 ## Ćwiczenia
 
 1. 🟢 **Kandydaci na cache.** Przejrzyj Queries w `Application/Features/**` i wskaż 2–3, które nadają się do
-   cache'owania. Uzasadnij (często czytane, rzadko zmieniane).
-2. 🟡 **Dodaj Memory Cache.** Zaimplementuj cache dla `GetCategoriesQuery` z TTL 10 min (przez `IMemoryCache`,
-   wstrzyknięty do handlera). *Done, gdy* drugie wywołanie nie uderza w bazę (sprawdź w logach EF).
-3. 🟡 **Inwalidacja.** Dodaj czyszczenie klucza `"categories"` w miejscu, gdzie kategorie mogłyby się zmienić
-   (np. hipotetyczny `CreateCategoryCommand`). Opisz, gdzie dokładnie wywołasz `Remove`.
-4. 🔴 **Redis (projekt).** Naszkicuj (na papierze) wprowadzenie Redisa do cache'owania szczegółów kursu
-   (`course:{id}`): rejestracja, zapis/odczyt, TTL, inwalidacja przy `UpdateCourse`. Jakie ryzyka vs Memory Cache?
+   cache'owania. Uzasadnij (często czytane, rzadko zmieniane). Porównaj z tym, co już cache'uje `IAppCache`.
+2. 🟡 **Prześledź istniejący cache.** Otwórz `GetCategoriesQueryHandler` i `HybridAppCache`. Opisz flow
+   `GetOrCreateAsync`: skąd bierze dane, jaki TTL, co robi Redis vs memory. *Done, gdy* potrafisz wytłumaczyć
+   różnicę między hit a miss.
+3. 🟡 **Inwalidacja.** Znajdź miejsca, gdzie wywoływane jest `InvalidateTagAsync` (np. po zmianie kategorii).
+   Opisz, co by się stało bez inwalidacji.
+4. 🔴 **Rozszerzenie cache.** Naszkicuj (na papierze) cache dla szczegółów kursu (`course:{id}`) przez ten sam
+   `IAppCache`: klucz, TTL, tag do inwalidacji przy `UpdateCourse`. Jakie ryzyka vs brak cache?
 
 ## Pytania kontrolne
 
