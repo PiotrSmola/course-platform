@@ -51,6 +51,9 @@ public class GetLessonVideoUrlQueryHandler : IRequestHandler<GetLessonVideoUrlQu
             throw new ForbiddenAccessException("You are not enrolled in this course.");
         }
 
+        await ProgressGateHelper.EnsureLessonUnlockedAsync(
+            _context, _currentUserService, request.CourseId, request.LessonId, cancellationToken);
+
         var lesson = await _context.Lessons
             .AsNoTracking()
             .Include(l => l.Module)

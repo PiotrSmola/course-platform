@@ -1,8 +1,12 @@
 using FluentValidation;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Options;
 using CoursePlatform.Application.Common.Exceptions;
+using CoursePlatform.Application.Common.Helpers;
 using CoursePlatform.Application.Common.Interfaces;
+using CoursePlatform.Application.Common.Options;
+using CoursePlatform.Domain.Enums;
 
 namespace CoursePlatform.Application.Features.Admin.Commands.UpdateCourseStatus;
 
@@ -24,19 +28,25 @@ public class UpdateCourseStatusCommandHandler : IRequestHandler<UpdateCourseStat
     private readonly ICourseIndexingService _courseIndexing;
     private readonly IAppCache _cache;
     private readonly IAuditLogService _auditLog;
+    private readonly IEmailQueue _emailQueue;
+    private readonly IOptions<FrontendOptions> _frontendOptions;
 
     public UpdateCourseStatusCommandHandler(
         IApplicationDbContext context,
         ICurrentUserService currentUserService,
         ICourseIndexingService courseIndexing,
         IAppCache cache,
-        IAuditLogService auditLog)
+        IAuditLogService auditLog,
+        IEmailQueue emailQueue,
+        IOptions<FrontendOptions> frontendOptions)
     {
         _context = context;
         _currentUserService = currentUserService;
         _courseIndexing = courseIndexing;
         _cache = cache;
         _auditLog = auditLog;
+        _emailQueue = emailQueue;
+        _frontendOptions = frontendOptions;
     }
 
     public async Task Handle(UpdateCourseStatusCommand request, CancellationToken cancellationToken)
@@ -58,6 +68,18 @@ public class UpdateCourseStatusCommandHandler : IRequestHandler<UpdateCourseStat
         course.Status = request.Status;
         course.MarkUpdated();
         await _context.SaveChangesAsync(cancellationToken);
+
+        if (request.Status == CourseStatus.Published && previousStatus != CourseStatus.Published)
+        {
+            await WaitlistNotifier.NotifyPublishedAsync(
+                _context,
+                _emailQueue,
+                _frontendOptions,
+                course.Id,
+                course.Title,
+                cancellationToken);
+        }
+
         await _courseIndexing.IndexCourseAsync(course.Id, cancellationToken);
         await _cache.InvalidateTagAsync("courses", cancellationToken);
 

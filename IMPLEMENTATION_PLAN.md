@@ -70,6 +70,13 @@ docker compose exec frontend npm run build
 | **Etap 4 — Q&A / komentarze pod lekcjami** | Gotowe |
 | **Etap 5 — Quizy MCQ z auto-sprawdzaniem** | Gotowe |
 | **Etap 6 — Kupony rabatowe (admin + Stripe checkout)** | Gotowe |
+| **Etap 7 — Player UX (prędkość + continue watching)** | Gotowe |
+| **Etap 8 — Bramka postępu (kolejność + quiz)** | Gotowe |
+| **Etap 9 — Materiały do pobrania przy lekcji** | Gotowe |
+| **Etap 10 — Wishlist + waitlist** | Gotowe |
+| **Etap 11 — Moderacja Q&A** | Gotowe |
+| **Etap 12 — Subskrypcja All-access (miesięczna)** | Gotowe |
+| **Etap 13 — Analytics (drop-off, revenue)** | Gotowe |
 
 **Nie scaffolduj od zera.** Rozszerzaj istniejący kod. Nowe feature’y według konwencji CQRS / feature-based Vue.
 

@@ -5,6 +5,13 @@ export enum PaymentStatus {
   Expired = 3
 }
 
+export enum SubscriptionStatus {
+  Active = 0,
+  PastDue = 1,
+  Canceled = 2,
+  Incomplete = 3
+}
+
 export interface CheckoutSessionDto {
   redirectUrl: string | null
   enrolled: boolean
@@ -22,4 +29,23 @@ export interface PurchaseDto {
   amount: number
   currency: string
   completedAt: string
+}
+
+export interface SubscriptionCheckoutSessionDto {
+  redirectUrl: string
+}
+
+export interface BillingPortalSessionDto {
+  redirectUrl: string
+}
+
+export interface MySubscriptionDto {
+  hasSubscription: boolean
+  hasActiveAccess: boolean
+  status: SubscriptionStatus | null
+  currentPeriodEnd: string | null
+  canManageInPortal: boolean
+  latestInvoicePaidAt: string | null
+  latestInvoiceAmount: number | null
+  latestInvoiceCurrency: string | null
 }

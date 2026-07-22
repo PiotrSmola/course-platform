@@ -458,6 +458,37 @@ namespace CoursePlatform.Infrastructure.Migrations
                     b.ToTable("Courses");
                 });
 
+            modelBuilder.Entity("CoursePlatform.Domain.Entities.CourseWaitlistEntry", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("CourseId")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTime?>("NotifiedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid>("UserId")
+                        .HasColumnType("uuid");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("CourseId");
+
+                    b.HasIndex("UserId", "CourseId")
+                        .IsUnique();
+
+                    b.ToTable("CourseWaitlistEntries");
+                });
+
             modelBuilder.Entity("CoursePlatform.Domain.Entities.Enrollment", b =>
                 {
                     b.Property<Guid>("Id")
@@ -676,6 +707,14 @@ namespace CoursePlatform.Infrastructure.Migrations
                     b.Property<bool>("IsCompleted")
                         .HasColumnType("boolean");
 
+                    b.Property<int>("LastPositionSeconds")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer")
+                        .HasDefaultValue(0);
+
+                    b.Property<DateTime?>("LastWatchedAt")
+                        .HasColumnType("timestamp with time zone");
+
                     b.HasKey("UserId", "LessonId");
 
                     b.HasIndex("LessonId");
@@ -718,6 +757,49 @@ namespace CoursePlatform.Infrastructure.Migrations
                     b.HasIndex("LessonId", "CreatedAt");
 
                     b.ToTable("LessonQuestions");
+                });
+
+            modelBuilder.Entity("CoursePlatform.Domain.Entities.LessonResource", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("ContentType")
+                        .IsRequired()
+                        .HasMaxLength(128)
+                        .HasColumnType("character varying(128)");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid>("LessonId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("ObjectKey")
+                        .IsRequired()
+                        .HasMaxLength(1024)
+                        .HasColumnType("character varying(1024)");
+
+                    b.Property<int>("Order")
+                        .HasColumnType("integer");
+
+                    b.Property<long>("SizeBytes")
+                        .HasColumnType("bigint");
+
+                    b.Property<string>("Title")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("LessonId");
+
+                    b.ToTable("LessonResources");
                 });
 
             modelBuilder.Entity("CoursePlatform.Domain.Entities.Module", b =>
@@ -1080,6 +1162,93 @@ namespace CoursePlatform.Infrastructure.Migrations
                     b.ToTable("Reviews");
                 });
 
+            modelBuilder.Entity("CoursePlatform.Domain.Entities.Subscription", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTime>("CurrentPeriodEnd")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<int>("Status")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("StripeCustomerId")
+                        .IsRequired()
+                        .HasMaxLength(255)
+                        .HasColumnType("character varying(255)");
+
+                    b.Property<string>("StripeSubscriptionId")
+                        .IsRequired()
+                        .HasMaxLength(255)
+                        .HasColumnType("character varying(255)");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid>("UserId")
+                        .HasColumnType("uuid");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("StripeCustomerId")
+                        .IsUnique();
+
+                    b.HasIndex("StripeSubscriptionId")
+                        .IsUnique();
+
+                    b.HasIndex("UserId")
+                        .IsUnique();
+
+                    b.ToTable("Subscriptions");
+                });
+
+            modelBuilder.Entity("CoursePlatform.Domain.Entities.SubscriptionInvoice", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<decimal>("Amount")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("numeric(18,2)");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("Currency")
+                        .IsRequired()
+                        .HasMaxLength(3)
+                        .HasColumnType("character varying(3)");
+
+                    b.Property<DateTime>("PaidAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("StripeInvoiceId")
+                        .IsRequired()
+                        .HasMaxLength(255)
+                        .HasColumnType("character varying(255)");
+
+                    b.Property<Guid>("SubscriptionId")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("StripeInvoiceId")
+                        .IsUnique();
+
+                    b.HasIndex("SubscriptionId");
+
+                    b.ToTable("SubscriptionInvoices");
+                });
+
             modelBuilder.Entity("CoursePlatform.Domain.Entities.Technology", b =>
                 {
                     b.Property<Guid>("Id")
@@ -1112,6 +1281,34 @@ namespace CoursePlatform.Infrastructure.Migrations
                         .IsUnique();
 
                     b.ToTable("Technologies");
+                });
+
+            modelBuilder.Entity("CoursePlatform.Domain.Entities.WishlistItem", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("CourseId")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid>("UserId")
+                        .HasColumnType("uuid");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("CourseId");
+
+                    b.HasIndex("UserId", "CourseId")
+                        .IsUnique();
+
+                    b.ToTable("WishlistItems");
                 });
 
             modelBuilder.Entity("CourseTechnology", b =>
@@ -1344,6 +1541,25 @@ namespace CoursePlatform.Infrastructure.Migrations
                     b.Navigation("Instructor");
                 });
 
+            modelBuilder.Entity("CoursePlatform.Domain.Entities.CourseWaitlistEntry", b =>
+                {
+                    b.HasOne("CoursePlatform.Domain.Entities.Course", "Course")
+                        .WithMany()
+                        .HasForeignKey("CourseId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("CoursePlatform.Domain.Entities.ApplicationUser", "User")
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Course");
+
+                    b.Navigation("User");
+                });
+
             modelBuilder.Entity("CoursePlatform.Domain.Entities.Enrollment", b =>
                 {
                     b.HasOne("CoursePlatform.Domain.Entities.Course", "Course")
@@ -1446,6 +1662,17 @@ namespace CoursePlatform.Infrastructure.Migrations
                         .IsRequired();
 
                     b.Navigation("Author");
+
+                    b.Navigation("Lesson");
+                });
+
+            modelBuilder.Entity("CoursePlatform.Domain.Entities.LessonResource", b =>
+                {
+                    b.HasOne("CoursePlatform.Domain.Entities.Lesson", "Lesson")
+                        .WithMany("Resources")
+                        .HasForeignKey("LessonId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
 
                     b.Navigation("Lesson");
                 });
@@ -1600,6 +1827,47 @@ namespace CoursePlatform.Infrastructure.Migrations
                     b.Navigation("User");
                 });
 
+            modelBuilder.Entity("CoursePlatform.Domain.Entities.Subscription", b =>
+                {
+                    b.HasOne("CoursePlatform.Domain.Entities.ApplicationUser", "User")
+                        .WithOne("Subscription")
+                        .HasForeignKey("CoursePlatform.Domain.Entities.Subscription", "UserId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("User");
+                });
+
+            modelBuilder.Entity("CoursePlatform.Domain.Entities.SubscriptionInvoice", b =>
+                {
+                    b.HasOne("CoursePlatform.Domain.Entities.Subscription", "Subscription")
+                        .WithMany("Invoices")
+                        .HasForeignKey("SubscriptionId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Subscription");
+                });
+
+            modelBuilder.Entity("CoursePlatform.Domain.Entities.WishlistItem", b =>
+                {
+                    b.HasOne("CoursePlatform.Domain.Entities.Course", "Course")
+                        .WithMany()
+                        .HasForeignKey("CourseId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("CoursePlatform.Domain.Entities.ApplicationUser", "User")
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Course");
+
+                    b.Navigation("User");
+                });
+
             modelBuilder.Entity("CourseTechnology", b =>
                 {
                     b.HasOne("CoursePlatform.Domain.Entities.Course", null)
@@ -1685,6 +1953,8 @@ namespace CoursePlatform.Infrastructure.Migrations
                     b.Navigation("RefreshTokens");
 
                     b.Navigation("Reviews");
+
+                    b.Navigation("Subscription");
                 });
 
             modelBuilder.Entity("CoursePlatform.Domain.Entities.BusinessPlan", b =>
@@ -1720,6 +1990,8 @@ namespace CoursePlatform.Infrastructure.Migrations
                     b.Navigation("Questions");
 
                     b.Navigation("Quiz");
+
+                    b.Navigation("Resources");
                 });
 
             modelBuilder.Entity("CoursePlatform.Domain.Entities.LessonQuestion", b =>
@@ -1747,6 +2019,11 @@ namespace CoursePlatform.Infrastructure.Migrations
             modelBuilder.Entity("CoursePlatform.Domain.Entities.QuizQuestion", b =>
                 {
                     b.Navigation("Options");
+                });
+
+            modelBuilder.Entity("CoursePlatform.Domain.Entities.Subscription", b =>
+                {
+                    b.Navigation("Invoices");
                 });
 #pragma warning restore 612, 618
         }

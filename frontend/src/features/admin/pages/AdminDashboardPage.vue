@@ -12,6 +12,8 @@
         <button type="button" class="glass no-warp" :class="{ active: tab === 'reviews' }" @click="tab = 'reviews'">Recenzje</button>
         <button type="button" class="glass no-warp" :class="{ active: tab === 'audit' }" @click="tab = 'audit'">Audit log</button>
         <button type="button" class="glass no-warp" :class="{ active: tab === 'coupons' }" @click="tab = 'coupons'">Kupony</button>
+        <button type="button" class="glass no-warp" :class="{ active: tab === 'revenue' }" @click="tab = 'revenue'">Przychody</button>
+        <button type="button" class="glass no-warp" :class="{ active: tab === 'qa' }" @click="tab = 'qa'">Q&A</button>
         <button type="button" class="glass no-warp" :class="{ active: tab === 'search' }" @click="tab = 'search'">Wyszukiwarka</button>
       </div>
 
@@ -176,6 +178,14 @@
         <CouponsAdminPanel />
       </section>
 
+      <section v-else-if="tab === 'revenue'" class="panel glass-card">
+        <AdminRevenuePanel />
+      </section>
+
+      <section v-else-if="tab === 'qa'" class="panel glass-card">
+        <QaModerationPanel :course-options="adminCourseOptions" />
+      </section>
+
       <section v-else class="panel search-panel">
         <SearchAdminPanel />
       </section>
@@ -189,8 +199,10 @@ import { useAdminUsers, useAdminCourses, useAdminReviews, useAdminAuditLogs, use
 import { CourseStatus } from '@/features/courses/types/course.types'
 import SearchAdminPanel from '@/features/admin/components/SearchAdminPanel.vue'
 import CouponsAdminPanel from '@/features/admin/components/CouponsAdminPanel.vue'
+import AdminRevenuePanel from '@/features/analytics/components/AdminRevenuePanel.vue'
+import QaModerationPanel from '@/features/lesson-discussion/components/QaModerationPanel.vue'
 
-type AdminTab = 'users' | 'courses' | 'reviews' | 'audit' | 'coupons' | 'search'
+type AdminTab = 'users' | 'courses' | 'reviews' | 'audit' | 'coupons' | 'revenue' | 'qa' | 'search'
 const tab = ref<AdminTab>('users')
 
 const { data: usersData, isLoading: usersLoading } = useAdminUsers()
@@ -205,6 +217,9 @@ const users = computed(() => usersData.value ?? [])
 const adminCourses = computed(() => coursesData.value?.items ?? [])
 const adminReviews = computed(() => reviewsData.value ?? [])
 const auditLogs = computed(() => auditLogsData.value?.items ?? [])
+const adminCourseOptions = computed(() =>
+  adminCourses.value.map((course) => ({ id: course.id, title: course.title }))
+)
 
 function formatDate(value: string): string {
   return new Date(value).toLocaleString('pl-PL')

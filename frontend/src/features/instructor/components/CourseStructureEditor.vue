@@ -105,6 +105,11 @@
             :course-id="courseId"
             :lesson-id="lesson.id"
           />
+          <LessonResourcesEditor
+            v-if="!lesson.id.startsWith('temp-')"
+            :course-id="courseId"
+            :lesson-id="lesson.id"
+          />
         </div>
         <button type="button" class="btn btn-ghost add-lesson" @click="addLesson(module.id, module.lessons.length)">+ Lekcja</button>
       </div>
@@ -117,6 +122,7 @@ import { computed, ref, watch } from 'vue'
 import type { ModuleDto } from '@/features/courses/types/course.types'
 import { useModuleMutations, useLessonVideoUpload } from '@/features/instructor/composables/useInstructor'
 import LessonQuizEditor from '@/features/quizzes/components/LessonQuizEditor.vue'
+import LessonResourcesEditor from '@/features/lesson-resources/components/LessonResourcesEditor.vue'
 
 const props = defineProps<{
   courseId: string

@@ -45,6 +45,7 @@ export interface LessonDto {
   courseId?: string
   courseTitle?: string
   isCompleted?: boolean
+  lastPositionSeconds?: number
 }
 
 export interface LessonListDto {
@@ -55,6 +56,8 @@ export interface LessonListDto {
   order: number
   isCompleted?: boolean
   videoObjectKey?: string | null
+  isLocked?: boolean
+  lockReason?: string | null
 }
 
 export interface ModuleDto {
@@ -92,9 +95,14 @@ export interface CourseDetailsDto {
   reviewCount: number
   reviews: ReviewDto[]
   isEnrolled: boolean
+  canAccessContent: boolean
+  hasSubscriptionAccess: boolean
   hasUserReviewed: boolean
   canReview: boolean
   userReviewId: string | null
+  isOnWishlist: boolean
+  canJoinWaitlist: boolean
+  isOnWaitlist: boolean
 }
 
 export interface InstructorCourseDto {

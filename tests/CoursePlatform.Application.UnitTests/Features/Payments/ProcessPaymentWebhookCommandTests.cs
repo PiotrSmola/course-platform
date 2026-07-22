@@ -234,4 +234,90 @@ public class ProcessPaymentWebhookCommandTests
         _context.Payments.Single().Status.Should().Be(PaymentStatus.Completed);
         _context.Enrollments.Should().HaveCount(1);
     }
+
+    [Fact]
+    public async Task Handle_SubscriptionUpdated_UpsertsSubscription()
+    {
+        var user = new ApplicationUser
+        {
+            Id = Guid.NewGuid(),
+            UserName = "sub-user",
+            Email = "sub@test.com",
+            FirstName = "A",
+            LastName = "B"
+        };
+
+        _context.Users.Add(user);
+        await _context.SaveChangesAsync();
+
+        _gateway.EventToReturn = new PaymentGatewayEvent(
+            PaymentGatewayEventType.SubscriptionUpdated,
+            "evt_sub_1",
+            null,
+            null,
+            "pln",
+            null,
+            user.Id.ToString(),
+            "cus_123",
+            null,
+            "sub_123",
+            null,
+            SubscriptionStatus.Active,
+            DateTime.UtcNow.AddDays(30));
+
+        await CreateHandler().Handle(Command(), CancellationToken.None);
+
+        var subscription = _context.Subscriptions.Single();
+        subscription.UserId.Should().Be(user.Id);
+        subscription.StripeCustomerId.Should().Be("cus_123");
+        subscription.StripeSubscriptionId.Should().Be("sub_123");
+        subscription.Status.Should().Be(SubscriptionStatus.Active);
+        subscription.CurrentPeriodEnd.Should().BeAfter(DateTime.UtcNow.AddDays(25));
+    }
+
+    [Fact]
+    public async Task Handle_InvoicePaid_CreatesSubscriptionInvoice()
+    {
+        var user = new ApplicationUser
+        {
+            Id = Guid.NewGuid(),
+            UserName = "sub-user",
+            Email = "sub@test.com",
+            FirstName = "A",
+            LastName = "B"
+        };
+
+        _context.Users.Add(user);
+        _context.Subscriptions.Add(new Subscription
+        {
+            UserId = user.Id,
+            StripeCustomerId = "cus_123",
+            StripeSubscriptionId = "sub_123",
+            Status = SubscriptionStatus.Active,
+            CurrentPeriodEnd = DateTime.UtcNow.AddDays(20)
+        });
+        await _context.SaveChangesAsync();
+
+        _gateway.EventToReturn = new PaymentGatewayEvent(
+            PaymentGatewayEventType.InvoicePaid,
+            "evt_inv_1",
+            null,
+            39900,
+            "pln",
+            null,
+            null,
+            "cus_123",
+            "sub@test.com",
+            "sub_123",
+            "in_123",
+            null,
+            null,
+            DateTime.UtcNow);
+
+        await CreateHandler().Handle(Command(), CancellationToken.None);
+
+        _context.SubscriptionInvoices.Should().ContainSingle();
+        _context.SubscriptionInvoices.Single().StripeInvoiceId.Should().Be("in_123");
+        _context.SubscriptionInvoices.Single().Amount.Should().Be(399);
+    }
 }

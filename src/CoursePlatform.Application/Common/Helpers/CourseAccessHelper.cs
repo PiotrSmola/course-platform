@@ -2,6 +2,7 @@ using Microsoft.EntityFrameworkCore;
 using CoursePlatform.Application.Common.Exceptions;
 using CoursePlatform.Application.Common.Interfaces;
 using CoursePlatform.Domain.Entities;
+using CoursePlatform.Domain.Enums;
 
 namespace CoursePlatform.Application.Common.Helpers;
 
@@ -60,8 +61,29 @@ public static class CourseAccessHelper
             return true;
         }
 
-        return await context.Enrollments
+        var isEnrolled = await context.Enrollments
             .AnyAsync(e => e.CourseId == courseId && e.UserId == userId, cancellationToken);
+
+        if (isEnrolled)
+        {
+            return true;
+        }
+
+        return await HasActiveSubscriptionAsync(context, userId, cancellationToken);
+    }
+
+    public static async Task<bool> HasActiveSubscriptionAsync(
+        IApplicationDbContext context,
+        Guid userId,
+        CancellationToken cancellationToken)
+    {
+        var now = DateTime.UtcNow;
+
+        return await context.Subscriptions.AnyAsync(
+            s => s.UserId == userId
+                && s.CurrentPeriodEnd > now
+                && (s.Status == SubscriptionStatus.Active || s.Status == SubscriptionStatus.PastDue),
+            cancellationToken);
     }
 
     public static async Task<Module> GetManagedModuleAsync(

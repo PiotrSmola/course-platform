@@ -16,7 +16,8 @@ public record LessonDto(
     string ModuleTitle,
     Guid CourseId,
     string CourseTitle,
-    bool IsCompleted);
+    bool IsCompleted,
+    int LastPositionSeconds);
 
 public record GetLessonQuery(Guid CourseId, Guid LessonId) : IRequest<LessonDto>;
 
@@ -46,6 +47,9 @@ public class GetLessonQueryHandler : IRequestHandler<GetLessonQuery, LessonDto>
             throw new ForbiddenAccessException("You are not enrolled in this course.");
         }
 
+        await ProgressGateHelper.EnsureLessonUnlockedAsync(
+            _context, _currentUserService, request.CourseId, request.LessonId, cancellationToken);
+
         var lesson = await _context.Lessons
             .AsNoTracking()
             .Include(l => l.Module)
@@ -70,6 +74,7 @@ public class GetLessonQueryHandler : IRequestHandler<GetLessonQuery, LessonDto>
             lesson.Module.Title,
             lesson.Module.CourseId,
             lesson.Module.Course.Title,
-            progress?.IsCompleted ?? false);
+            progress?.IsCompleted ?? false,
+            progress?.LastPositionSeconds ?? 0);
     }
 }

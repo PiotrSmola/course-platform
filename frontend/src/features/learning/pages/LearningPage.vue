@@ -8,7 +8,27 @@
       />
       <div class="video-section">
         <div class="video-container glass">
-          <video :key="videoUrl ?? lesson.id" :src="videoUrl ?? undefined" controls crossorigin="anonymous"></video>
+          <video
+            ref="videoRef"
+            :key="videoUrl ?? lesson.id"
+            :src="videoUrl ?? undefined"
+            controls
+            crossorigin="anonymous"
+            @loadedmetadata="onLoadedMetadata"
+            @timeupdate="onTimeUpdate"
+            @pause="savePosition"
+          ></video>
+          <div class="playback-controls">
+            <label for="playback-rate">Prędkość</label>
+            <select id="playback-rate" v-model.number="playbackRate" @change="applyPlaybackRate">
+              <option :value="0.75">0.75x</option>
+              <option :value="1">1x</option>
+              <option :value="1.25">1.25x</option>
+              <option :value="1.5">1.5x</option>
+              <option :value="1.75">1.75x</option>
+              <option :value="2">2x</option>
+            </select>
+          </div>
         </div>
         <div class="lesson-info glass">
           <div class="lesson-header">
@@ -46,6 +66,7 @@
           </div>
         </div>
         <LessonQuizPanel :course-id="courseId" :lesson-id="lessonId" />
+        <LessonResourcesPanel :course-id="courseId" :lesson-id="lessonId" />
         <LessonDiscussionPanel :course-id="courseId" :lesson-id="lessonId" />
       </div>
     </div>
@@ -53,7 +74,7 @@
   <div v-else-if="lessonQuery.isError" class="error-state">
     <div class="container">
       <h2>Brak dostępu do lekcji</h2>
-      <p>Musisz być zapisany na kurs, aby oglądać tę lekcję.</p>
+      <p>{{ lessonAccessError }}</p>
       <router-link class="btn btn-primary" :to="{ name: 'CourseDetails', params: { id: courseId } }">
         Wróć do kursu
       </router-link>
@@ -63,15 +84,25 @@
 </template>
 
 <script setup lang="ts">
-import { computed, watch } from 'vue'
+import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { useRouter } from 'vue-router'
-import { useLesson, useCompleteLesson, useLessonVideoUrl } from '@/features/learning/composables/useLearning'
+import {
+  useLesson,
+  useCompleteLesson,
+  useLessonVideoUrl,
+  useUpdateLessonWatchPosition
+} from '@/features/learning/composables/useLearning'
 import { useCourseDetails } from '@/features/courses/composables/useCourses'
 import CourseSidebar from '@/features/learning/components/CourseSidebar.vue'
 import LessonDiscussionPanel from '@/features/lesson-discussion/components/LessonDiscussionPanel.vue'
+import LessonResourcesPanel from '@/features/lesson-resources/components/LessonResourcesPanel.vue'
 import LessonQuizPanel from '@/features/quizzes/components/LessonQuizPanel.vue'
 import { toast } from '@/shared/toast/toast'
+import { getApiErrorMessage } from '@/shared/api/apiError'
 import type { ModuleDto, LessonListDto } from '@/features/courses/types/course.types'
+
+const PLAYBACK_RATE_KEY = 'cp.playbackRate'
+const POSITION_SAVE_INTERVAL_MS = 8000
 
 const props = defineProps<{
   courseId: string
@@ -86,6 +117,12 @@ const lesson = computed(() => lessonQuery.data.value)
 const course = computed(() => courseQuery.data.value)
 const videoUrl = computed(() => videoUrlQuery.data.value?.url)
 const completeMutation = useCompleteLesson()
+const positionMutation = useUpdateLessonWatchPosition()
+
+const videoRef = ref<HTMLVideoElement | null>(null)
+const playbackRate = ref(Number(localStorage.getItem(PLAYBACK_RATE_KEY) || '1') || 1)
+let lastSavedAt = 0
+let lastSavedPosition = -1
 
 const isSubmitting = computed(() => completeMutation.isPending.value)
 
@@ -116,8 +153,52 @@ const nextLesson = computed<LessonListDto | null>(() => {
   return allLessons.value[lessonIndex.value + 1] ?? null
 })
 
+const lessonAccessError = computed(() => {
+  const message = getApiErrorMessage(lessonQuery.error.value)
+  if (message?.toLowerCase().includes('previous') || message?.toLowerCase().includes('quiz')) {
+    return 'Ta lekcja jest jeszcze zablokowana. Ukończ poprzednią lekcję i zalicz quiz, jeśli jest wymagany.'
+  }
+  return message || 'Musisz być zapisany na kurs, aby oglądać tę lekcję.'
+})
+
 function navigateToLesson(lessonId: string) {
   router.push({ name: 'Learning', params: { courseId: props.courseId, lessonId } })
+}
+
+function applyPlaybackRate() {
+  localStorage.setItem(PLAYBACK_RATE_KEY, String(playbackRate.value))
+  if (videoRef.value) {
+    videoRef.value.playbackRate = playbackRate.value
+  }
+}
+
+function onLoadedMetadata() {
+  const video = videoRef.value
+  if (!video) return
+  video.playbackRate = playbackRate.value
+  const position = lesson.value?.lastPositionSeconds ?? 0
+  if (position > 0 && Number.isFinite(video.duration) && position < video.duration - 5) {
+    video.currentTime = position
+  }
+}
+
+function savePosition() {
+  const video = videoRef.value
+  if (!video || !Number.isFinite(video.currentTime)) return
+  const positionSeconds = Math.floor(video.currentTime)
+  if (positionSeconds === lastSavedPosition) return
+  lastSavedPosition = positionSeconds
+  lastSavedAt = Date.now()
+  positionMutation.mutate({
+    courseId: props.courseId,
+    lessonId: props.lessonId,
+    positionSeconds
+  })
+}
+
+function onTimeUpdate() {
+  if (Date.now() - lastSavedAt < POSITION_SAVE_INTERVAL_MS) return
+  savePosition()
 }
 
 function complete() {
@@ -142,6 +223,27 @@ watch(
     }
   }
 )
+
+watch(
+  () => props.lessonId,
+  () => {
+    lastSavedAt = 0
+    lastSavedPosition = -1
+  }
+)
+
+function onBeforeUnload() {
+  savePosition()
+}
+
+onMounted(() => {
+  window.addEventListener('beforeunload', onBeforeUnload)
+})
+
+onBeforeUnmount(() => {
+  window.removeEventListener('beforeunload', onBeforeUnload)
+  savePosition()
+})
 </script>
 
 <style lang="scss" scoped>
@@ -178,6 +280,26 @@ watch(
     width: 100%;
     border-radius: 20px;
     display: block;
+  }
+}
+
+.playback-controls {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: 12px;
+
+  label {
+    color: $color-muted;
+    font-size: 0.85rem;
+  }
+
+  select {
+    border-radius: 10px;
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    background: rgba(255, 255, 255, 0.04);
+    color: $color-ink;
+    padding: 6px 10px;
   }
 }
 

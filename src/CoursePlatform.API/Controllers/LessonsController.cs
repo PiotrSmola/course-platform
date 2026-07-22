@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.RateLimiting;
 using CoursePlatform.Application.Features.Lessons.Queries.GetLesson;
+using CoursePlatform.Application.Features.Lessons.Commands.UpdateLessonWatchPosition;
 using CoursePlatform.Application.Features.Lessons.Commands.UpdateProgress;
 using CoursePlatform.Application.Features.Lessons.Queries.GetLessonVideoUrl;
 using CoursePlatform.Application.Features.Lessons.Commands.VideoUploads;
@@ -34,6 +35,20 @@ public class LessonsController : ControllerBase
     public async Task<ActionResult> CompleteLesson(Guid courseId, Guid lessonId, CancellationToken cancellationToken)
     {
         await _mediator.Send(new UpdateProgressCommand(courseId, lessonId), cancellationToken);
+        return NoContent();
+    }
+
+    [HttpPut("{lessonId:guid}/position")]
+    [Authorize]
+    public async Task<ActionResult> UpdateWatchPosition(
+        Guid courseId,
+        Guid lessonId,
+        [FromBody] UpdateWatchPositionRequest body,
+        CancellationToken cancellationToken)
+    {
+        await _mediator.Send(
+            new UpdateLessonWatchPositionCommand(courseId, lessonId, body.PositionSeconds),
+            cancellationToken);
         return NoContent();
     }
 
@@ -109,4 +124,6 @@ public class LessonsController : ControllerBase
     public sealed record PresignLessonVideoPartBody(int PartNumber);
 
     public sealed record CompleteLessonVideoUploadBody(List<CoursePlatform.Application.Common.Models.CompletedPart> Parts);
+
+    public sealed record UpdateWatchPositionRequest(int PositionSeconds);
 }

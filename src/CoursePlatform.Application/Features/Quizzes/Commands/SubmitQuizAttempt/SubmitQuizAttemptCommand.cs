@@ -42,6 +42,9 @@ public class SubmitQuizAttemptCommandHandler : IRequestHandler<SubmitQuizAttempt
             throw new ForbiddenAccessException("You must be enrolled in the course to take the quiz.");
         }
 
+        await ProgressGateHelper.EnsureLessonUnlockedAsync(
+            _context, _currentUserService, request.CourseId, request.LessonId, cancellationToken);
+
         var quiz = await _context.Quizzes
             .Include(q => q.Questions)
                 .ThenInclude(qq => qq.Options)

@@ -18,3 +18,11 @@ export async function getLessonVideoUrl(courseId: string, lessonId: string): Pro
   const response = await client.get(`/courses/${courseId}/lessons/${lessonId}/video`)
   return response.data
 }
+
+export async function updateLessonWatchPosition(
+  courseId: string,
+  lessonId: string,
+  positionSeconds: number
+): Promise<void> {
+  await client.put(`/courses/${courseId}/lessons/${lessonId}/position`, { positionSeconds })
+}

@@ -14,6 +14,7 @@ using CoursePlatform.Application.Features.Courses.Commands.UpdateCourseStatus;
 using CoursePlatform.Application.Features.Courses.Commands.ThumbnailUploads;
 using CoursePlatform.Application.Features.Courses.Queries.GetInstructorCourses;
 using CoursePlatform.Application.Features.Courses.Queries.GetInstructorDashboard;
+using CoursePlatform.Application.Features.Analytics.Queries.GetInstructorAnalytics;
 using CoursePlatform.Domain.Enums;
 
 namespace CoursePlatform.API.Controllers;
@@ -82,6 +83,16 @@ public class CoursesController : ControllerBase
     public async Task<ActionResult<InstructorDashboardDto>> GetInstructorDashboard(CancellationToken cancellationToken)
     {
         var result = await _mediator.Send(new GetInstructorDashboardQuery(), cancellationToken);
+        return Ok(result);
+    }
+
+    [HttpGet("instructor/analytics")]
+    [Authorize(Policy = AuthorizationPolicies.InstructorOrAdmin)]
+    public async Task<ActionResult<InstructorAnalyticsDto>> GetInstructorAnalytics(
+        [FromQuery] Guid? courseId,
+        CancellationToken cancellationToken)
+    {
+        var result = await _mediator.Send(new GetInstructorAnalyticsQuery(courseId), cancellationToken);
         return Ok(result);
     }
 

@@ -1,6 +1,7 @@
 namespace CoursePlatform.Application.Common.Interfaces;
 
 public record CheckoutSession(string SessionId, string RedirectUrl, string Currency);
+public record BillingPortalSession(string RedirectUrl);
 
 public enum PaymentGatewayEventType
 {
@@ -8,7 +9,11 @@ public enum PaymentGatewayEventType
     CheckoutCompleted = 1,
     CheckoutExpired = 2,
     PaymentRefunded = 3,
-    Chargeback = 4
+    Chargeback = 4,
+    SubscriptionCheckoutCompleted = 5,
+    SubscriptionUpdated = 6,
+    SubscriptionDeleted = 7,
+    InvoicePaid = 8
 }
 
 public record PaymentGatewayEvent(
@@ -17,7 +22,15 @@ public record PaymentGatewayEvent(
     string? SessionId,
     long? AmountTotalMinorUnits,
     string? Currency,
-    string? PaymentId);
+    string? PaymentId,
+    string? UserId = null,
+    string? CustomerId = null,
+    string? CustomerEmail = null,
+    string? SubscriptionId = null,
+    string? InvoiceId = null,
+    CoursePlatform.Domain.Enums.SubscriptionStatus? SubscriptionStatus = null,
+    DateTime? CurrentPeriodEnd = null,
+    DateTime? PaidAt = null);
 
 public interface IPaymentGateway
 {
@@ -30,6 +43,18 @@ public interface IPaymentGateway
         string courseTitle,
         decimal amount,
         string customerEmail,
+        CancellationToken cancellationToken);
+
+    Task<CheckoutSession> CreateSubscriptionCheckoutSessionAsync(
+        Guid userId,
+        string customerEmail,
+        decimal amountPln,
+        string? existingStripeCustomerId,
+        CancellationToken cancellationToken);
+
+    Task<BillingPortalSession> CreateBillingPortalSessionAsync(
+        string stripeCustomerId,
+        string returnUrl,
         CancellationToken cancellationToken);
 
     PaymentGatewayEvent ParseWebhookEvent(string payload, string signature);

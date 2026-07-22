@@ -7,6 +7,51 @@
         <router-link class="btn btn-primary" :to="{ name: 'Courses' }">Przeglądaj kursy</router-link>
       </template>
 
+      <template v-else-if="isSubscriptionFlow && isSubscriptionChecking">
+        <div class="spinner" />
+        <h1>Aktywujemy subskrypcję...</h1>
+        <p>Stripe potwierdza płatność i synchronizuje dostęp do wszystkich kursów.</p>
+      </template>
+
+      <template v-else-if="isSubscriptionFlow && subscriptionQuery.isError.value">
+        <div class="result-icon error">✕</div>
+        <h1>Nie udało się potwierdzić subskrypcji</h1>
+        <p>Spróbuj ponownie za chwilę. Jeśli płatność została pobrana, dostęp powinien pojawić się po odświeżeniu.</p>
+        <div class="result-actions">
+          <button class="btn btn-primary" @click="subscriptionQuery.refetch()">Spróbuj ponownie</button>
+          <router-link class="btn btn-ghost" :to="{ name: 'Courses' }">Wróć do kursów</router-link>
+        </div>
+      </template>
+
+      <template v-else-if="isSubscriptionFlow && subscriptionPollingTimeout">
+        <div class="result-icon error">✕</div>
+        <h1>Subskrypcja jeszcze się synchronizuje</h1>
+        <p>Webhook Stripe potrzebuje więcej czasu. Odśwież stronę za chwilę lub przejdź do katalogu kursów.</p>
+        <div class="result-actions">
+          <button class="btn btn-primary" @click="subscriptionQuery.refetch()">Odśwież status</button>
+          <router-link class="btn btn-ghost" :to="{ name: 'Courses' }">Przejdź do kursów</router-link>
+        </div>
+      </template>
+
+      <template v-else-if="isSubscriptionFlow && isSubscriptionCompleted">
+        <div class="result-icon success">✓</div>
+        <h1>All-access aktywny</h1>
+        <p>Masz już dostęp do wszystkich opublikowanych kursów w ramach miesięcznej subskrypcji.</p>
+        <div class="result-actions">
+          <router-link class="btn btn-primary" :to="{ name: 'Courses' }">Przeglądaj kursy</router-link>
+          <router-link class="btn btn-ghost" :to="{ name: 'Home' }">Wróć na start</router-link>
+        </div>
+      </template>
+
+      <template v-else-if="isSubscriptionFlow">
+        <div class="result-icon error">✕</div>
+        <h1>Subskrypcja nie jest aktywna</h1>
+        <p>{{ subscriptionFailureMessage }}</p>
+        <div class="result-actions">
+          <router-link class="btn btn-primary" :to="{ name: 'Courses' }">Przeglądaj kursy</router-link>
+        </div>
+      </template>
+
       <template v-else-if="isChecking">
         <div class="spinner" />
         <h1>Przetwarzamy płatność...</h1>
@@ -75,26 +120,47 @@
 import { computed, watch } from 'vue'
 import { useRoute } from 'vue-router'
 import { useQueryClient } from '@tanstack/vue-query'
-import { usePaymentStatus } from '@/features/payments/composables/usePayments'
-import { PaymentStatus } from '@/features/payments/types/payment.types'
+import { useMySubscription, usePaymentStatus } from '@/features/payments/composables/usePayments'
+import { PaymentStatus, SubscriptionStatus } from '@/features/payments/types/payment.types'
 import { queryKeys } from '@/shared/queryKeys'
 
 const route = useRoute()
 const queryClient = useQueryClient()
 
 const sessionId = computed(() => (route.query.session_id as string) ?? '')
-const statusQuery = usePaymentStatus(() => sessionId.value)
+const isSubscriptionFlow = computed(() => route.query.type === 'subscription')
+const statusQuery = usePaymentStatus(() => (isSubscriptionFlow.value ? '' : sessionId.value))
+const subscriptionQuery = useMySubscription(() => isSubscriptionFlow.value, true)
 
 const isChecking = computed(() =>
+  !isSubscriptionFlow.value && (
   statusQuery.isLoading.value ||
   (!statusQuery.isPollingTimeout.value && statusQuery.data.value?.status === PaymentStatus.Pending)
-)
+))
 const isCompleted = computed(() => statusQuery.data.value?.status === PaymentStatus.Completed)
 const isPollingTimeout = computed(() => statusQuery.isPollingTimeout.value)
+const isSubscriptionChecking = computed(() =>
+  isSubscriptionFlow.value && (
+    subscriptionQuery.isLoading.value ||
+    (!subscriptionQuery.isPollingTimeout.value && !subscriptionQuery.data.value?.hasActiveAccess)
+  )
+)
+const isSubscriptionCompleted = computed(() => subscriptionQuery.data.value?.hasActiveAccess ?? false)
+const subscriptionPollingTimeout = computed(() => subscriptionQuery.isPollingTimeout.value)
 
 const failureMessage = computed(() => {
   if (statusQuery.data.value?.status === PaymentStatus.Expired) return 'Sesja płatności wygasła. Spróbuj ponownie.'
   return 'Płatność została odrzucona. Spróbuj ponownie lub skontaktuj się z nami.'
+})
+
+const subscriptionFailureMessage = computed(() => {
+  if (subscriptionQuery.data.value?.status === SubscriptionStatus.Canceled) {
+    return 'Subskrypcja została anulowana lub nie została dokończona.'
+  }
+  if (subscriptionQuery.data.value?.status === SubscriptionStatus.PastDue) {
+    return 'Subskrypcja jest w stanie PastDue. Dostęp może wygasnąć po końcu bieżącego okresu.'
+  }
+  return 'Checkout zakończył się, ale dostęp nie został jeszcze aktywowany.'
 })
 
 watch(isCompleted, (completed) => {
@@ -102,6 +168,12 @@ watch(isCompleted, (completed) => {
     queryClient.invalidateQueries({ queryKey: queryKeys.enrollments() })
     queryClient.invalidateQueries({ queryKey: queryKeys.course(statusQuery.data.value.courseId) })
     queryClient.invalidateQueries({ queryKey: queryKeys.myPurchases() })
+  }
+})
+
+watch(isSubscriptionCompleted, (completed) => {
+  if (completed) {
+    queryClient.invalidateQueries({ queryKey: queryKeys.mySubscription() })
   }
 })
 </script>

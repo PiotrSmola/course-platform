@@ -79,6 +79,16 @@ public class ProcessPaymentWebhookCommandHandler : IRequestHandler<ProcessPaymen
             case PaymentGatewayEventType.Chargeback:
                 await HandleRefundedAsync(gatewayEvent, PaymentStatus.Chargeback, cancellationToken);
                 break;
+            case PaymentGatewayEventType.SubscriptionCheckoutCompleted:
+                await HandleSubscriptionCheckoutCompletedAsync(gatewayEvent, cancellationToken);
+                break;
+            case PaymentGatewayEventType.SubscriptionUpdated:
+            case PaymentGatewayEventType.SubscriptionDeleted:
+                await HandleSubscriptionUpdatedAsync(gatewayEvent, cancellationToken);
+                break;
+            case PaymentGatewayEventType.InvoicePaid:
+                await HandleSubscriptionInvoicePaidAsync(gatewayEvent, cancellationToken);
+                break;
         }
     }
 
@@ -254,6 +264,72 @@ public class ProcessPaymentWebhookCommandHandler : IRequestHandler<ProcessPaymen
     private static long ToMinorUnits(decimal amount) =>
         (long)Math.Round(amount * 100, MidpointRounding.AwayFromZero);
 
+    private async Task HandleSubscriptionCheckoutCompletedAsync(
+        PaymentGatewayEvent gatewayEvent,
+        CancellationToken cancellationToken)
+    {
+        var subscription = await GetOrCreateSubscriptionAsync(gatewayEvent, cancellationToken);
+        if (subscription == null)
+        {
+            return;
+        }
+
+        ApplySubscriptionChanges(subscription, gatewayEvent);
+        await _context.SaveChangesAsync(cancellationToken);
+    }
+
+    private async Task HandleSubscriptionUpdatedAsync(
+        PaymentGatewayEvent gatewayEvent,
+        CancellationToken cancellationToken)
+    {
+        var subscription = await GetOrCreateSubscriptionAsync(gatewayEvent, cancellationToken);
+        if (subscription == null)
+        {
+            return;
+        }
+
+        ApplySubscriptionChanges(subscription, gatewayEvent);
+        await _context.SaveChangesAsync(cancellationToken);
+    }
+
+    private async Task HandleSubscriptionInvoicePaidAsync(
+        PaymentGatewayEvent gatewayEvent,
+        CancellationToken cancellationToken)
+    {
+        var subscription = await GetOrCreateSubscriptionAsync(gatewayEvent, cancellationToken);
+        if (subscription == null)
+        {
+            return;
+        }
+
+        ApplySubscriptionChanges(subscription, gatewayEvent);
+
+        if (string.IsNullOrWhiteSpace(gatewayEvent.InvoiceId)
+            || gatewayEvent.AmountTotalMinorUnits == null
+            || string.IsNullOrWhiteSpace(gatewayEvent.Currency))
+        {
+            await _context.SaveChangesAsync(cancellationToken);
+            return;
+        }
+
+        var invoiceExists = await _context.SubscriptionInvoices
+            .AnyAsync(i => i.StripeInvoiceId == gatewayEvent.InvoiceId, cancellationToken);
+
+        if (!invoiceExists)
+        {
+            _context.SubscriptionInvoices.Add(new SubscriptionInvoice
+            {
+                SubscriptionId = subscription.Id,
+                Amount = gatewayEvent.AmountTotalMinorUnits.Value / 100m,
+                Currency = gatewayEvent.Currency.ToUpperInvariant(),
+                PaidAt = gatewayEvent.PaidAt ?? DateTime.UtcNow,
+                StripeInvoiceId = gatewayEvent.InvoiceId
+            });
+        }
+
+        await _context.SaveChangesAsync(cancellationToken);
+    }
+
     private async Task<Payment?> FindPaymentAsync(PaymentGatewayEvent gatewayEvent, CancellationToken cancellationToken)
     {
         Payment? payment = null;
@@ -278,5 +354,136 @@ public class ProcessPaymentWebhookCommandHandler : IRequestHandler<ProcessPaymen
         }
 
         return payment;
+    }
+
+    private async Task<Subscription?> GetOrCreateSubscriptionAsync(
+        PaymentGatewayEvent gatewayEvent,
+        CancellationToken cancellationToken)
+    {
+        var subscription = await FindSubscriptionAsync(gatewayEvent, cancellationToken);
+        if (subscription != null)
+        {
+            return subscription;
+        }
+
+        if (string.IsNullOrWhiteSpace(gatewayEvent.CustomerId) || string.IsNullOrWhiteSpace(gatewayEvent.SubscriptionId))
+        {
+            _logger.LogWarning(
+                "Subscription webhook missing Stripe identifiers. Customer {CustomerId}, subscription {SubscriptionId}.",
+                gatewayEvent.CustomerId,
+                gatewayEvent.SubscriptionId);
+            return null;
+        }
+
+        var userId = await ResolveSubscriptionUserIdAsync(gatewayEvent, cancellationToken);
+        if (userId == null)
+        {
+            _logger.LogWarning(
+                "Subscription webhook for unknown user. Customer {CustomerId}, subscription {SubscriptionId}.",
+                gatewayEvent.CustomerId,
+                gatewayEvent.SubscriptionId);
+            return null;
+        }
+
+        subscription = new Subscription
+        {
+            UserId = userId.Value,
+            StripeCustomerId = gatewayEvent.CustomerId,
+            StripeSubscriptionId = gatewayEvent.SubscriptionId,
+            Status = gatewayEvent.SubscriptionStatus ?? SubscriptionStatus.Incomplete,
+            CurrentPeriodEnd = gatewayEvent.CurrentPeriodEnd ?? DateTime.UtcNow
+        };
+
+        _context.Subscriptions.Add(subscription);
+        return subscription;
+    }
+
+    private async Task<Subscription?> FindSubscriptionAsync(
+        PaymentGatewayEvent gatewayEvent,
+        CancellationToken cancellationToken)
+    {
+        if (!string.IsNullOrWhiteSpace(gatewayEvent.SubscriptionId))
+        {
+            var byStripeSubscriptionId = await _context.Subscriptions
+                .FirstOrDefaultAsync(s => s.StripeSubscriptionId == gatewayEvent.SubscriptionId, cancellationToken);
+
+            if (byStripeSubscriptionId != null)
+            {
+                return byStripeSubscriptionId;
+            }
+        }
+
+        if (!string.IsNullOrWhiteSpace(gatewayEvent.CustomerId))
+        {
+            var byStripeCustomerId = await _context.Subscriptions
+                .FirstOrDefaultAsync(s => s.StripeCustomerId == gatewayEvent.CustomerId, cancellationToken);
+
+            if (byStripeCustomerId != null)
+            {
+                return byStripeCustomerId;
+            }
+        }
+
+        if (!string.IsNullOrWhiteSpace(gatewayEvent.UserId) && Guid.TryParse(gatewayEvent.UserId, out var userId))
+        {
+            return await _context.Subscriptions
+                .FirstOrDefaultAsync(s => s.UserId == userId, cancellationToken);
+        }
+
+        return null;
+    }
+
+    private async Task<Guid?> ResolveSubscriptionUserIdAsync(
+        PaymentGatewayEvent gatewayEvent,
+        CancellationToken cancellationToken)
+    {
+        if (!string.IsNullOrWhiteSpace(gatewayEvent.UserId) && Guid.TryParse(gatewayEvent.UserId, out var userId))
+        {
+            return userId;
+        }
+
+        if (!string.IsNullOrWhiteSpace(gatewayEvent.CustomerEmail))
+        {
+            return await _context.Users
+                .Where(u => u.Email == gatewayEvent.CustomerEmail)
+                .Select(u => (Guid?)u.Id)
+                .FirstOrDefaultAsync(cancellationToken);
+        }
+
+        return null;
+    }
+
+    private static void ApplySubscriptionChanges(Subscription subscription, PaymentGatewayEvent gatewayEvent)
+    {
+        var changed = false;
+
+        if (!string.IsNullOrWhiteSpace(gatewayEvent.CustomerId) && subscription.StripeCustomerId != gatewayEvent.CustomerId)
+        {
+            subscription.StripeCustomerId = gatewayEvent.CustomerId;
+            changed = true;
+        }
+
+        if (!string.IsNullOrWhiteSpace(gatewayEvent.SubscriptionId) && subscription.StripeSubscriptionId != gatewayEvent.SubscriptionId)
+        {
+            subscription.StripeSubscriptionId = gatewayEvent.SubscriptionId;
+            changed = true;
+        }
+
+        if (gatewayEvent.SubscriptionStatus.HasValue && subscription.Status != gatewayEvent.SubscriptionStatus.Value)
+        {
+            subscription.Status = gatewayEvent.SubscriptionStatus.Value;
+            changed = true;
+        }
+
+        if (gatewayEvent.CurrentPeriodEnd.HasValue && subscription.CurrentPeriodEnd != gatewayEvent.CurrentPeriodEnd.Value)
+        {
+            subscription.CurrentPeriodEnd = gatewayEvent.CurrentPeriodEnd.Value;
+            changed = true;
+        }
+
+        if (changed)
+        {
+            subscription.MarkUpdated();
+        }
     }
 }

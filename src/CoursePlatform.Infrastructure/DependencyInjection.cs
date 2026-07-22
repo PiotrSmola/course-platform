@@ -50,6 +50,8 @@ public static class DependencyInjection
         services.Configure<EmailOptions>(configuration.GetSection("Email"));
         services.Configure<CoursePlatform.Application.Common.Options.FrontendOptions>(
             configuration.GetSection(CoursePlatform.Application.Common.Options.FrontendOptions.SectionName));
+        services.Configure<CoursePlatform.Application.Common.Options.SubscriptionOptions>(
+            configuration.GetSection(CoursePlatform.Application.Common.Options.SubscriptionOptions.SectionName));
 
         services.AddSingleton<IAmazonS3>(sp =>
         {

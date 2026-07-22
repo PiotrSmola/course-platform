@@ -5,14 +5,42 @@
         <div class="hero-content">
           <span class="eyebrow">{{ course.instructorName }}</span>
           <h1>{{ course.title }}</h1>
+          <div class="title-actions">
+            <button
+              v-if="showWishlistButton"
+              type="button"
+              class="wishlist-btn"
+              :class="{ active: course.isOnWishlist }"
+              :disabled="wishlistToggle.isPending.value"
+              :aria-label="course.isOnWishlist ? 'Usuń z listy życzeń' : 'Dodaj do listy życzeń'"
+              @click="toggleWishlist"
+            >
+              {{ course.isOnWishlist ? '♥' : '♡' }}
+            </button>
+          </div>
           <p class="description">{{ course.description }}</p>
           <div class="meta">
             <span class="badge level">{{ levelLabel }}</span>
             <span class="badge modules">{{ course.modules.length }} modułów</span>
             <span class="badge price">{{ course.price }} zł</span>
           </div>
+          <div v-if="hasSubscriptionAccess" class="subscription-access glass-card">
+            <div>
+              <strong>Masz aktywny All-access</strong>
+              <p>Ten kurs jest już dostępny w Twojej subskrypcji.</p>
+            </div>
+            <button
+              v-if="canManageSubscription"
+              type="button"
+              class="btn btn-ghost"
+              :disabled="billingPortalMutation.isPending.value"
+              @click="openBillingPortal"
+            >
+              {{ billingPortalMutation.isPending.value ? 'Otwieramy...' : 'Zarządzaj subskrypcją' }}
+            </button>
+          </div>
           <div class="actions" v-if="!isInstructor">
-            <template v-if="authStore.isAuthenticated && !isEnrolled">
+            <template v-if="authStore.isAuthenticated && !canAccessContent">
               <div v-if="isPaid" class="checkout-box">
                 <div class="coupon-row">
                   <input
@@ -46,11 +74,40 @@
                       : `Kup teraz — ${displayPrice} zł`
                   }}
                 </button>
+                <button
+                  type="button"
+                  class="btn btn-ghost"
+                  :disabled="subscriptionCheckoutMutation.isPending.value"
+                  @click="startSubscription"
+                >
+                  {{
+                    subscriptionCheckoutMutation.isPending.value
+                      ? 'Przekierowujemy...'
+                      : 'All-access — 399 zł/mies.'
+                  }}
+                </button>
               </div>
               <button v-else class="btn btn-primary" @click="enroll">Zapisz się</button>
             </template>
+            <router-link
+              v-else-if="authStore.isAuthenticated && firstAccessibleLesson"
+              class="btn btn-primary"
+              :to="{ name: 'Learning', params: { courseId: course.id, lessonId: firstAccessibleLesson.id } }"
+            >
+              {{ hasSubscriptionAccess ? 'Otwórz kurs w All-access' : 'Przejdź do kursu' }}
+            </router-link>
             <router-link class="btn btn-primary" :to="{ name: 'MyCourses' }" v-else-if="authStore.isAuthenticated && isEnrolled">Przejdź do kursu</router-link>
             <router-link class="btn btn-primary" :to="{ name: 'Login', query: { redirect: route.fullPath } }" v-else>Zaloguj się, aby zapisać</router-link>
+          </div>
+          <div class="waitlist-actions" v-if="showWaitlistSection">
+            <button
+              type="button"
+              class="btn btn-primary"
+              :disabled="waitlistToggle.isPending.value"
+              @click="toggleWaitlist"
+            >
+              {{ course.isOnWaitlist ? 'Wypisz się z powiadomień' : 'Powiadom o starcie' }}
+            </button>
           </div>
         </div>
         <div class="hero-visual">
@@ -70,7 +127,7 @@
               <div class="lessons-list">
                 <template v-for="lesson in module.lessons" :key="lesson.id">
                   <router-link
-                    v-if="isEnrolled"
+                    v-if="canAccessContent && !lesson.isLocked"
                     class="lesson-item link"
                     :to="{ name: 'Learning', params: { courseId: course.id, lessonId: lesson.id } }"
                   >
@@ -78,6 +135,11 @@
                     <span class="lesson-title">{{ lesson.title }}</span>
                     <span class="lesson-duration">{{ lesson.duration }} min</span>
                   </router-link>
+                  <div v-else-if="canAccessContent" class="lesson-item locked" :title="lesson.lockReason || undefined">
+                    <span class="lesson-icon">🔒</span>
+                    <span class="lesson-title">{{ lesson.title }}</span>
+                    <span class="lesson-duration">{{ lesson.duration }} min</span>
+                  </div>
                   <div v-else class="lesson-item">
                     <span class="lesson-icon">▶</span>
                     <span class="lesson-title">{{ lesson.title }}</span>
@@ -178,10 +240,18 @@ import { toTypedSchema } from '@vee-validate/zod'
 import { useAuthStore } from '@/features/auth/stores/auth.store'
 import { useCourseDetails } from '@/features/courses/composables/useCourses'
 import { useEnroll } from '@/features/enrollment/composables/useEnrollment'
-import { useCreateCheckout, usePreviewCoupon } from '@/features/payments/composables/usePayments'
+import {
+  useCreateBillingPortalSession,
+  useCreateCheckout,
+  useCreateSubscriptionCheckout,
+  useMySubscription,
+  usePreviewCoupon
+} from '@/features/payments/composables/usePayments'
 import { useCreateReview, useUpdateReview, useDeleteReview } from '@/features/reviews/composables/useReviews'
+import { useToggleWishlist } from '@/features/wishlist/composables/useWishlist'
+import { useToggleWaitlist } from '@/features/waitlist/composables/useWaitlist'
 import { createReviewSchema, updateReviewSchema } from '@/features/reviews/schemas/review.schema'
-import { CourseLevel } from '@/features/courses/types/course.types'
+import { CourseLevel, CourseStatus } from '@/features/courses/types/course.types'
 import type { ReviewDto } from '@/features/courses/types/course.types'
 import CourseThumbnail from '@/shared/components/media/CourseThumbnail.vue'
 
@@ -195,6 +265,8 @@ const createReviewMutation = useCreateReview(courseId)
 const updateReviewMutation = useUpdateReview(courseId)
 const deleteReviewMutation = useDeleteReview(courseId)
 const isEditing = ref(false)
+const wishlistToggle = useToggleWishlist()
+const waitlistToggle = useToggleWaitlist()
 
 const {
   handleSubmit: handleCreateSubmit,
@@ -226,6 +298,9 @@ const [editRating] = defineEditField('rating')
 const [editComment] = defineEditField('comment')
 
 const checkoutMutation = useCreateCheckout()
+const subscriptionCheckoutMutation = useCreateSubscriptionCheckout()
+const billingPortalMutation = useCreateBillingPortalSession()
+const subscriptionQuery = useMySubscription(() => authStore.isAuthenticated)
 const previewCouponMutation = usePreviewCoupon()
 const couponCode = ref('')
 const couponPreview = ref<{
@@ -237,10 +312,29 @@ const couponPreview = ref<{
 
 const isInstructor = computed(() => authStore.user?.id === course.value?.instructorId)
 const isEnrolled = computed(() => course.value?.isEnrolled ?? false)
+const canAccessContent = computed(() => course.value?.canAccessContent ?? false)
+const hasSubscriptionAccess = computed(() => course.value?.hasSubscriptionAccess ?? false)
+const canManageSubscription = computed(() => subscriptionQuery.data.value?.canManageInPortal ?? false)
 const isPaid = computed(() => (course.value?.price ?? 0) > 0)
+const isPublished = computed(() => course.value?.status === CourseStatus.Published)
+const showWishlistButton = computed(
+  () => authStore.isAuthenticated && isPublished.value && !isInstructor.value && !canAccessContent.value
+)
+const showWaitlistSection = computed(
+  () =>
+    authStore.isAuthenticated &&
+    !isPublished.value &&
+    !isInstructor.value &&
+    !canAccessContent.value &&
+    ((course.value?.canJoinWaitlist ?? false) || (course.value?.isOnWaitlist ?? false))
+)
 const displayPrice = computed(
   () => couponPreview.value?.finalAmount ?? course.value?.price ?? 0
 )
+const firstAccessibleLesson = computed(() => {
+  const lessons = course.value?.modules.flatMap((module) => module.lessons) ?? []
+  return lessons.find((lesson) => !lesson.isLocked) ?? lessons[0] ?? null
+})
 
 const levelLabel = computed(() => {
   if (!course.value) return ''
@@ -271,6 +365,24 @@ const buy = () => {
     courseId: course.value.id,
     couponCode: couponPreview.value?.code ?? (couponCode.value.trim() || null)
   })
+}
+
+const startSubscription = () => {
+  subscriptionCheckoutMutation.mutate()
+}
+
+const openBillingPortal = () => {
+  billingPortalMutation.mutate()
+}
+
+const toggleWishlist = () => {
+  if (!course.value) return
+  wishlistToggle.toggle(course.value.id, course.value.isOnWishlist)
+}
+
+const toggleWaitlist = () => {
+  if (!course.value) return
+  waitlistToggle.toggle(course.value.id, course.value.isOnWaitlist)
 }
 
 const onCreateSubmit = handleCreateSubmit((values) => {
@@ -360,6 +472,39 @@ watch(() => course.value?.userReviewId, () => {
     margin: 16px 0 20px;
   }
 
+  .title-actions {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin: -8px 0 12px;
+  }
+
+  .wishlist-btn {
+    width: 44px;
+    height: 44px;
+    border-radius: 50%;
+    border: none;
+    background: rgba(255, 255, 255, 0.08);
+    color: $color-muted;
+    font-size: 1.4rem;
+    cursor: pointer;
+    transition: color 0.2s, background 0.2s, transform 0.2s;
+
+    &.active {
+      color: #f87171;
+      background: rgba(248, 113, 113, 0.15);
+    }
+
+    &:hover:not(:disabled) {
+      transform: scale(1.05);
+    }
+
+    &:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+    }
+  }
+
   .description {
     color: $color-muted;
     font-size: 1.05rem;
@@ -391,6 +536,32 @@ watch(() => course.value?.userReviewId, () => {
 
 .actions .btn {
   padding: 14px 32px;
+}
+
+.waitlist-actions {
+  margin-top: 16px;
+}
+
+.subscription-access {
+  --lg-r: 20px;
+  --lg-blur: 0px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 18px 20px;
+  margin-bottom: 24px;
+
+  strong {
+    display: block;
+    margin-bottom: 6px;
+  }
+
+  p {
+    margin: 0;
+    color: $color-muted;
+    font-size: 0.92rem;
+  }
 }
 
 .checkout-box {
@@ -580,6 +751,11 @@ watch(() => course.value?.userReviewId, () => {
     color: $color-faint;
     font-size: 0.82rem;
   }
+}
+
+.lesson-item.locked {
+  opacity: 0.7;
+  cursor: not-allowed;
 }
 
 .reviews-list {

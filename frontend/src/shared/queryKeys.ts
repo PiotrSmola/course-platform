@@ -4,6 +4,7 @@ export const queryKeys = {
   currentUser: () => ['currentUser'] as const,
   userProfile: () => ['userProfile'] as const,
   enrollments: () => ['enrollments'] as const,
+  wishlist: () => ['wishlist'] as const,
 
   categories: () => ['categories'] as const,
   technologies: () => ['technologies'] as const,
@@ -27,8 +28,13 @@ export const queryKeys = {
     ['lesson-quiz-manage', courseId, lessonId] as const,
   lessonQuizAttempts: (courseId: string, lessonId: string) =>
     ['lesson-quiz-attempts', courseId, lessonId] as const,
+  lessonResources: (courseId: string, lessonId: string) =>
+    ['lesson-resources', courseId, lessonId] as const,
+  lessonResourcesManage: (courseId: string, lessonId: string) =>
+    ['lesson-resources-manage', courseId, lessonId] as const,
 
   paymentStatus: (sessionId: string) => ['payment-status', sessionId] as const,
+  mySubscription: () => ['my-subscription'] as const,
 
 
   myPurchases: () => ['my-purchases'] as const,
@@ -37,12 +43,22 @@ export const queryKeys = {
 
   instructorCourses: () => ['instructor-courses'] as const,
   instructorDashboard: () => ['instructor-dashboard'] as const,
+  instructorAnalytics: (courseId?: string) => ['instructor-analytics', courseId ?? 'all'] as const,
   adminUsers: () => ['admin-users'] as const,
   adminCourses: () => ['admin-courses'] as const,
   adminReviews: () => ['admin-reviews'] as const,
   adminAuditLogs: (pageNumber: number, pageSize: number) => ['admin-audit-logs', pageNumber, pageSize] as const,
   adminCoupons: () => ['admin-coupons'] as const,
+  adminRevenue: () => ['admin-revenue'] as const,
   catalogStats: () => ['catalog-stats'] as const,
   searchStats: () => ['admin-search-stats'] as const,
-  reindexJob: () => ['admin-reindex-job'] as const
+  reindexJob: () => ['admin-reindex-job'] as const,
+
+  qaModeration: (filters: {
+    courseId?: string
+    unansweredByInstructorOnly?: boolean
+    pageNumber?: number
+    pageSize?: number
+  }) => ['qa-moderation', filters] as const,
+  qaModerationAll: () => ['qa-moderation'] as const
 }

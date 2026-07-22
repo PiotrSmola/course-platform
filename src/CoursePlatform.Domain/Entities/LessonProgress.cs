@@ -10,4 +10,6 @@ public class LessonProgress
 
     public bool IsCompleted { get; set; }
     public DateTime? CompletedAt { get; set; }
+    public int LastPositionSeconds { get; set; }
+    public DateTime? LastWatchedAt { get; set; }
 }

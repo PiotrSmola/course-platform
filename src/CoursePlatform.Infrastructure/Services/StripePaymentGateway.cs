@@ -1,5 +1,6 @@
 using CoursePlatform.Application.Common.Exceptions;
 using CoursePlatform.Application.Common.Interfaces;
+using CoursePlatform.Domain.Enums;
 using CoursePlatform.Infrastructure.Options;
 using CoursePlatform.Infrastructure.Resilience;
 using Microsoft.Extensions.Options;
@@ -90,6 +91,92 @@ internal sealed class StripePaymentGateway : IPaymentGateway
         return new CheckoutSession(session.Id, session.Url, _options.Currency);
     }
 
+    public async Task<CheckoutSession> CreateSubscriptionCheckoutSessionAsync(
+        Guid userId,
+        string customerEmail,
+        decimal amountPln,
+        string? existingStripeCustomerId,
+        CancellationToken cancellationToken)
+    {
+        if (_client == null)
+        {
+            throw new InvalidOperationException("Stripe is not configured.");
+        }
+
+        var sessionOptions = new SessionCreateOptions
+        {
+            Mode = "subscription",
+            ClientReferenceId = userId.ToString(),
+            Customer = string.IsNullOrWhiteSpace(existingStripeCustomerId) ? null : existingStripeCustomerId,
+            CustomerEmail = string.IsNullOrWhiteSpace(existingStripeCustomerId) && !string.IsNullOrWhiteSpace(customerEmail)
+                ? customerEmail
+                : null,
+            SuccessUrl = $"{_options.SuccessUrl}?type=subscription&session_id={{CHECKOUT_SESSION_ID}}",
+            CancelUrl = $"{_options.CancelUrl}?type=subscription",
+            LineItems = new List<SessionLineItemOptions>
+            {
+                new()
+                {
+                    Quantity = 1,
+                    PriceData = new SessionLineItemPriceDataOptions
+                    {
+                        Currency = _options.Currency,
+                        UnitAmount = (long)Math.Round(amountPln * 100, MidpointRounding.AwayFromZero),
+                        Recurring = new SessionLineItemPriceDataRecurringOptions
+                        {
+                            Interval = "month"
+                        },
+                        ProductData = new SessionLineItemPriceDataProductDataOptions
+                        {
+                            Name = "Course Platform All-access"
+                        }
+                    }
+                }
+            },
+            Metadata = new Dictionary<string, string>
+            {
+                ["userId"] = userId.ToString()
+            },
+            SubscriptionData = new SessionSubscriptionDataOptions
+            {
+                Metadata = new Dictionary<string, string>
+                {
+                    ["userId"] = userId.ToString()
+                }
+            }
+        };
+
+        var service = new SessionService(_client);
+        var session = await _pipeline.ExecuteAsync(async ct =>
+            await service.CreateAsync(sessionOptions, cancellationToken: ct), cancellationToken);
+
+        return new CheckoutSession(session.Id, session.Url, _options.Currency);
+    }
+
+    public async Task<BillingPortalSession> CreateBillingPortalSessionAsync(
+        string stripeCustomerId,
+        string returnUrl,
+        CancellationToken cancellationToken)
+    {
+        if (_client == null)
+        {
+            throw new InvalidOperationException("Stripe is not configured.");
+        }
+
+        var service = new Stripe.BillingPortal.SessionService(_client);
+        var session = await _pipeline.ExecuteAsync(async ct =>
+            await service.CreateAsync(
+                new Stripe.BillingPortal.SessionCreateOptions
+                {
+                    Customer = stripeCustomerId,
+                    ReturnUrl = returnUrl
+                },
+                cancellationToken: ct),
+            cancellationToken);
+
+        return new BillingPortalSession(session.Url);
+    }
+
     public PaymentGatewayEvent ParseWebhookEvent(string payload, string signature)
     {
         if (!IsConfigured)
@@ -117,6 +204,9 @@ internal sealed class StripePaymentGateway : IPaymentGateway
             "checkout.session.expired" => ToSessionEvent(PaymentGatewayEventType.CheckoutExpired, stripeEvent),
             "charge.refunded" => ToChargeEvent(PaymentGatewayEventType.PaymentRefunded, stripeEvent),
             "charge.dispute.created" => ToChargeEvent(PaymentGatewayEventType.Chargeback, stripeEvent),
+            "customer.subscription.updated" => ToSubscriptionEvent(PaymentGatewayEventType.SubscriptionUpdated, stripeEvent),
+            "customer.subscription.deleted" => ToSubscriptionEvent(PaymentGatewayEventType.SubscriptionDeleted, stripeEvent),
+            "invoice.paid" => ToInvoiceEvent(stripeEvent),
             _ => new PaymentGatewayEvent(PaymentGatewayEventType.Ignored, stripeEvent.Id, null, null, null, null)
         };
     }
@@ -124,6 +214,22 @@ internal sealed class StripePaymentGateway : IPaymentGateway
     private static PaymentGatewayEvent ToSessionEvent(PaymentGatewayEventType type, Event stripeEvent)
     {
         var session = stripeEvent.Data.Object as Session;
+        if (string.Equals(session?.Mode, "subscription", StringComparison.OrdinalIgnoreCase))
+        {
+            var userId = GetMetadataValue(session?.Metadata, "userId") ?? session?.ClientReferenceId;
+            return new PaymentGatewayEvent(
+                PaymentGatewayEventType.SubscriptionCheckoutCompleted,
+                stripeEvent.Id,
+                session?.Id,
+                session?.AmountTotal,
+                session?.Currency,
+                null,
+                userId,
+                session?.CustomerId,
+                session?.CustomerDetails?.Email,
+                session?.SubscriptionId);
+        }
+
         var paymentId = GetMetadataValue(session?.Metadata, "paymentId") ?? session?.ClientReferenceId;
         return new PaymentGatewayEvent(type, stripeEvent.Id, session?.Id, session?.AmountTotal, session?.Currency, paymentId);
     }
@@ -139,6 +245,70 @@ internal sealed class StripePaymentGateway : IPaymentGateway
             charge?.AmountRefunded,
             charge?.Currency,
             paymentId);
+    }
+
+    private static PaymentGatewayEvent ToSubscriptionEvent(PaymentGatewayEventType type, Event stripeEvent)
+    {
+        var subscription = stripeEvent.Data.Object as Stripe.Subscription;
+        return new PaymentGatewayEvent(
+            type,
+            stripeEvent.Id,
+            null,
+            null,
+            subscription?.Currency,
+            null,
+            GetMetadataValue(subscription?.Metadata, "userId"),
+            subscription?.CustomerId,
+            null,
+            subscription?.Id,
+            null,
+            MapSubscriptionStatus(subscription?.Status),
+            GetCurrentPeriodEnd(subscription));
+    }
+
+    private static PaymentGatewayEvent ToInvoiceEvent(Event stripeEvent)
+    {
+        var invoice = stripeEvent.Data.Object as Invoice;
+        return new PaymentGatewayEvent(
+            PaymentGatewayEventType.InvoicePaid,
+            stripeEvent.Id,
+            null,
+            invoice?.AmountPaid,
+            invoice?.Currency,
+            null,
+            GetMetadataValue(invoice?.Parent?.SubscriptionDetails?.Metadata, "userId"),
+            invoice?.CustomerId,
+            invoice?.CustomerEmail,
+            invoice?.Parent?.Type == "subscription_details" ? invoice.Parent.SubscriptionDetails?.SubscriptionId : null,
+            invoice?.Id,
+            null,
+            null,
+            invoice?.StatusTransitions?.PaidAt ?? invoice?.Created);
+    }
+
+    private static DateTime? GetCurrentPeriodEnd(Stripe.Subscription? subscription)
+    {
+        if (subscription?.Items?.Data == null || subscription.Items.Data.Count == 0)
+        {
+            return null;
+        }
+
+        return subscription.Items.Data.Max(item => item.CurrentPeriodEnd);
+    }
+
+    private static SubscriptionStatus? MapSubscriptionStatus(string? stripeStatus)
+    {
+        return stripeStatus?.ToLowerInvariant() switch
+        {
+            "active" => SubscriptionStatus.Active,
+            "trialing" => SubscriptionStatus.Active,
+            "past_due" => SubscriptionStatus.PastDue,
+            "unpaid" => SubscriptionStatus.PastDue,
+            "canceled" => SubscriptionStatus.Canceled,
+            "incomplete" => SubscriptionStatus.Incomplete,
+            "incomplete_expired" => SubscriptionStatus.Incomplete,
+            _ => null
+        };
     }
 
     private static string? GetMetadataValue(IDictionary<string, string>? metadata, string key) =>

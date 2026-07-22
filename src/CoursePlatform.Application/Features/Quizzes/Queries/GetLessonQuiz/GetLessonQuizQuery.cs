@@ -31,6 +31,9 @@ public class GetLessonQuizQueryHandler : IRequestHandler<GetLessonQuizQuery, Les
             throw new ForbiddenAccessException("You must be enrolled in the course to view the quiz.");
         }
 
+        await ProgressGateHelper.EnsureLessonUnlockedAsync(
+            _context, _currentUserService, request.CourseId, request.LessonId, cancellationToken);
+
         var lessonExists = await _context.Lessons
             .AnyAsync(l => l.Id == request.LessonId && l.Module.CourseId == request.CourseId, cancellationToken);
 

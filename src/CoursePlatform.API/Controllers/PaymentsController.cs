@@ -6,6 +6,9 @@ using CoursePlatform.Application.Features.Payments.Commands.CreateCheckoutSessio
 using CoursePlatform.Application.Features.Payments.Commands.ProcessPaymentWebhook;
 using CoursePlatform.Application.Features.Payments.Queries.GetMyPurchases;
 using CoursePlatform.Application.Features.Payments.Queries.GetPaymentStatus;
+using CoursePlatform.Application.Features.Subscriptions.Commands.CreateBillingPortalSession;
+using CoursePlatform.Application.Features.Subscriptions.Commands.CreateSubscriptionCheckout;
+using CoursePlatform.Application.Features.Subscriptions.Queries.GetMySubscription;
 
 namespace CoursePlatform.API.Controllers;
 
@@ -27,6 +30,31 @@ public class PaymentsController : ControllerBase
         CreateCheckoutSessionCommand command, CancellationToken cancellationToken)
     {
         var result = await _mediator.Send(command, cancellationToken);
+        return Ok(result);
+    }
+
+    [HttpPost("subscription/checkout")]
+    [Authorize]
+    public async Task<ActionResult<SubscriptionCheckoutSessionDto>> CreateSubscriptionCheckoutSession(
+        CancellationToken cancellationToken)
+    {
+        var result = await _mediator.Send(new CreateSubscriptionCheckoutCommand(), cancellationToken);
+        return Ok(result);
+    }
+
+    [HttpGet("subscription/me")]
+    [Authorize]
+    public async Task<ActionResult<MySubscriptionDto>> GetMySubscription(CancellationToken cancellationToken)
+    {
+        var result = await _mediator.Send(new GetMySubscriptionQuery(), cancellationToken);
+        return Ok(result);
+    }
+
+    [HttpPost("subscription/portal")]
+    [Authorize]
+    public async Task<ActionResult<BillingPortalSessionDto>> CreateBillingPortalSession(CancellationToken cancellationToken)
+    {
+        var result = await _mediator.Send(new CreateBillingPortalSessionCommand(), cancellationToken);
         return Ok(result);
     }
 

@@ -44,6 +44,9 @@ public class UpdateProgressCommandHandler : IRequestHandler<UpdateProgressComman
             throw new ForbiddenAccessException("You are not enrolled in this course.");
         }
 
+        await ProgressGateHelper.EnsureCanCompleteLessonAsync(
+            _context, _currentUserService, request.CourseId, request.LessonId, cancellationToken);
+
         var lesson = await _context.Lessons
             .Include(l => l.Module)
             .FirstOrDefaultAsync(l => l.Id == request.LessonId && l.Module.CourseId == request.CourseId, cancellationToken);

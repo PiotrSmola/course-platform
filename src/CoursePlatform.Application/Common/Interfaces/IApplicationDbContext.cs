@@ -16,6 +16,7 @@ public interface IApplicationDbContext
     DbSet<Review> Reviews { get; }
     DbSet<LessonQuestion> LessonQuestions { get; }
     DbSet<LessonAnswer> LessonAnswers { get; }
+    DbSet<LessonResource> LessonResources { get; }
     DbSet<Quiz> Quizzes { get; }
     DbSet<QuizQuestion> QuizQuestions { get; }
     DbSet<QuizOption> QuizOptions { get; }
@@ -29,11 +30,15 @@ public interface IApplicationDbContext
     DbSet<BusinessPlan> BusinessPlans { get; }
     DbSet<BusinessPlanFeature> BusinessPlanFeatures { get; }
     DbSet<Payment> Payments { get; }
+    DbSet<Subscription> Subscriptions { get; }
+    DbSet<SubscriptionInvoice> SubscriptionInvoices { get; }
     DbSet<ProcessedStripeEvent> ProcessedStripeEvents { get; }
     DbSet<Certificate> Certificates { get; }
     DbSet<RefreshToken> RefreshTokens { get; }
     DbSet<AuditLog> AuditLogs { get; }
     DbSet<ApplicationUser> Users { get; }
+    DbSet<WishlistItem> WishlistItems { get; }
+    DbSet<CourseWaitlistEntry> CourseWaitlistEntries { get; }
 
     DatabaseFacade Database { get; }
 

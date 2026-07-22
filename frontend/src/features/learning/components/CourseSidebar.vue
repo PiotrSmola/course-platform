@@ -8,6 +8,7 @@
           <ul>
             <li v-for="lesson in module.lessons" :key="lesson.id">
               <router-link
+                v-if="!lesson.isLocked"
                 :to="{ name: 'Learning', params: { courseId, lessonId: lesson.id } }"
                 :class="{ active: lesson.id === currentLessonId, completed: lesson.isCompleted }"
               >
@@ -15,6 +16,15 @@
                 <span class="title">{{ lesson.title }}</span>
                 <span class="duration">{{ lesson.duration }}m</span>
               </router-link>
+              <div
+                v-else
+                class="locked"
+                :title="lesson.lockReason || 'Lekcja zablokowana'"
+              >
+                <span class="icon">🔒</span>
+                <span class="title">{{ lesson.title }}</span>
+                <span class="duration">{{ lesson.duration }}m</span>
+              </div>
             </li>
           </ul>
         </div>
@@ -83,7 +93,8 @@ defineProps<{
     gap: 4px;
   }
 
-  a {
+  a,
+  .locked {
     display: grid;
     grid-template-columns: auto 1fr auto;
     gap: 8px;
@@ -94,7 +105,9 @@ defineProps<{
     color: $color-muted;
     font-size: 0.85rem;
     transition: background 0.2s, color 0.2s;
+  }
 
+  a {
     &:hover,
     &.active {
       background: rgba(255, 255, 255, 0.06);
@@ -104,6 +117,11 @@ defineProps<{
     &.completed .icon {
       color: #4ade80;
     }
+  }
+
+  .locked {
+    opacity: 0.55;
+    cursor: not-allowed;
   }
 
   .icon {

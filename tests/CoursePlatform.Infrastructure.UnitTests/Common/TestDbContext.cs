@@ -17,6 +17,7 @@ public class TestDbContext : DbContext, IApplicationDbContext
     public DbSet<Review> Reviews => Set<Review>();
     public DbSet<LessonQuestion> LessonQuestions => Set<LessonQuestion>();
     public DbSet<LessonAnswer> LessonAnswers => Set<LessonAnswer>();
+    public DbSet<LessonResource> LessonResources => Set<LessonResource>();
     public DbSet<Quiz> Quizzes => Set<Quiz>();
     public DbSet<QuizQuestion> QuizQuestions => Set<QuizQuestion>();
     public DbSet<QuizOption> QuizOptions => Set<QuizOption>();
@@ -31,11 +32,15 @@ public class TestDbContext : DbContext, IApplicationDbContext
     public DbSet<BusinessPlan> BusinessPlans => Set<BusinessPlan>();
     public DbSet<BusinessPlanFeature> BusinessPlanFeatures => Set<BusinessPlanFeature>();
     public DbSet<Payment> Payments => Set<Payment>();
+    public DbSet<Subscription> Subscriptions => Set<Subscription>();
+    public DbSet<SubscriptionInvoice> SubscriptionInvoices => Set<SubscriptionInvoice>();
     public DbSet<ProcessedStripeEvent> ProcessedStripeEvents => Set<ProcessedStripeEvent>();
     public DbSet<Certificate> Certificates => Set<Certificate>();
     public DbSet<RefreshToken> RefreshTokens => Set<RefreshToken>();
     public DbSet<AuditLog> AuditLogs => Set<AuditLog>();
     public DbSet<ApplicationUser> Users => Set<ApplicationUser>();
+    public DbSet<WishlistItem> WishlistItems => Set<WishlistItem>();
+    public DbSet<CourseWaitlistEntry> CourseWaitlistEntries => Set<CourseWaitlistEntry>();
 
     public TestDbContext(DbContextOptions<TestDbContext> options) : base(options) { }
 

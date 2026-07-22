@@ -10,6 +10,9 @@ public class LessonProgressConfiguration : IEntityTypeConfiguration<LessonProgre
     {
         builder.HasKey(lp => new { lp.UserId, lp.LessonId });
 
+        builder.Property(lp => lp.LastPositionSeconds)
+            .HasDefaultValue(0);
+
         builder.HasOne(lp => lp.User)
             .WithMany(u => u.LessonProgresses)
             .HasForeignKey(lp => lp.UserId)

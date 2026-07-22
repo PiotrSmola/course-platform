@@ -64,6 +64,23 @@ public static class EmailTemplates
                 """));
     }
 
+    public static (string Subject, string Html) CoursePublishedWaitlist(string firstName, string courseTitle, string courseUrl)
+    {
+        var name = WebUtility.HtmlEncode(firstName);
+        var title = WebUtility.HtmlEncode(courseTitle);
+        var url = WebUtility.HtmlEncode(courseUrl);
+        return ($"Kurs dostępny — {courseTitle}",
+            Wrap($"""
+                <h2 style="margin:0 0 12px">Cześć {name}!</h2>
+                <p>Kurs <strong>{title}</strong>, na który czekałeś(-aś), właśnie został opublikowany.</p>
+                <p style="margin:24px 0">
+                  <a href="{url}" style="display:inline-block;padding:12px 24px;background:{Accent};color:#fff;text-decoration:none;border-radius:8px;font-weight:600">
+                    Zobacz kurs
+                  </a>
+                </p>
+                """));
+    }
+
     public static (string Subject, string Html) ConfirmEmail(string firstName, string confirmUrl)
     {
         var name = WebUtility.HtmlEncode(firstName);

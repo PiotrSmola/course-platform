@@ -13,6 +13,7 @@ using CoursePlatform.Application.Features.Admin.Queries.GetAuditLogs;
 using CoursePlatform.Application.Features.Admin.Queries.GetReviews;
 using CoursePlatform.Application.Features.Admin.Queries.GetUsers;
 using CoursePlatform.Application.Features.Admin.Search;
+using CoursePlatform.Application.Features.Analytics.Queries.GetAdminRevenueOverview;
 using CoursePlatform.Application.Features.Courses.Queries.GetCourses;
 using CoursePlatform.Domain.Enums;
 
@@ -112,5 +113,12 @@ public class AdminController : ControllerBase
     {
         var stats = await _mediator.Send(new GetSearchStatsQuery(), cancellationToken);
         return Ok(stats);
+    }
+
+    [HttpGet("revenue")]
+    public async Task<ActionResult<AdminRevenueOverviewDto>> GetRevenueOverview(CancellationToken cancellationToken)
+    {
+        var result = await _mediator.Send(new GetAdminRevenueOverviewQuery(), cancellationToken);
+        return Ok(result);
     }
 }

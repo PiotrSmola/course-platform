@@ -4,6 +4,37 @@
       <div class="container">
         <h1 class="browse-title">Wszystkie kursy</h1>
         <p class="browse-subtitle">Odkryj {{ totalCount }} kursów i rozpocznij naukę już dziś</p>
+        <div class="subscription-banner glass-card">
+          <div>
+            <span class="subscription-banner__eyebrow">All-access</span>
+            <h2>Ucz się bez limitu za 399 zł / mies.</h2>
+            <p>Jedna subskrypcja odblokowuje wszystkie opublikowane kursy i pozwala zarządzać planem w Stripe Billing Portal.</p>
+          </div>
+          <div class="subscription-banner__actions">
+            <button
+              v-if="authStore.isAuthenticated && !hasActiveSubscription"
+              type="button"
+              class="btn btn-primary"
+              :disabled="subscriptionCheckoutMutation.isPending.value"
+              @click="startSubscription"
+            >
+              {{ subscriptionCheckoutMutation.isPending.value ? 'Przekierowujemy...' : 'Aktywuj All-access' }}
+            </button>
+            <button
+              v-else-if="authStore.isAuthenticated && canManageSubscription"
+              type="button"
+              class="btn btn-ghost"
+              :disabled="billingPortalMutation.isPending.value"
+              @click="openBillingPortal"
+            >
+              {{ billingPortalMutation.isPending.value ? 'Otwieramy...' : 'Zarządzaj subskrypcją' }}
+            </button>
+            <router-link v-else-if="!authStore.isAuthenticated" class="btn btn-primary" :to="{ name: 'Register' }">
+              Załóż konto i subskrybuj
+            </router-link>
+            <span v-if="hasActiveSubscription" class="subscription-banner__badge">Aktywne dla Twojego konta</span>
+          </div>
+        </div>
 
         <div class="browse-toolbar">
           <div class="search-box glass">
@@ -310,11 +341,18 @@
 <script setup lang="ts">
 import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { useQuery } from '@tanstack/vue-query'
+import { useAuthStore } from '@/features/auth/stores/auth.store'
 import { useCourseBrowse, type SortOption } from '@/features/courses/composables/useCourseBrowse'
 import CourseBrowseCard from '@/features/courses/components/CourseBrowseCard.vue'
+import { useCreateBillingPortalSession, useCreateSubscriptionCheckout, useMySubscription } from '@/features/payments/composables/usePayments'
 import { CourseLevel } from '@/features/courses/types/course.types'
 import { getCategories, getTechnologies } from '@/features/courses/api/courses.api'
 import { queryKeys } from '@/shared/queryKeys'
+
+const authStore = useAuthStore()
+const subscriptionCheckoutMutation = useCreateSubscriptionCheckout()
+const billingPortalMutation = useCreateBillingPortalSession()
+const subscriptionQuery = useMySubscription(() => authStore.isAuthenticated)
 
 const {
   state,
@@ -346,6 +384,9 @@ const { data: technologies } = useQuery({
   queryFn: getTechnologies,
   initialData: []
 })
+
+const hasActiveSubscription = computed(() => subscriptionQuery.data.value?.hasActiveAccess ?? false)
+const canManageSubscription = computed(() => subscriptionQuery.data.value?.canManageInPortal ?? false)
 
 const searchInput = ref(state.searchTerm)
 
@@ -442,6 +483,14 @@ const visiblePages = computed(() => {
   }
   return pages
 })
+
+function startSubscription() {
+  subscriptionCheckoutMutation.mutate()
+}
+
+function openBillingPortal() {
+  billingPortalMutation.mutate()
+}
 </script>
 
 <style lang="scss" scoped>
@@ -476,7 +525,60 @@ const visiblePages = computed(() => {
 .browse-subtitle {
   color: $color-muted;
   font-size: 0.95rem;
+  margin-bottom: 20px;
+}
+
+.subscription-banner {
+  --lg-r: 24px;
+  --lg-blur: 0px;
+  display: flex;
+  justify-content: space-between;
+  gap: 24px;
+  padding: 22px 24px;
   margin-bottom: 24px;
+
+  @media (max-width: 780px) {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+}
+
+.subscription-banner__eyebrow {
+  display: inline-flex;
+  margin-bottom: 10px;
+  font-size: 0.76rem;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: $color-gold;
+}
+
+.subscription-banner h2 {
+  font-size: 1.3rem;
+  margin-bottom: 8px;
+}
+
+.subscription-banner p {
+  color: $color-muted;
+  max-width: 720px;
+}
+
+.subscription-banner__actions {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  justify-content: center;
+  gap: 10px;
+
+  @media (max-width: 780px) {
+    align-items: flex-start;
+  }
+}
+
+.subscription-banner__badge {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: #86efac;
 }
 
 .browse-toolbar {

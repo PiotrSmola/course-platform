@@ -2,11 +2,17 @@
   <div class="payment-result">
     <div class="result-card glass-card">
       <div class="result-icon">!</div>
-      <h1>Płatność anulowana</h1>
-      <p>Nie obciążyliśmy Twojej karty. Możesz wrócić do kursu i spróbować ponownie.</p>
+      <h1>{{ isSubscriptionFlow ? 'Subskrypcja anulowana' : 'Płatność anulowana' }}</h1>
+      <p>
+        {{
+          isSubscriptionFlow
+            ? 'Nie aktywowaliśmy planu All-access. Możesz wrócić do katalogu i spróbować ponownie.'
+            : 'Nie obciążyliśmy Twojej karty. Możesz wrócić do kursu i spróbować ponownie.'
+        }}
+      </p>
       <div class="result-actions">
         <router-link
-          v-if="courseId"
+          v-if="courseId && !isSubscriptionFlow"
           class="btn btn-primary"
           :to="{ name: 'CourseDetails', params: { id: courseId } }"
         >
@@ -24,6 +30,7 @@ import { useRoute } from 'vue-router'
 
 const route = useRoute()
 const courseId = computed(() => (route.query.courseId as string) ?? '')
+const isSubscriptionFlow = computed(() => route.query.type === 'subscription')
 </script>
 
 <style lang="scss" scoped>

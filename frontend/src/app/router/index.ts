@@ -65,6 +65,14 @@ const routes: RouteRecordRaw[] = [
     ]
   },
   {
+    path: '/wishlist',
+    component: () => import('@/app/layouts/DashboardLayout.vue'),
+    beforeEnter: authGuard,
+    children: [
+      { path: '', component: () => import('@/features/wishlist/pages/WishlistPage.vue'), name: 'Wishlist' }
+    ]
+  },
+  {
     path: '/profile',
     component: () => import('@/app/layouts/DashboardLayout.vue'),
     beforeEnter: authGuard,

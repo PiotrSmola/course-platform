@@ -10,5 +10,8 @@ public static class ObjectKeyBuilder
 
     public static string CertificatePdfObjectKey(Guid certificateId)
         => $"certificates/{certificateId:D}/certificate.pdf";
+
+    public static string LessonResourceObjectKey(Guid courseId, Guid lessonId, Guid resourceId)
+        => $"courses/{courseId:D}/lessons/{lessonId:D}/resources/{resourceId:D}/file";
 }
 

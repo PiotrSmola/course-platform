@@ -116,4 +116,86 @@ public class GetCourseDetailsQueryTests
 
         await act.Should().ThrowAsync<NotFoundException>();
     }
+
+    [Fact]
+    public async Task Handle_ActiveSubscriptionUser_LoadsProgressAndAccessFlags()
+    {
+        var instructor = new ApplicationUser { Id = Guid.NewGuid(), UserName = "inst", Email = "i@t.com", FirstName = "A", LastName = "B" };
+        var student = new ApplicationUser { Id = Guid.NewGuid(), UserName = "stud", Email = "s@t.com", FirstName = "C", LastName = "D" };
+        _context.Users.AddRange(instructor, student);
+
+        var lessonOne = new Lesson
+        {
+            Title = "L1",
+            Description = "Desc",
+            Duration = 10,
+            Order = 1,
+            VideoObjectKey = "video-1"
+        };
+
+        var lessonTwo = new Lesson
+        {
+            Title = "L2",
+            Description = "Desc",
+            Duration = 10,
+            Order = 2,
+            VideoObjectKey = "video-2"
+        };
+
+        var course = new Course
+        {
+            Title = "Subscribed",
+            Description = "Desc",
+            ShortDescription = "Short",
+            Price = 10,
+            Level = CourseLevel.Beginner,
+            Status = CourseStatus.Published,
+            ThumbnailObjectKey = "",
+            Language = "pl",
+            InstructorId = instructor.Id,
+            Categories = new List<Category>(),
+            Technologies = new List<Technology>(),
+            Modules = new List<Module>
+            {
+                new()
+                {
+                    Title = "M1",
+                    Order = 1,
+                    Lessons = new List<Lesson> { lessonOne, lessonTwo }
+                }
+            },
+            Reviews = new List<Review>()
+        };
+
+        _context.Courses.Add(course);
+        _context.Subscriptions.Add(new Subscription
+        {
+            UserId = student.Id,
+            StripeCustomerId = "cus_123",
+            StripeSubscriptionId = "sub_123",
+            Status = SubscriptionStatus.Active,
+            CurrentPeriodEnd = DateTime.UtcNow.AddDays(30)
+        });
+        _context.LessonProgresses.Add(new LessonProgress
+        {
+            UserId = student.Id,
+            LessonId = lessonOne.Id,
+            IsCompleted = true,
+            CompletedAt = DateTime.UtcNow
+        });
+        await _context.SaveChangesAsync();
+
+        _currentUserServiceMock.Setup(x => x.UserId).Returns(student.Id);
+        _currentUserServiceMock.Setup(x => x.IsAdmin).Returns(false);
+
+        var handler = new GetCourseDetailsQueryHandler(_context, _currentUserServiceMock.Object, _fileStorageMock.Object);
+        var result = await handler.Handle(new GetCourseDetailsQuery(course.Id), CancellationToken.None);
+
+        result.IsEnrolled.Should().BeFalse();
+        result.CanAccessContent.Should().BeTrue();
+        result.HasSubscriptionAccess.Should().BeTrue();
+        result.Modules[0].Lessons[0].IsCompleted.Should().BeTrue();
+        result.Modules[0].Lessons[1].IsLocked.Should().BeFalse();
+        result.CanReview.Should().BeFalse();
+    }
 }

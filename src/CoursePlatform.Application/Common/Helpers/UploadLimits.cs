@@ -12,4 +12,9 @@ public static class UploadLimits
 
     public static readonly IReadOnlyCollection<string> AllowedVideoContentTypes =
         new[] { "video/mp4", "video/webm", "video/quicktime" };
+
+    public const long MaxLessonResourceBytes = 25L * 1024 * 1024;
+
+    public static readonly IReadOnlyCollection<string> AllowedLessonResourceContentTypes =
+        new[] { "application/pdf", "application/zip", "text/plain", "application/json" };
 }

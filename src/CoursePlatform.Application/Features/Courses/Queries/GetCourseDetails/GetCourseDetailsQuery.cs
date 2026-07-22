@@ -49,8 +49,12 @@ public class GetCourseDetailsQueryHandler : IRequestHandler<GetCourseDetailsQuer
         }
 
         var isEnrolled = false;
+        var canAccessContent = false;
+        var hasSubscriptionAccess = false;
         var hasUserReviewed = false;
         Guid? userReviewId = null;
+        var isOnWishlist = false;
+        var isOnWaitlist = false;
         HashSet<Guid> completedLessonIds = new();
 
         if (_currentUserService.UserId.HasValue)
@@ -58,6 +62,10 @@ public class GetCourseDetailsQueryHandler : IRequestHandler<GetCourseDetailsQuer
             var userId = _currentUserService.UserId.Value;
             isEnrolled = await _context.Enrollments
                 .AnyAsync(e => e.UserId == userId && e.CourseId == request.Id, cancellationToken);
+            hasSubscriptionAccess = await CourseAccessHelper.HasActiveSubscriptionAsync(
+                _context,
+                userId,
+                cancellationToken);
 
             var userReview = await _context.Reviews
                 .AsNoTracking()
@@ -65,7 +73,9 @@ public class GetCourseDetailsQueryHandler : IRequestHandler<GetCourseDetailsQuer
             hasUserReviewed = userReview != null;
             userReviewId = userReview?.Id;
 
-            if (isEnrolled)
+            canAccessContent = isEnrolled || hasSubscriptionAccess;
+
+            if (canAccessContent)
             {
                 var lessonIds = course.Modules.SelectMany(m => m.Lessons).Select(l => l.Id).ToList();
                 completedLessonIds = (await _context.LessonProgresses
@@ -74,23 +84,48 @@ public class GetCourseDetailsQueryHandler : IRequestHandler<GetCourseDetailsQuer
                     .ToListAsync(cancellationToken))
                     .ToHashSet();
             }
+
+            if (course.Status == Domain.Enums.CourseStatus.Published)
+            {
+                isOnWishlist = await _context.WishlistItems
+                    .AnyAsync(w => w.UserId == userId && w.CourseId == request.Id, cancellationToken);
+            }
+
+            if (course.Status is Domain.Enums.CourseStatus.Draft or Domain.Enums.CourseStatus.Hidden)
+            {
+                isOnWaitlist = await _context.CourseWaitlistEntries
+                    .AnyAsync(e => e.UserId == userId && e.CourseId == request.Id, cancellationToken);
+            }
         }
 
         var canManage = _currentUserService.UserId.HasValue &&
             (_currentUserService.UserId.Value == course.InstructorId || _currentUserService.IsAdmin);
 
+        canAccessContent = canAccessContent || canManage;
+
+        var lockStates = canAccessContent
+            ? await ProgressGateHelper.GetLessonLockStatesAsync(
+                _context, _currentUserService, course.Id, cancellationToken)
+            : new Dictionary<Guid, (bool IsLocked, string? LockReason)>();
+
         var modules = course.Modules.OrderBy(m => m.Order).Select(m => new ModuleDto(
             m.Id,
             m.Title,
             m.Order,
-            m.Lessons.OrderBy(l => l.Order).Select(l => new LessonListDto(
-                l.Id,
-                l.Title,
-                l.Description,
-                l.Duration,
-                l.Order,
-                completedLessonIds.Contains(l.Id),
-                canManage ? l.VideoObjectKey : null)).ToList())).ToList();
+            m.Lessons.OrderBy(l => l.Order).Select(l =>
+            {
+                var lockState = lockStates.GetValueOrDefault(l.Id);
+                return new LessonListDto(
+                    l.Id,
+                    l.Title,
+                    l.Description,
+                    l.Duration,
+                    l.Order,
+                    completedLessonIds.Contains(l.Id),
+                    canManage ? l.VideoObjectKey : null,
+                    lockState.IsLocked,
+                    lockState.LockReason);
+            }).ToList())).ToList();
 
         var reviews = course.Reviews.OrderByDescending(r => r.CreatedAt).Select(r => new ReviewDto(
             r.Id,
@@ -100,6 +135,11 @@ public class GetCourseDetailsQueryHandler : IRequestHandler<GetCourseDetailsQuer
             r.CreatedAt)).ToList();
 
         var canReview = isEnrolled && !hasUserReviewed;
+
+        var canJoinWaitlist = _currentUserService.UserId.HasValue &&
+            course.Status is Domain.Enums.CourseStatus.Draft or Domain.Enums.CourseStatus.Hidden &&
+            _currentUserService.UserId.Value != course.InstructorId &&
+            !isOnWaitlist;
 
         return new CourseDetailsDto(
             course.Id,
@@ -121,8 +161,13 @@ public class GetCourseDetailsQueryHandler : IRequestHandler<GetCourseDetailsQuer
             course.Reviews.Count,
             reviews,
             isEnrolled,
+            canAccessContent,
+            hasSubscriptionAccess,
             hasUserReviewed,
             canReview,
-            userReviewId);
+            userReviewId,
+            isOnWishlist,
+            canJoinWaitlist,
+            isOnWaitlist);
     }
 }
