@@ -1,13 +1,13 @@
 # Course Platform
 
-Online course platform — ASP.NET Core 9 (Clean Architecture) + Vue 3 + TypeScript. Portfolio / learning project with real integrations (MinIO, Stripe, Redis, Elasticsearch, SignalR).
+Online course platform — ASP.NET Core 9 (Clean Architecture) + Vue 3 + TypeScript. Portfolio / learning project with real integrations (MinIO, Stripe, Redis, Elasticsearch, SignalR, Aspire/OTEL).
 
 ## Architecture highlights
 
 - **Backend:** Clean Architecture (API → Application → Domain; Infrastructure → Application/Domain), CQRS via MediatR, FluentValidation, EF Core + PostgreSQL, ASP.NET Identity + JWT/refresh tokens
 - **AuthZ:** role policies (`AdminOnly`, `InstructorOrAdmin`) + resource policy `ManageCourse` (owner or admin); lesson access via enrollment **or** active All-access subscription, with progress gates
 - **Frontend:** Vue 3 Composition API, Pinia (auth), TanStack Vue Query (server state), VeeValidate + Zod, SCSS (7-1)
-- **Infra:** Docker Compose — API, Vue, Postgres, MinIO, Redis, Elasticsearch, MailHog, optional Stripe CLI
+- **Infra:** Docker Compose — API, Vue, Postgres, MinIO, Redis, Elasticsearch, MailHog, Aspire Dashboard (OTEL), optional Stripe CLI
 
 ## Prerequisites
 
@@ -29,7 +29,9 @@ docker compose up -d
 - API: http://localhost:8080
 - Frontend: http://localhost:5173
 - Swagger (dev only): http://localhost:8080/swagger
-- MailHog UI: http://localhost:8025 (password reset / confirm email in dev)
+- MailHog UI: http://localhost:8025 (password reset / confirm email / waitlist publish mail in dev)
+- MinIO console: http://localhost:9001
+- Aspire Dashboard (OTEL): http://localhost:18888
 
 Official local dev path is **Docker Compose**. `launchSettings.json` ports (5089/7079) are for optional IDE runs outside containers.
 
@@ -37,11 +39,15 @@ Official local dev path is **Docker Compose**. `launchSettings.json` ports (5089
 
 | Role | Capabilities |
 |------|----------------|
-| Student | Register/login, confirm email, reset password, browse/filter courses, wishlist, waitlist on coming-soon (`Hidden`) courses, enroll free / Stripe checkout or **All-access** monthly subscription, learn with playback speed + resume, progress gates (lesson order + quiz pass), lesson Q&A, MCQ quizzes, downloadable lesson materials, reviews, certificates |
+| Student | Register/login, confirm email, reset password, browse/filter courses, wishlist, waitlist on coming-soon (`Hidden`) courses, enroll free / Stripe checkout or **All-access** monthly subscription, learn with playback speed + resume, progress gates (lesson order + quiz pass), lesson Q&A, MCQ quizzes, downloadable lesson materials, reviews, certificates, profile (stats / purchases / delete account) |
 | Instructor | Create/edit courses, modules/lessons, thumbnail & video upload, lesson resources, publish/hide/delete own courses, Q&A moderation, dashboard + analytics (completion, drop-off, revenue) |
 | Admin | Users & roles, course status, moderate reviews, coupons, Q&A moderation, audit log, Elastic reindex, revenue overview |
 
+Also public: **learning paths**, **business plans**, certificate verification. Realtime toasts via SignalR (purchase, certificate, reindex) — no notification inbox.
+
 Error pages: `/error/403`, `/error/404`, `/error/500`, `/error/501` (+ SPA catch-all → 404).
+
+Aspire Dashboard (OpenTelemetry): http://localhost:18888 when the `aspire` service is up.
 
 ## Configuration
 
