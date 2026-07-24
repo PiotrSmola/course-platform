@@ -5,7 +5,7 @@ Online course platform — ASP.NET Core 9 (Clean Architecture) + Vue 3 + TypeScr
 ## Architecture highlights
 
 - **Backend:** Clean Architecture (API → Application → Domain; Infrastructure → Application/Domain), CQRS via MediatR, FluentValidation, EF Core + PostgreSQL, ASP.NET Identity + JWT/refresh tokens
-- **AuthZ:** role policies (`AdminOnly`, `InstructorOrAdmin`) + resource policy `ManageCourse` (owner or admin) alongside handler-level enrollment checks
+- **AuthZ:** role policies (`AdminOnly`, `InstructorOrAdmin`) + resource policy `ManageCourse` (owner or admin); lesson access via enrollment **or** active All-access subscription, with progress gates
 - **Frontend:** Vue 3 Composition API, Pinia (auth), TanStack Vue Query (server state), VeeValidate + Zod, SCSS (7-1)
 - **Infra:** Docker Compose — API, Vue, Postgres, MinIO, Redis, Elasticsearch, MailHog, optional Stripe CLI
 
@@ -37,9 +37,9 @@ Official local dev path is **Docker Compose**. `launchSettings.json` ports (5089
 
 | Role | Capabilities |
 |------|----------------|
-| Student | Register/login, confirm email, reset password, browse/filter courses, enroll free / Stripe checkout, learn + progress, reviews, certificates |
-| Instructor | Create/edit courses, modules/lessons, thumbnail & video upload, publish/hide/delete own courses, dashboard stats |
-| Admin | Users & roles, course status, moderate reviews, audit log, Elastic reindex |
+| Student | Register/login, confirm email, reset password, browse/filter courses, wishlist, waitlist on coming-soon (`Hidden`) courses, enroll free / Stripe checkout or **All-access** monthly subscription, learn with playback speed + resume, progress gates (lesson order + quiz pass), lesson Q&A, MCQ quizzes, downloadable lesson materials, reviews, certificates |
+| Instructor | Create/edit courses, modules/lessons, thumbnail & video upload, lesson resources, publish/hide/delete own courses, Q&A moderation, dashboard + analytics (completion, drop-off, revenue) |
+| Admin | Users & roles, course status, moderate reviews, coupons, Q&A moderation, audit log, Elastic reindex, revenue overview |
 
 Error pages: `/error/403`, `/error/404`, `/error/500`, `/error/501` (+ SPA catch-all → 404).
 
@@ -127,7 +127,7 @@ CSP on API responses is defence-in-depth (Swagger, error pages, iframe protectio
 
 ## File storage — MinIO (Etap 2)
 
-Course thumbnails and lesson videos are stored in MinIO (S3-compatible object storage), never in the database. The bucket is private (`mc anonymous set none`) — every read and write goes through **presigned URLs** issued by the API after authorization checks.
+Course thumbnails, lesson videos, and **lesson download materials** (PDF, ZIP, source archives, etc.) are stored in MinIO (S3-compatible object storage), never in the database. The bucket is private (`mc anonymous set none`) — every read and write goes through **presigned URLs** issued by the API after authorization checks.
 
 ### Services
 
@@ -149,7 +149,8 @@ Configuration lives in `.env` (`MINIO_ROOT_USER`, `MINIO_ROOT_PASSWORD`, `MINIO_
 ### Read access
 
 - **Thumbnails** — course DTOs return a presigned `thumbnailUrl` (15 min expiry); `null` when no thumbnail was uploaded.
-- **Videos** — `GET /api/courses/{courseId}/lessons/{lessonId}/video` returns a presigned URL (6 h expiry) only for enrolled students, the course owner or an admin (resource-based authorization).
+- **Videos** — `GET /api/courses/{courseId}/lessons/{lessonId}/video` returns a presigned URL (6 h expiry) only for enrolled students, active All-access subscribers, the course owner or an admin (resource-based authorization + progress gates when applicable).
+- **Lesson resources** — list/download endpoints under `/api/courses/{courseId}/lessons/{lessonId}/resources` (same access rules as learning content).
 
 ### Exporting stored files (e.g. sharing a lesson video)
 
@@ -184,11 +185,15 @@ The result is a standard media file (e.g. `video/mp4`) — share it like any oth
 
 Production CSP must include the MinIO/public CDN origin in `img-src`, `media-src` and `connect-src` (browser `PUT`s uploads via `fetch`).
 
-## Payments — Stripe test mode (Etap 3)
+## Payments — Stripe test mode (Etap 3 + All-access)
 
 Paid courses are purchased through **Stripe Checkout** in test mode. The enrollment is created **only by the webhook** (`checkout.session.completed`) after Stripe confirms the payment — never from the browser redirect. Free courses (price 0) enroll directly without Stripe.
 
-### Flow
+**All-access** is a separate monthly Stripe Subscription (~399 PLN, configurable via `Subscription:MonthlyPricePln`). It unlocks all **Published** courses without creating per-course enrollments. Access is driven by webhook events (`checkout.session.completed` for subscription mode, plus `customer.subscription.*` / `invoice.paid`). Public price: `GET /api/payments/subscription/offer`. Manage billing: Stripe Customer Portal via `POST /api/payments/subscription/portal`.
+
+Admin coupons can discount single-course checkout (preview + apply at `POST /api/payments/checkout`).
+
+### Flow (single course)
 
 1. `POST /api/payments/checkout` (authorized) — verifies the course and price server-side, stores a `Payment` row (`Pending`) and returns the Stripe Checkout URL.
 2. The browser is redirected to Stripe; the user pays with a test card.
@@ -196,6 +201,11 @@ Paid courses are purchased through **Stripe Checkout** in test mode. The enrollm
 4. The browser lands on `/payment/success`, which polls `GET /api/payments/{sessionId}` until the webhook finishes.
 
 Direct enrollment (`POST /api/enrollments`) rejects paid courses, so payment cannot be bypassed.
+
+### Flow (All-access)
+
+1. `POST /api/payments/subscription/checkout` (authorized) — creates a Stripe Checkout session in `subscription` mode.
+2. After payment, the webhook activates the local `Subscription` row (`Status` + `CurrentPeriodEnd`); success page polls `GET /api/payments/subscription/me`.
 
 ### Setup (dev)
 
@@ -238,4 +248,9 @@ npx playwright install
 npm run test:e2e
 ```
 
-See `IMPLEMENTATION_PLAN.md` for architecture details and historical roadmap. Status of stages 1–3: **done** (plus certificates, search, realtime, auth recovery, error pages, tests).
+See `IMPLEMENTATION_PLAN.md` for architecture details and historical roadmap. Status of stages **1–13: done** (domain MVP, MinIO, Stripe, Q&A, quizzes, coupons, player UX, progress gates, lesson materials, wishlist/waitlist, Q&A moderation, All-access subscription, analytics — plus certificates, search, realtime, auth recovery, error pages, tests).
+
+### Waitlist note
+
+- **Wishlist** — Published courses only.
+- **Waitlist** — unpublished courses (`Draft` via shareable teaser URL; `Hidden` also appears in the public catalog as “coming soon”). Joining requires login; publishing a course emails waitlisted users (MailHog in dev).
