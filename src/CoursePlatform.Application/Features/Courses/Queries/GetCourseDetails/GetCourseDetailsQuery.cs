@@ -39,13 +39,15 @@ public class GetCourseDetailsQueryHandler : IRequestHandler<GetCourseDetailsQuer
             throw new NotFoundException($"Course {request.Id} not found.");
         }
 
-        if (course.Status != Domain.Enums.CourseStatus.Published)
+        var canManage = _currentUserService.UserId.HasValue &&
+            (_currentUserService.UserId.Value == course.InstructorId || _currentUserService.IsAdmin);
+
+        var isWaitlistTeaser = course.Status is Domain.Enums.CourseStatus.Draft or Domain.Enums.CourseStatus.Hidden
+            && !canManage;
+
+        if (course.Status != Domain.Enums.CourseStatus.Published && !canManage && !isWaitlistTeaser)
         {
-            if (!_currentUserService.UserId.HasValue ||
-                (_currentUserService.UserId.Value != course.InstructorId && !_currentUserService.IsAdmin))
-            {
-                throw new NotFoundException($"Course {request.Id} not found.");
-            }
+            throw new NotFoundException($"Course {request.Id} not found.");
         }
 
         var isEnrolled = false;
@@ -57,7 +59,7 @@ public class GetCourseDetailsQueryHandler : IRequestHandler<GetCourseDetailsQuer
         var isOnWaitlist = false;
         HashSet<Guid> completedLessonIds = new();
 
-        if (_currentUserService.UserId.HasValue)
+        if (_currentUserService.UserId.HasValue && !isWaitlistTeaser)
         {
             var userId = _currentUserService.UserId.Value;
             isEnrolled = await _context.Enrollments
@@ -90,16 +92,16 @@ public class GetCourseDetailsQueryHandler : IRequestHandler<GetCourseDetailsQuer
                 isOnWishlist = await _context.WishlistItems
                     .AnyAsync(w => w.UserId == userId && w.CourseId == request.Id, cancellationToken);
             }
-
-            if (course.Status is Domain.Enums.CourseStatus.Draft or Domain.Enums.CourseStatus.Hidden)
-            {
-                isOnWaitlist = await _context.CourseWaitlistEntries
-                    .AnyAsync(e => e.UserId == userId && e.CourseId == request.Id, cancellationToken);
-            }
         }
 
-        var canManage = _currentUserService.UserId.HasValue &&
-            (_currentUserService.UserId.Value == course.InstructorId || _currentUserService.IsAdmin);
+        if (_currentUserService.UserId.HasValue
+            && course.Status is Domain.Enums.CourseStatus.Draft or Domain.Enums.CourseStatus.Hidden)
+        {
+            isOnWaitlist = await _context.CourseWaitlistEntries
+                .AnyAsync(
+                    e => e.UserId == _currentUserService.UserId.Value && e.CourseId == request.Id,
+                    cancellationToken);
+        }
 
         canAccessContent = canAccessContent || canManage;
 
@@ -118,7 +120,7 @@ public class GetCourseDetailsQueryHandler : IRequestHandler<GetCourseDetailsQuer
                 return new LessonListDto(
                     l.Id,
                     l.Title,
-                    l.Description,
+                    isWaitlistTeaser ? null : l.Description,
                     l.Duration,
                     l.Order,
                     completedLessonIds.Contains(l.Id),
@@ -127,14 +129,16 @@ public class GetCourseDetailsQueryHandler : IRequestHandler<GetCourseDetailsQuer
                     lockState.LockReason);
             }).ToList())).ToList();
 
-        var reviews = course.Reviews.OrderByDescending(r => r.CreatedAt).Select(r => new ReviewDto(
-            r.Id,
-            r.Rating,
-            r.Comment,
-            $"{r.User.FirstName} {r.User.LastName}",
-            r.CreatedAt)).ToList();
+        var reviews = isWaitlistTeaser
+            ? new List<ReviewDto>()
+            : course.Reviews.OrderByDescending(r => r.CreatedAt).Select(r => new ReviewDto(
+                r.Id,
+                r.Rating,
+                r.Comment,
+                $"{r.User.FirstName} {r.User.LastName}",
+                r.CreatedAt)).ToList();
 
-        var canReview = isEnrolled && !hasUserReviewed;
+        var canReview = (isEnrolled || hasSubscriptionAccess) && !hasUserReviewed;
 
         var canJoinWaitlist = _currentUserService.UserId.HasValue &&
             course.Status is Domain.Enums.CourseStatus.Draft or Domain.Enums.CourseStatus.Hidden &&
@@ -144,7 +148,7 @@ public class GetCourseDetailsQueryHandler : IRequestHandler<GetCourseDetailsQuer
         return new CourseDetailsDto(
             course.Id,
             course.Title,
-            course.Description,
+            isWaitlistTeaser ? course.ShortDescription : course.Description,
             course.ShortDescription,
             course.Price,
             course.Level,
@@ -157,8 +161,8 @@ public class GetCourseDetailsQueryHandler : IRequestHandler<GetCourseDetailsQuer
             course.Categories.Select(c => c.Name).ToList(),
             course.Technologies.Select(t => t.Name).ToList(),
             modules,
-            course.Reviews.Any() ? course.Reviews.Average(r => r.Rating) : 0,
-            course.Reviews.Count,
+            isWaitlistTeaser ? 0 : (course.Reviews.Any() ? course.Reviews.Average(r => r.Rating) : 0),
+            isWaitlistTeaser ? 0 : course.Reviews.Count,
             reviews,
             isEnrolled,
             canAccessContent,

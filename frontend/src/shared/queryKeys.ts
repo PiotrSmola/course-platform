@@ -35,6 +35,7 @@ export const queryKeys = {
 
   paymentStatus: (sessionId: string) => ['payment-status', sessionId] as const,
   mySubscription: () => ['my-subscription'] as const,
+  subscriptionOffer: () => ['subscription-offer'] as const,
 
 
   myPurchases: () => ['my-purchases'] as const,

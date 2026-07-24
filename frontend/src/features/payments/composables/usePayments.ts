@@ -7,6 +7,7 @@ import {
   getMyPurchases,
   getMySubscription,
   getPaymentStatus,
+  getSubscriptionOffer,
   previewCoupon
 } from '@/features/payments/api/payments.api'
 import { PaymentStatus, SubscriptionStatus } from '@/features/payments/types/payment.types'
@@ -148,4 +149,11 @@ export function useMySubscription(
     isPollingTimeout: readonly(isPollingTimeout),
     refetch
   }
+}
+
+export function useSubscriptionOffer() {
+  return useQuery({
+    queryKey: queryKeys.subscriptionOffer(),
+    queryFn: getSubscriptionOffer
+  })
 }

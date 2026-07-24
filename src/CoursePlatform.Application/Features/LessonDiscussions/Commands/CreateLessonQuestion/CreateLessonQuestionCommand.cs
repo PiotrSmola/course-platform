@@ -40,6 +40,17 @@ public class CreateLessonQuestionCommandHandler : IRequestHandler<CreateLessonQu
             throw new ForbiddenAccessException("You must be enrolled in the course to ask a question.");
         }
 
+        var isManager = _currentUserService.IsAdmin
+            || await _context.Courses.AnyAsync(
+                c => c.Id == request.CourseId && c.InstructorId == _currentUserService.UserId.Value,
+                cancellationToken);
+
+        if (!isManager)
+        {
+            await ProgressGateHelper.EnsureLessonUnlockedAsync(
+                _context, _currentUserService, request.CourseId, request.LessonId, cancellationToken);
+        }
+
         var lessonExists = await _context.Lessons
             .AnyAsync(l => l.Id == request.LessonId && l.Module.CourseId == request.CourseId, cancellationToken);
 

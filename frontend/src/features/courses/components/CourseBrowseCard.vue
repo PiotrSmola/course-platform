@@ -1,7 +1,10 @@
 <template>
   <article class="course-card glass-card">
-    <CourseThumbnail class="course-thumb" :url="course.thumbnailUrl" />
-      <span v-if="levelLabel" class="course-badge">{{ levelLabel }}</span>
+    <div class="course-thumb-wrap">
+      <CourseThumbnail class="course-thumb" :url="course.thumbnailUrl" />
+      <span v-if="isComingSoon" class="course-badge coming-soon">Wkrótce</span>
+      <span v-else-if="levelLabel" class="course-badge">{{ levelLabel }}</span>
+    </div>
     <div class="course-body">
       <h3 class="course-title">{{ course.title }}</h3>
       <p class="course-instructor">{{ course.instructorName }}</p>
@@ -25,12 +28,12 @@
         <span class="course-lessons">{{ course.lessonCount }} lekcji</span>
       </div>
       <div class="course-footer">
-        <span class="course-price"><strong>{{ course.price }} zł</strong></span>
+        <span class="course-price"><strong>{{ isComingSoon ? 'Powiadom o starcie' : `${course.price} zł` }}</strong></span>
         <router-link
           class="btn btn-primary course-btn"
           :to="{ name: 'CourseDetails', params: { id: course.id } }"
         >
-          Zobacz
+          {{ isComingSoon ? 'Lista oczekujących' : 'Zobacz' }}
         </router-link>
       </div>
     </div>
@@ -40,7 +43,7 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import type { CourseListDto } from '@/features/courses/types/course.types'
-import { CourseLevel } from '@/features/courses/types/course.types'
+import { CourseLevel, CourseStatus } from '@/features/courses/types/course.types'
 import CourseThumbnail from '@/shared/components/media/CourseThumbnail.vue'
 
 interface Props {
@@ -48,6 +51,8 @@ interface Props {
 }
 
 const props = defineProps<Props>()
+
+const isComingSoon = computed(() => props.course.status === CourseStatus.Hidden)
 
 const levelLabel = computed(() => {
   switch (props.course.level) {
@@ -83,13 +88,16 @@ const levelLabel = computed(() => {
   }
 }
 
+.course-thumb-wrap {
+  position: relative;
+  margin: 20px 20px 0;
+}
+
 .course-thumb {
   position: relative;
   width: 100%;
   aspect-ratio: 16 / 9;
   border-radius: 20px;
-  margin: 20px 20px 0;
-  width: calc(100% - 40px);
   box-shadow:
     0 12px 28px rgba(3, 6, 24, 0.4),
     inset 0 1px 1px rgba(255, 255, 255, 0.35),
@@ -110,6 +118,11 @@ const levelLabel = computed(() => {
   background: rgba(10, 14, 23, 0.75);
   backdrop-filter: blur(8px);
   border: 1px solid rgba(255, 255, 255, 0.12);
+
+  &.coming-soon {
+    background: rgba(59, 130, 246, 0.85);
+    border-color: rgba(147, 197, 253, 0.4);
+  }
 }
 
 .course-body {

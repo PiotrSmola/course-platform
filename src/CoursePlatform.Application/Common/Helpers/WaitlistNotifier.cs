@@ -1,5 +1,4 @@
 using Microsoft.EntityFrameworkCore;
-using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
 using CoursePlatform.Application.Common.Interfaces;
 using CoursePlatform.Application.Common.Options;

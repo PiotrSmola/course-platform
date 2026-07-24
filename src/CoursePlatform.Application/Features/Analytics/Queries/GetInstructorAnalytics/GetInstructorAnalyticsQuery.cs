@@ -99,6 +99,36 @@ public class GetInstructorAnalyticsQueryHandler : IRequestHandler<GetInstructorA
             .Select(lp => new { lp.UserId, lp.LessonId })
             .ToListAsync(cancellationToken);
 
+        var anyProgress = await _context.LessonProgresses
+            .AsNoTracking()
+            .Where(lp => allLessonIds.Contains(lp.LessonId))
+            .Select(lp => new { lp.UserId, lp.LessonId })
+            .ToListAsync(cancellationToken);
+
+        var lessonToCourseId = courses
+            .SelectMany(c => c.Modules.SelectMany(m => m.Lessons.Select(l => (l.Id, CourseId: c.Id))))
+            .ToDictionary(x => x.Id, x => x.CourseId);
+
+        var learnersByCourse = enrollments
+            .GroupBy(e => e.CourseId)
+            .ToDictionary(g => g.Key, g => g.Select(x => x.UserId).ToHashSet());
+
+        foreach (var progress in anyProgress)
+        {
+            if (!lessonToCourseId.TryGetValue(progress.LessonId, out var courseId))
+            {
+                continue;
+            }
+
+            if (!learnersByCourse.TryGetValue(courseId, out var learners))
+            {
+                learners = new HashSet<Guid>();
+                learnersByCourse[courseId] = learners;
+            }
+
+            learners.Add(progress.UserId);
+        }
+
         var completedByLesson = completedProgress
             .GroupBy(p => p.LessonId)
             .ToDictionary(g => g.Key, g => g.Select(x => x.UserId).ToHashSet());
@@ -114,25 +144,22 @@ public class GetInstructorAnalyticsQueryHandler : IRequestHandler<GetInstructorA
                     .Select(l => (Lesson: l, Module: m)))
                 .ToList();
 
-            var enrolledUserIds = enrollments
-                .Where(e => e.CourseId == course.Id)
-                .Select(e => e.UserId)
-                .ToHashSet();
-
-            var enrollmentCount = enrolledUserIds.Count;
+            var learnerUserIds = learnersByCourse.GetValueOrDefault(course.Id) ?? new HashSet<Guid>();
+            var enrollmentCount = enrollments.Count(e => e.CourseId == course.Id);
+            var learnerCount = learnerUserIds.Count;
             var totalLessons = lessons.Count;
 
             var fullyCompletedUsers = 0;
-            if (totalLessons > 0 && enrollmentCount > 0)
+            if (totalLessons > 0 && learnerCount > 0)
             {
-                fullyCompletedUsers = enrolledUserIds.Count(userId =>
+                fullyCompletedUsers = learnerUserIds.Count(userId =>
                     lessons.All(item =>
                         completedByLesson.TryGetValue(item.Lesson.Id, out var users)
                         && users.Contains(userId)));
             }
 
-            var completionRate = enrollmentCount > 0
-                ? Math.Round(fullyCompletedUsers * 100.0 / enrollmentCount, 2)
+            var completionRate = learnerCount > 0
+                ? Math.Round(fullyCompletedUsers * 100.0 / learnerCount, 2)
                 : 0;
 
             var dropOff = new List<LessonDropOffDto>();
@@ -142,18 +169,18 @@ public class GetInstructorAnalyticsQueryHandler : IRequestHandler<GetInstructorA
                 int reachedCount;
                 if (i == 0)
                 {
-                    reachedCount = enrollmentCount;
+                    reachedCount = learnerCount;
                 }
                 else
                 {
                     var previousId = lessons[i - 1].Lesson.Id;
                     reachedCount = completedByLesson.TryGetValue(previousId, out var prevUsers)
-                        ? prevUsers.Count(u => enrolledUserIds.Contains(u))
+                        ? prevUsers.Count(u => learnerUserIds.Contains(u))
                         : 0;
                 }
 
                 var completedCount = completedByLesson.TryGetValue(lesson.Id, out var doneUsers)
-                    ? doneUsers.Count(u => enrolledUserIds.Contains(u))
+                    ? doneUsers.Count(u => learnerUserIds.Contains(u))
                     : 0;
 
                 var dropOffPercent = reachedCount > 0

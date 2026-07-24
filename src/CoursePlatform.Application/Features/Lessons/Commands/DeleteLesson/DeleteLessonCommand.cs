@@ -48,6 +48,7 @@ public class DeleteLessonCommandHandler : IRequestHandler<DeleteLessonCommand>
             _context, _currentUserService, request.CourseId, request.ModuleId, cancellationToken);
 
         var lesson = await _context.Lessons
+            .Include(l => l.Resources)
             .FirstOrDefaultAsync(l => l.Id == request.LessonId && l.ModuleId == request.ModuleId, cancellationToken);
 
         if (lesson == null)
@@ -56,10 +57,28 @@ public class DeleteLessonCommandHandler : IRequestHandler<DeleteLessonCommand>
         }
 
         var videoObjectKey = lesson.VideoObjectKey;
+        var resourceObjectKeys = lesson.Resources
+            .Select(r => r.ObjectKey)
+            .Where(key => !string.IsNullOrWhiteSpace(key))
+            .Distinct()
+            .ToList();
 
         _context.Lessons.Remove(lesson);
         await _context.SaveChangesAsync(cancellationToken);
         await _cache.InvalidateTagAsync("courses", cancellationToken);
+
+        foreach (var objectKey in resourceObjectKeys)
+        {
+            try
+            {
+                await _fileStorage.DeleteObjectAsync(objectKey, cancellationToken);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogWarning(ex, "Failed to delete resource object {ObjectKey} for removed lesson {LessonId}.",
+                    objectKey, request.LessonId);
+            }
+        }
 
         if (!string.IsNullOrWhiteSpace(videoObjectKey))
         {

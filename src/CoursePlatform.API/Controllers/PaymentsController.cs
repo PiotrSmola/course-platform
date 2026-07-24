@@ -9,6 +9,7 @@ using CoursePlatform.Application.Features.Payments.Queries.GetPaymentStatus;
 using CoursePlatform.Application.Features.Subscriptions.Commands.CreateBillingPortalSession;
 using CoursePlatform.Application.Features.Subscriptions.Commands.CreateSubscriptionCheckout;
 using CoursePlatform.Application.Features.Subscriptions.Queries.GetMySubscription;
+using CoursePlatform.Application.Features.Subscriptions.Queries.GetSubscriptionOffer;
 
 namespace CoursePlatform.API.Controllers;
 
@@ -39,6 +40,14 @@ public class PaymentsController : ControllerBase
         CancellationToken cancellationToken)
     {
         var result = await _mediator.Send(new CreateSubscriptionCheckoutCommand(), cancellationToken);
+        return Ok(result);
+    }
+
+    [HttpGet("subscription/offer")]
+    [AllowAnonymous]
+    public async Task<ActionResult<SubscriptionOfferDto>> GetSubscriptionOffer(CancellationToken cancellationToken)
+    {
+        var result = await _mediator.Send(new GetSubscriptionOfferQuery(), cancellationToken);
         return Ok(result);
     }
 

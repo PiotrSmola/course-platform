@@ -46,7 +46,8 @@ public sealed class EfCourseSearchService : ICourseSearchService
         }
         else
         {
-            query = query.Where(c => c.Status == CourseStatus.Published);
+            query = query.Where(c =>
+                c.Status == CourseStatus.Published || c.Status == CourseStatus.Hidden);
         }
 
         if (criteria.MinPrice.HasValue)

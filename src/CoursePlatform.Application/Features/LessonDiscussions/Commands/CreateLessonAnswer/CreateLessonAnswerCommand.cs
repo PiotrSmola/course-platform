@@ -40,6 +40,17 @@ public class CreateLessonAnswerCommandHandler : IRequestHandler<CreateLessonAnsw
             throw new ForbiddenAccessException("You must be enrolled in the course to answer a question.");
         }
 
+        var isInstructorAnswer = _currentUserService.IsAdmin
+            || await _context.Courses.AnyAsync(
+                c => c.Id == request.CourseId && c.InstructorId == _currentUserService.UserId.Value,
+                cancellationToken);
+
+        if (!isInstructorAnswer)
+        {
+            await ProgressGateHelper.EnsureLessonUnlockedAsync(
+                _context, _currentUserService, request.CourseId, request.LessonId, cancellationToken);
+        }
+
         var question = await _context.LessonQuestions
             .Include(q => q.Lesson)
                 .ThenInclude(l => l.Module)
@@ -54,11 +65,6 @@ public class CreateLessonAnswerCommandHandler : IRequestHandler<CreateLessonAnsw
         {
             throw new NotFoundException($"Question {request.QuestionId} not found.");
         }
-
-        var isInstructorAnswer = _currentUserService.IsAdmin
-            || await _context.Courses.AnyAsync(
-                c => c.Id == request.CourseId && c.InstructorId == _currentUserService.UserId.Value,
-                cancellationToken);
 
         var answer = new LessonAnswer
         {

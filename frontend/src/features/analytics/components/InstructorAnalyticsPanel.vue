@@ -4,7 +4,7 @@
       <h3>Analytics</h3>
       <select v-model="selectedCourseId">
         <option value="">Wszystkie kursy</option>
-        <option v-for="course in analytics?.courses ?? []" :key="course.courseId" :value="course.courseId">
+        <option v-for="course in courseOptions" :key="course.courseId" :value="course.courseId">
           {{ course.title }}
         </option>
       </select>
@@ -15,11 +15,11 @@
     <template v-else-if="analytics">
       <div class="stats-grid">
         <div class="stat-card glass-card">
-          <span class="stat-value">{{ formatCurrency(analytics.totalRevenue) }}</span>
+          <span class="stat-value">{{ formatCurrency(displayStats.totalRevenue) }}</span>
           <span class="stat-label">Przychód</span>
         </div>
         <div class="stat-card glass-card">
-          <span class="stat-value">{{ analytics.averageCompletionRate }}%</span>
+          <span class="stat-value">{{ displayStats.averageCompletionRate }}%</span>
           <span class="stat-label">Ukończenie kursu</span>
         </div>
       </div>
@@ -76,14 +76,28 @@ import { computed, ref } from 'vue'
 import { useInstructorAnalytics } from '@/features/analytics/composables/useAnalytics'
 
 const selectedCourseId = ref('')
-const courseIdFilter = computed(() => selectedCourseId.value || undefined)
-const { data, isLoading, isError } = useInstructorAnalytics(courseIdFilter)
+const { data, isLoading, isError } = useInstructorAnalytics()
 
 const analytics = computed(() => data.value)
+const courseOptions = computed(() => analytics.value?.courses ?? [])
 const visibleCourses = computed(() => {
   if (!analytics.value) return []
   if (!selectedCourseId.value) return analytics.value.courses
   return analytics.value.courses.filter((c) => c.courseId === selectedCourseId.value)
+})
+
+const displayStats = computed(() => {
+  const courses = visibleCourses.value
+  if (courses.length === 0) {
+    return { totalRevenue: 0, averageCompletionRate: 0 }
+  }
+
+  return {
+    totalRevenue: courses.reduce((sum, course) => sum + course.revenue, 0),
+    averageCompletionRate: Math.round(
+      (courses.reduce((sum, course) => sum + course.completionRate, 0) / courses.length) * 100
+    ) / 100
+  }
 })
 
 function formatCurrency(value: number) {

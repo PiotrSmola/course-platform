@@ -49,3 +49,7 @@ export interface MySubscriptionDto {
   latestInvoiceAmount: number | null
   latestInvoiceCurrency: string | null
 }
+
+export interface SubscriptionOfferDto {
+  monthlyPricePln: number
+}

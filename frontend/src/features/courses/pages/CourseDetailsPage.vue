@@ -39,7 +39,7 @@
               {{ billingPortalMutation.isPending.value ? 'Otwieramy...' : 'Zarządzaj subskrypcją' }}
             </button>
           </div>
-          <div class="actions" v-if="!isInstructor">
+          <div class="actions" v-if="!isInstructor && isPublished">
             <template v-if="authStore.isAuthenticated && !canAccessContent">
               <div v-if="isPaid" class="checkout-box">
                 <div class="coupon-row">
@@ -83,7 +83,7 @@
                   {{
                     subscriptionCheckoutMutation.isPending.value
                       ? 'Przekierowujemy...'
-                      : 'All-access — 399 zł/mies.'
+                      : `All-access — ${monthlyPriceLabel}/mies.`
                   }}
                 </button>
               </div>
@@ -108,6 +108,11 @@
             >
               {{ course.isOnWaitlist ? 'Wypisz się z powiadomień' : 'Powiadom o starcie' }}
             </button>
+          </div>
+          <div class="waitlist-actions" v-else-if="showWaitlistLogin">
+            <router-link class="btn btn-primary" :to="{ name: 'Login', query: { redirect: route.fullPath } }">
+              Zaloguj się, aby dołączyć do listy oczekujących
+            </router-link>
           </div>
         </div>
         <div class="hero-visual">
@@ -245,7 +250,8 @@ import {
   useCreateCheckout,
   useCreateSubscriptionCheckout,
   useMySubscription,
-  usePreviewCoupon
+  usePreviewCoupon,
+  useSubscriptionOffer
 } from '@/features/payments/composables/usePayments'
 import { useCreateReview, useUpdateReview, useDeleteReview } from '@/features/reviews/composables/useReviews'
 import { useToggleWishlist } from '@/features/wishlist/composables/useWishlist'
@@ -301,6 +307,7 @@ const checkoutMutation = useCreateCheckout()
 const subscriptionCheckoutMutation = useCreateSubscriptionCheckout()
 const billingPortalMutation = useCreateBillingPortalSession()
 const subscriptionQuery = useMySubscription(() => authStore.isAuthenticated)
+const subscriptionOfferQuery = useSubscriptionOffer()
 const previewCouponMutation = usePreviewCoupon()
 const couponCode = ref('')
 const couponPreview = ref<{
@@ -315,6 +322,10 @@ const isEnrolled = computed(() => course.value?.isEnrolled ?? false)
 const canAccessContent = computed(() => course.value?.canAccessContent ?? false)
 const hasSubscriptionAccess = computed(() => course.value?.hasSubscriptionAccess ?? false)
 const canManageSubscription = computed(() => subscriptionQuery.data.value?.canManageInPortal ?? false)
+const monthlyPriceLabel = computed(() => {
+  const price = subscriptionOfferQuery.data.value?.monthlyPricePln ?? 399
+  return `${price} zł`
+})
 const isPaid = computed(() => (course.value?.price ?? 0) > 0)
 const isPublished = computed(() => course.value?.status === CourseStatus.Published)
 const showWishlistButton = computed(
@@ -327,6 +338,9 @@ const showWaitlistSection = computed(
     !isInstructor.value &&
     !canAccessContent.value &&
     ((course.value?.canJoinWaitlist ?? false) || (course.value?.isOnWaitlist ?? false))
+)
+const showWaitlistLogin = computed(
+  () => !authStore.isAuthenticated && !isPublished.value && !canAccessContent.value
 )
 const displayPrice = computed(
   () => couponPreview.value?.finalAmount ?? course.value?.price ?? 0

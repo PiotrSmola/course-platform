@@ -146,10 +146,22 @@ const lessonIndex = computed(() => {
 })
 
 const previousLesson = computed<LessonListDto | null>(() => {
-  return allLessons.value[lessonIndex.value - 1] ?? null
+  for (let i = lessonIndex.value - 1; i >= 0; i--) {
+    const lessonItem = allLessons.value[i]
+    if (lessonItem && !lessonItem.isLocked) return lessonItem
+  }
+  return null
 })
 
 const nextLesson = computed<LessonListDto | null>(() => {
+  for (let i = lessonIndex.value + 1; i < allLessons.value.length; i++) {
+    const lessonItem = allLessons.value[i]
+    if (lessonItem && !lessonItem.isLocked) return lessonItem
+  }
+  return null
+})
+
+const nextLockedLesson = computed<LessonListDto | null>(() => {
   return allLessons.value[lessonIndex.value + 1] ?? null
 })
 
@@ -218,8 +230,13 @@ function complete() {
 watch(
   () => completeMutation.isSuccess.value,
   (success) => {
-    if (success && nextLesson.value) {
+    if (!success) return
+    if (nextLesson.value) {
       navigateToLesson(nextLesson.value.id)
+      return
+    }
+    if (nextLockedLesson.value?.isLocked) {
+      toast.info(nextLockedLesson.value.lockReason || 'Następna lekcja jest jeszcze zablokowana.')
     }
   }
 )

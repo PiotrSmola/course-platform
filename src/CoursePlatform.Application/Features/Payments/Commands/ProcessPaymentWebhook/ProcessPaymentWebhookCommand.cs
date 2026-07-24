@@ -268,6 +268,8 @@ public class ProcessPaymentWebhookCommandHandler : IRequestHandler<ProcessPaymen
         PaymentGatewayEvent gatewayEvent,
         CancellationToken cancellationToken)
     {
+        gatewayEvent = await EnrichSubscriptionCheckoutEventAsync(gatewayEvent, cancellationToken);
+
         var subscription = await GetOrCreateSubscriptionAsync(gatewayEvent, cancellationToken);
         if (subscription == null)
         {
@@ -276,6 +278,39 @@ public class ProcessPaymentWebhookCommandHandler : IRequestHandler<ProcessPaymen
 
         ApplySubscriptionChanges(subscription, gatewayEvent);
         await _context.SaveChangesAsync(cancellationToken);
+    }
+
+    private async Task<PaymentGatewayEvent> EnrichSubscriptionCheckoutEventAsync(
+        PaymentGatewayEvent gatewayEvent,
+        CancellationToken cancellationToken)
+    {
+        var status = gatewayEvent.SubscriptionStatus ?? SubscriptionStatus.Active;
+        var periodEnd = gatewayEvent.CurrentPeriodEnd;
+        var customerId = gatewayEvent.CustomerId;
+        var subscriptionId = gatewayEvent.SubscriptionId;
+
+        if ((!periodEnd.HasValue || string.IsNullOrWhiteSpace(customerId))
+            && !string.IsNullOrWhiteSpace(subscriptionId))
+        {
+            var state = await _paymentGateway.GetSubscriptionStateAsync(subscriptionId, cancellationToken);
+            if (state != null)
+            {
+                status = state.Status;
+                periodEnd = state.CurrentPeriodEnd;
+                customerId ??= state.CustomerId;
+                subscriptionId = state.SubscriptionId;
+            }
+        }
+
+        periodEnd ??= DateTime.UtcNow.AddMonths(1);
+
+        return gatewayEvent with
+        {
+            CustomerId = customerId,
+            SubscriptionId = subscriptionId,
+            SubscriptionStatus = status,
+            CurrentPeriodEnd = periodEnd
+        };
     }
 
     private async Task HandleSubscriptionUpdatedAsync(

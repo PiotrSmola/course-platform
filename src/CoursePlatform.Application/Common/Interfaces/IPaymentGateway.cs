@@ -32,6 +32,12 @@ public record PaymentGatewayEvent(
     DateTime? CurrentPeriodEnd = null,
     DateTime? PaidAt = null);
 
+public record SubscriptionGatewayState(
+    string SubscriptionId,
+    string CustomerId,
+    CoursePlatform.Domain.Enums.SubscriptionStatus Status,
+    DateTime CurrentPeriodEnd);
+
 public interface IPaymentGateway
 {
     bool IsConfigured { get; }
@@ -55,6 +61,10 @@ public interface IPaymentGateway
     Task<BillingPortalSession> CreateBillingPortalSessionAsync(
         string stripeCustomerId,
         string returnUrl,
+        CancellationToken cancellationToken);
+
+    Task<SubscriptionGatewayState?> GetSubscriptionStateAsync(
+        string stripeSubscriptionId,
         CancellationToken cancellationToken);
 
     PaymentGatewayEvent ParseWebhookEvent(string payload, string signature);

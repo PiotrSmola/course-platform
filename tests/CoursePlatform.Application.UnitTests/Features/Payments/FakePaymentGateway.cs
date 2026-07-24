@@ -12,6 +12,7 @@ public sealed class FakePaymentGateway : IPaymentGateway
     public Action? OnCreateCheckoutSession { get; set; }
     public Action? OnCreateSubscriptionCheckoutSession { get; set; }
     public Action? OnCreateBillingPortalSession { get; set; }
+    public SubscriptionGatewayState? SubscriptionStateToReturn { get; set; }
 
     public Task<CheckoutSession> CreateCheckoutSessionAsync(
         Guid paymentId,
@@ -49,6 +50,13 @@ public sealed class FakePaymentGateway : IPaymentGateway
     {
         OnCreateBillingPortalSession?.Invoke();
         return Task.FromResult(new BillingPortalSession(BillingPortalUrlToReturn));
+    }
+
+    public Task<SubscriptionGatewayState?> GetSubscriptionStateAsync(
+        string stripeSubscriptionId,
+        CancellationToken cancellationToken)
+    {
+        return Task.FromResult(SubscriptionStateToReturn);
     }
 
     public PaymentGatewayEvent ParseWebhookEvent(string payload, string signature)

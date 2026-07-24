@@ -2,6 +2,8 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/vue-query'
 import { computed, toValue, type MaybeRefOrGetter } from 'vue'
 import { getLesson, completeLesson, getLessonVideoUrl, updateLessonWatchPosition } from '@/features/learning/api/learning.api'
 import { queryKeys } from '@/shared/queryKeys'
+import { toast } from '@/shared/toast/toast'
+import { getApiErrorMessage } from '@/shared/api/apiError'
 
 export function useLesson(courseId: MaybeRefOrGetter<string>, lessonId: MaybeRefOrGetter<string>) {
   return useQuery({
@@ -20,6 +22,9 @@ export function useCompleteLesson() {
       queryClient.invalidateQueries({ queryKey: queryKeys.lesson(variables.courseId, variables.lessonId) })
       queryClient.invalidateQueries({ queryKey: queryKeys.enrollments() })
       queryClient.invalidateQueries({ queryKey: queryKeys.course(variables.courseId) })
+    },
+    onError: (error) => {
+      toast.error(getApiErrorMessage(error) || 'Nie udało się ukończyć lekcji. Sprawdź quiz, jeśli jest wymagany.')
     }
   })
 }

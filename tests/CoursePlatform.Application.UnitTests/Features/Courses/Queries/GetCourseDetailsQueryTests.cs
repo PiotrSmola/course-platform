@@ -5,7 +5,6 @@ using CoursePlatform.Application.Features.Courses.Queries.GetCourseDetails;
 using CoursePlatform.Domain.Entities;
 using CoursePlatform.Domain.Enums;
 using Microsoft.EntityFrameworkCore;
-using CoursePlatform.Application.Common.Exceptions;
 using CoursePlatform.Application.UnitTests.Common;
 
 namespace CoursePlatform.Application.UnitTests.Features.Courses.Queries;
@@ -83,7 +82,7 @@ public class GetCourseDetailsQueryTests
     }
 
     [Fact]
-    public async Task Handle_DraftCourseAnonymous_ThrowsNotFound()
+    public async Task Handle_DraftCourseAnonymous_ReturnsWaitlistTeaser()
     {
         var instructor = new ApplicationUser { Id = Guid.NewGuid(), UserName = "inst", Email = "i@t.com", FirstName = "A", LastName = "B" };
         _context.Users.Add(instructor);
@@ -92,8 +91,8 @@ public class GetCourseDetailsQueryTests
         var course = new Course
         {
             Title = "Draft",
-            Description = "Desc",
-            ShortDescription = "Short",
+            Description = "Secret full description",
+            ShortDescription = "Short teaser",
             Price = 10,
             Level = CourseLevel.Beginner,
             Status = CourseStatus.Draft,
@@ -102,7 +101,25 @@ public class GetCourseDetailsQueryTests
             InstructorId = instructor.Id,
             Categories = new List<Category>(),
             Technologies = new List<Technology>(),
-            Modules = new List<Module>(),
+            Modules = new List<Module>
+            {
+                new()
+                {
+                    Title = "M1",
+                    Order = 1,
+                    Lessons = new List<Lesson>
+                    {
+                        new()
+                        {
+                            Title = "L1",
+                            Description = "Hidden description",
+                            Duration = 10,
+                            Order = 1,
+                            VideoObjectKey = "secret/video.mp4"
+                        }
+                    }
+                }
+            },
             Reviews = new List<Review>()
         };
         _context.Courses.Add(course);
@@ -112,9 +129,14 @@ public class GetCourseDetailsQueryTests
         _currentUserServiceMock.Setup(x => x.IsAdmin).Returns(false);
 
         var handler = new GetCourseDetailsQueryHandler(_context, _currentUserServiceMock.Object, _fileStorageMock.Object);
-        var act = async () => await handler.Handle(new GetCourseDetailsQuery(course.Id), CancellationToken.None);
+        var result = await handler.Handle(new GetCourseDetailsQuery(course.Id), CancellationToken.None);
 
-        await act.Should().ThrowAsync<NotFoundException>();
+        result.Title.Should().Be("Draft");
+        result.Description.Should().Be("Short teaser");
+        result.CanAccessContent.Should().BeFalse();
+        result.CanJoinWaitlist.Should().BeFalse();
+        result.Modules[0].Lessons[0].Description.Should().BeNull();
+        result.Modules[0].Lessons[0].VideoObjectKey.Should().BeNull();
     }
 
     [Fact]
@@ -196,6 +218,6 @@ public class GetCourseDetailsQueryTests
         result.HasSubscriptionAccess.Should().BeTrue();
         result.Modules[0].Lessons[0].IsCompleted.Should().BeTrue();
         result.Modules[0].Lessons[1].IsLocked.Should().BeFalse();
-        result.CanReview.Should().BeFalse();
+        result.CanReview.Should().BeTrue();
     }
 }

@@ -7,7 +7,7 @@
         <div class="subscription-banner glass-card">
           <div>
             <span class="subscription-banner__eyebrow">All-access</span>
-            <h2>Ucz się bez limitu za 399 zł / mies.</h2>
+            <h2>Ucz się bez limitu za {{ monthlyPriceLabel }} / mies.</h2>
             <p>Jedna subskrypcja odblokowuje wszystkie opublikowane kursy i pozwala zarządzać planem w Stripe Billing Portal.</p>
           </div>
           <div class="subscription-banner__actions">
@@ -344,7 +344,7 @@ import { useQuery } from '@tanstack/vue-query'
 import { useAuthStore } from '@/features/auth/stores/auth.store'
 import { useCourseBrowse, type SortOption } from '@/features/courses/composables/useCourseBrowse'
 import CourseBrowseCard from '@/features/courses/components/CourseBrowseCard.vue'
-import { useCreateBillingPortalSession, useCreateSubscriptionCheckout, useMySubscription } from '@/features/payments/composables/usePayments'
+import { useCreateBillingPortalSession, useCreateSubscriptionCheckout, useMySubscription, useSubscriptionOffer } from '@/features/payments/composables/usePayments'
 import { CourseLevel } from '@/features/courses/types/course.types'
 import { getCategories, getTechnologies } from '@/features/courses/api/courses.api'
 import { queryKeys } from '@/shared/queryKeys'
@@ -353,6 +353,11 @@ const authStore = useAuthStore()
 const subscriptionCheckoutMutation = useCreateSubscriptionCheckout()
 const billingPortalMutation = useCreateBillingPortalSession()
 const subscriptionQuery = useMySubscription(() => authStore.isAuthenticated)
+const subscriptionOfferQuery = useSubscriptionOffer()
+const monthlyPriceLabel = computed(() => {
+  const price = subscriptionOfferQuery.data.value?.monthlyPricePln ?? 399
+  return `${price} zł`
+})
 
 const {
   state,

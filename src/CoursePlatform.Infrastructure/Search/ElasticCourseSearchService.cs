@@ -108,7 +108,8 @@ public sealed class ElasticCourseSearchService : ICourseSearchService
 
         if (!criteria.IsAdmin)
         {
-            dbQuery = dbQuery.Where(c => c.Status == CourseStatus.Published);
+            dbQuery = dbQuery.Where(c =>
+                c.Status == CourseStatus.Published || c.Status == CourseStatus.Hidden);
         }
         else if (criteria.Status.HasValue)
         {
@@ -234,10 +235,14 @@ public sealed class ElasticCourseSearchService : ICourseSearchService
         }
         else
         {
-            filter.Add(new TermQuery
+            filter.Add(new TermsQuery
             {
                 Field = "status",
-                Value = (int)CourseStatus.Published
+                Terms = new TermsQueryField(new[]
+                {
+                    FieldValue.Long((int)CourseStatus.Published),
+                    FieldValue.Long((int)CourseStatus.Hidden)
+                })
             });
         }
 

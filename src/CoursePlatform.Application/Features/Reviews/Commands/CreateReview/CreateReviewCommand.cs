@@ -2,6 +2,7 @@ using FluentValidation;
 using FluentValidation.Results;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
+using CoursePlatform.Application.Common.Helpers;
 using CoursePlatform.Application.Common.Interfaces;
 using CoursePlatform.Application.Common.Exceptions;
 using CoursePlatform.Domain.Entities;
@@ -34,16 +35,21 @@ public class CreateReviewCommandHandler : IRequestHandler<CreateReviewCommand, G
             throw new ForbiddenAccessException("User not authenticated.");
         }
 
-        var enrollment = await _context.Enrollments
-            .FirstOrDefaultAsync(e => e.UserId == _currentUserService.UserId.Value && e.CourseId == request.CourseId, cancellationToken);
+        var userId = _currentUserService.UserId.Value;
 
-        if (enrollment == null)
+        var isEnrolled = await _context.Enrollments
+            .AnyAsync(e => e.UserId == userId && e.CourseId == request.CourseId, cancellationToken);
+
+        var hasSubscriptionAccess = await CourseAccessHelper.HasActiveSubscriptionAsync(
+            _context, userId, cancellationToken);
+
+        if (!isEnrolled && !hasSubscriptionAccess)
         {
-            throw new ForbiddenAccessException("You must be enrolled in the course to leave a review.");
+            throw new ForbiddenAccessException("You must be enrolled in the course or have All-access to leave a review.");
         }
 
         var existing = await _context.Reviews
-            .FirstOrDefaultAsync(r => r.UserId == _currentUserService.UserId.Value && r.CourseId == request.CourseId, cancellationToken);
+            .FirstOrDefaultAsync(r => r.UserId == userId && r.CourseId == request.CourseId, cancellationToken);
 
         if (existing != null)
         {
@@ -52,7 +58,7 @@ public class CreateReviewCommandHandler : IRequestHandler<CreateReviewCommand, G
 
         var review = new Review
         {
-            UserId = _currentUserService.UserId.Value,
+            UserId = userId,
             CourseId = request.CourseId,
             Rating = request.Rating,
             Comment = _htmlSanitizer.Sanitize(request.Comment)
@@ -67,7 +73,7 @@ public class CreateReviewCommandHandler : IRequestHandler<CreateReviewCommand, G
         catch (DbUpdateException)
         {
             var alreadyReviewed = await _context.Reviews
-                .AnyAsync(r => r.UserId == _currentUserService.UserId.Value && r.CourseId == request.CourseId, cancellationToken);
+                .AnyAsync(r => r.UserId == userId && r.CourseId == request.CourseId, cancellationToken);
 
             if (!alreadyReviewed)
             {

@@ -5,7 +5,8 @@ import type {
   MySubscriptionDto,
   PaymentStatusDto,
   PurchaseDto,
-  SubscriptionCheckoutSessionDto
+  SubscriptionCheckoutSessionDto,
+  SubscriptionOfferDto
 } from '@/features/payments/types/payment.types'
 
 export async function createCheckoutSession(
@@ -44,6 +45,11 @@ export async function createSubscriptionCheckoutSession(): Promise<SubscriptionC
 
 export async function getMySubscription(): Promise<MySubscriptionDto> {
   const response = await client.get('/payments/subscription/me')
+  return response.data
+}
+
+export async function getSubscriptionOffer(): Promise<SubscriptionOfferDto> {
+  const response = await client.get('/payments/subscription/offer')
   return response.data
 }
 

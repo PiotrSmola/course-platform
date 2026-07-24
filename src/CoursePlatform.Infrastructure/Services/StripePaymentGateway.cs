@@ -177,6 +177,34 @@ internal sealed class StripePaymentGateway : IPaymentGateway
         return new BillingPortalSession(session.Url);
     }
 
+    public async Task<SubscriptionGatewayState?> GetSubscriptionStateAsync(
+        string stripeSubscriptionId,
+        CancellationToken cancellationToken)
+    {
+        if (_client == null || string.IsNullOrWhiteSpace(stripeSubscriptionId))
+        {
+            return null;
+        }
+
+        var service = new SubscriptionService(_client);
+        var subscription = await _pipeline.ExecuteAsync(async ct =>
+            await service.GetAsync(stripeSubscriptionId, cancellationToken: ct), cancellationToken);
+
+        var status = MapSubscriptionStatus(subscription.Status);
+        var periodEnd = GetCurrentPeriodEnd(subscription);
+
+        if (status == null || periodEnd == null || string.IsNullOrWhiteSpace(subscription.CustomerId))
+        {
+            return null;
+        }
+
+        return new SubscriptionGatewayState(
+            subscription.Id,
+            subscription.CustomerId,
+            status.Value,
+            periodEnd.Value);
+    }
+
     public PaymentGatewayEvent ParseWebhookEvent(string payload, string signature)
     {
         if (!IsConfigured)
@@ -227,7 +255,10 @@ internal sealed class StripePaymentGateway : IPaymentGateway
                 userId,
                 session?.CustomerId,
                 session?.CustomerDetails?.Email,
-                session?.SubscriptionId);
+                session?.SubscriptionId,
+                null,
+                SubscriptionStatus.Active,
+                null);
         }
 
         var paymentId = GetMetadataValue(session?.Metadata, "paymentId") ?? session?.ClientReferenceId;
