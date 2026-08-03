@@ -36,13 +36,16 @@ public class UpdateProgressCommandHandler : IRequestHandler<UpdateProgressComman
             throw new ForbiddenAccessException("User not authenticated.");
         }
 
-        var hasAccess = await CourseAccessHelper.CanAccessCourseContentAsync(
+        var access = await CourseContentAccessHelper.GetAsync(
             _context, _currentUserService, request.CourseId, cancellationToken);
 
-        if (!hasAccess)
+        if (!access.CanViewLessons)
         {
             throw new ForbiddenAccessException("You are not enrolled in this course.");
         }
+
+        await CourseContentAccessHelper.EnsureCanViewLessonAsync(
+            _context, _currentUserService, request.CourseId, request.LessonId, cancellationToken);
 
         await ProgressGateHelper.EnsureCanCompleteLessonAsync(
             _context, _currentUserService, request.CourseId, request.LessonId, cancellationToken);

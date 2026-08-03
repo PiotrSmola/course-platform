@@ -39,6 +39,7 @@
           <div class="course-info">
             <div class="card-meta">
               <span class="level">{{ levelLabel(e.courseLevel) }}</span>
+              <span v-if="e.isTrial" class="badge-trial">Trial</span>
               <span v-if="isComplete(e)" class="badge-done">Ukończony</span>
             </div>
             <h3>{{ e.courseTitle }}</h3>
@@ -163,6 +164,15 @@ function levelLabel(level: number) {
   border-radius: 999px;
   background: rgba(74, 222, 128, 0.15);
   color: #4ade80;
+}
+
+.badge-trial {
+  font-size: 0.75rem;
+  font-weight: 700;
+  padding: 4px 10px;
+  border-radius: 999px;
+  background: rgba(245, 158, 11, 0.15);
+  color: #fbbf24;
 }
 
 .progress-bar {

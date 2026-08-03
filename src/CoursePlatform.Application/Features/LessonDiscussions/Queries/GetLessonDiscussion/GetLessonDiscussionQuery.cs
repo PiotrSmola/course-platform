@@ -52,8 +52,8 @@ public class GetLessonDiscussionQueryHandler : IRequestHandler<GetLessonDiscussi
 
     public async Task<LessonDiscussionDto> Handle(GetLessonDiscussionQuery request, CancellationToken cancellationToken)
     {
-        var hasAccess = await CourseAccessHelper.CanAccessCourseContentAsync(
-            _context, _currentUserService, request.CourseId, cancellationToken);
+        var hasAccess = await CourseAccessHelper.CanAccessLessonContentAsync(
+            _context, _currentUserService, request.CourseId, request.LessonId, cancellationToken);
 
         if (!hasAccess)
         {

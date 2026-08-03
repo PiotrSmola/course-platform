@@ -39,12 +39,12 @@
             <div class="progress-fill" :style="{ width: `${progressPercent}%` }"></div>
           </div>
           <p v-if="lesson.description">{{ lesson.description }}</p>
-          <p v-if="isTrialAccess" class="trial-notice">Trial obejmuje odtwarzanie dwoch pierwszych lekcji.</p>
+          <p v-if="isTrialAccess" class="trial-notice">Trial obejmuje dwie pierwsze lekcje kursu.</p>
           <div class="lesson-meta">
             <span>{{ lesson.moduleTitle }}</span>
             <span>{{ lesson.duration }} min</span>
           </div>
-          <button v-if="!isTrialAccess" class="btn btn-primary" @click="complete" :disabled="!!lesson?.isCompleted || isSubmitting">
+          <button class="btn btn-primary" @click="complete" :disabled="!!lesson?.isCompleted || isSubmitting">
             {{ lesson.isCompleted ? 'Ukończono' : 'Oznacz jako ukończone' }}
           </button>
           <div class="lesson-navigation">
@@ -66,7 +66,7 @@
             </button>
           </div>
         </div>
-        <LessonQuizPanel v-if="!isTrialAccess" :course-id="courseId" :lesson-id="lessonId" />
+        <LessonQuizPanel :course-id="courseId" :lesson-id="lessonId" />
         <LessonResourcesPanel v-if="!isTrialAccess" :course-id="courseId" :lesson-id="lessonId" />
         <LessonDiscussionPanel v-if="!isTrialAccess" :course-id="courseId" :lesson-id="lessonId" />
       </div>
@@ -209,7 +209,6 @@ function onLoadedMetadata() {
 
 function savePosition() {
   const video = videoRef.value
-  if (isTrialAccess.value) return
   if (!video || !Number.isFinite(video.currentTime)) return
   const positionSeconds = Math.floor(video.currentTime)
   if (positionSeconds === lastSavedPosition) return
@@ -228,7 +227,6 @@ function onTimeUpdate() {
 }
 
 function complete() {
-  if (isTrialAccess.value) return
   completeMutation.mutate(
     { courseId: props.courseId, lessonId: props.lessonId },
     {

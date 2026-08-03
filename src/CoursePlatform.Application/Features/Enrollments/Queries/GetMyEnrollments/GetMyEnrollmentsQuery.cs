@@ -17,7 +17,8 @@ public record EnrollmentDto(
     int TotalLessons,
     double ProgressPercentage,
     Guid? FirstLessonId,
-    Guid? ContinueLessonId);
+    Guid? ContinueLessonId,
+    bool IsTrial);
 
 public record GetMyEnrollmentsQuery : IRequest<List<EnrollmentDto>>;
 
@@ -86,7 +87,52 @@ public class GetMyEnrollmentsQueryHandler : IRequestHandler<GetMyEnrollmentsQuer
                 totalLessons,
                 totalLessons > 0 ? (double)completedLessons / totalLessons * 100 : 0,
                 firstLessonId,
-                continueLessonId));
+                continueLessonId,
+                false));
+        }
+
+        var enrolledCourseIds = enrollments.Select(e => e.CourseId).ToHashSet();
+        var trialAccesses = await _context.TrialAccesses
+            .AsNoTracking()
+            .Include(t => t.Course)
+            .ThenInclude(c => c.Modules)
+            .ThenInclude(m => m.Lessons)
+            .Where(t => t.UserId == _currentUserService.UserId.Value && !enrolledCourseIds.Contains(t.CourseId))
+            .ToListAsync(cancellationToken);
+
+        foreach (var trial in trialAccesses)
+        {
+            var trialLessons = trial.Course.Modules
+                .OrderBy(m => m.Order)
+                .SelectMany(m => m.Lessons.OrderBy(l => l.Order))
+                .Take(2)
+                .ToList();
+            var trialLessonIds = trialLessons.Select(l => l.Id).ToHashSet();
+            var trialProgress = await _context.LessonProgresses
+                .AsNoTracking()
+                .Where(lp => lp.UserId == _currentUserService.UserId.Value
+                    && lp.IsCompleted
+                    && trialLessonIds.Contains(lp.LessonId))
+                .Select(lp => lp.LessonId)
+                .ToListAsync(cancellationToken);
+            var trialCompletedIds = trialProgress.ToHashSet();
+            var trialTotal = trialLessons.Count;
+            var trialCompleted = trialCompletedIds.Count;
+            var trialFirstLessonId = trialLessons.FirstOrDefault()?.Id;
+
+            result.Add(new EnrollmentDto(
+                trial.Id,
+                trial.CourseId,
+                trial.Course.Title,
+                await _fileStorage.GetThumbnailUrlOrNullAsync(trial.Course.ThumbnailObjectKey, cancellationToken),
+                trial.Course.Level,
+                trial.ActivatedAt,
+                trialCompleted,
+                trialTotal,
+                trialTotal > 0 ? (double)trialCompleted / trialTotal * 100 : 0,
+                trialFirstLessonId,
+                trialLessons.FirstOrDefault(l => !trialCompletedIds.Contains(l.Id))?.Id ?? trialFirstLessonId,
+                true));
         }
 
         return result;

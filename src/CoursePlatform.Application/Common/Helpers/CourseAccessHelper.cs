@@ -60,6 +60,32 @@ public static class CourseAccessHelper
         return access.HasFullAccess;
     }
 
+    public static async Task<bool> CanAccessLessonContentAsync(
+        IApplicationDbContext context,
+        ICurrentUserService currentUser,
+        Guid courseId,
+        Guid lessonId,
+        CancellationToken cancellationToken)
+    {
+        var access = await CourseContentAccessHelper.GetAsync(
+            context, currentUser, courseId, cancellationToken);
+
+        if (access.HasFullAccess)
+        {
+            return true;
+        }
+
+        if (!access.IsTrial)
+        {
+            return false;
+        }
+
+        var trialLockStates = await CourseContentAccessHelper.GetTrialLockStatesAsync(
+            context, courseId, cancellationToken);
+
+        return trialLockStates.TryGetValue(lessonId, out var state) && !state.IsLocked;
+    }
+
     public static async Task<bool> HasActiveSubscriptionAsync(
         IApplicationDbContext context,
         Guid userId,

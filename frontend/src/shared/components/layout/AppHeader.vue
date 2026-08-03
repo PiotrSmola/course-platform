@@ -743,6 +743,8 @@ onUnmounted(() => {
   display: flex;
   align-items: center;
   justify-content: center;
+  appearance: none;
+  background: none;
   border: none;
   color: $color-muted;
   cursor: pointer;

@@ -10,4 +10,5 @@ export interface EnrollmentDto {
   progressPercentage: number
   firstLessonId: string | null
   continueLessonId: string | null
+  isTrial: boolean
 }

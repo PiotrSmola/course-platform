@@ -41,8 +41,8 @@ public class UpdateLessonWatchPositionCommandHandler : IRequestHandler<UpdateLes
             throw new ForbiddenAccessException("User not authenticated.");
         }
 
-        var hasAccess = await CourseAccessHelper.CanAccessCourseContentAsync(
-            _context, _currentUserService, request.CourseId, cancellationToken);
+        var hasAccess = await CourseAccessHelper.CanAccessLessonContentAsync(
+            _context, _currentUserService, request.CourseId, request.LessonId, cancellationToken);
 
         if (!hasAccess)
         {

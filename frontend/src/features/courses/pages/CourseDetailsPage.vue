@@ -159,7 +159,7 @@
           </div>
         </div>
         <div class="hero-visual">
-          <CourseThumbnail class="glass-card course-thumb" :url="course.thumbnailUrl" />
+          <CourseThumbnail class="course-thumb" :url="course.thumbnailUrl" />
         </div>
       </div>
 
@@ -976,7 +976,7 @@ watch(() => course.value?.userReviewId, () => {
   max-width: 560px;
   aspect-ratio: 16 / 9;
   border-radius: 32px;
-  --lg-blur: 14px;
+  background-size: 150%;
 }
 
 .content-grid {
