@@ -72,6 +72,10 @@ const onSubmit = handleSubmit(async (values) => {
   grid-template-columns: 1fr 1fr;
   gap: 14px;
 
+  > .form-group {
+    min-width: 0;
+  }
+
   @media (max-width: 480px) {
     grid-template-columns: 1fr;
   }
@@ -89,6 +93,9 @@ const onSubmit = handleSubmit(async (values) => {
   }
 
   input {
+    box-sizing: border-box;
+    width: 100%;
+    min-width: 0;
     height: 48px;
     padding: 0 18px;
     border-radius: 16px;

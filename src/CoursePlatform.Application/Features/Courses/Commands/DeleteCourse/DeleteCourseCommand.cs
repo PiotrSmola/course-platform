@@ -2,6 +2,8 @@ using MediatR;
 using Microsoft.EntityFrameworkCore;
 using CoursePlatform.Application.Common.Interfaces;
 using CoursePlatform.Application.Common.Exceptions;
+using FluentValidation;
+using FluentValidation.Results;
 
 namespace CoursePlatform.Application.Features.Courses.Commands.DeleteCourse;
 
@@ -39,6 +41,12 @@ public class DeleteCourseCommandHandler : IRequestHandler<DeleteCourseCommand>
         if (!_currentUserService.IsAdmin && course.InstructorId != _currentUserService.UserId.Value)
         {
             throw new ForbiddenAccessException("You are not the instructor of this course.");
+        }
+        var hasGiftPurchases = await _context.GiftPurchases
+            .AnyAsync(gift => gift.CourseId == course.Id, cancellationToken);
+        if (hasGiftPurchases)
+        {
+            throw new ValidationException(new[] { new ValidationFailure("", "Cannot delete a course with gift purchase history.") });
         }
 
         _context.Courses.Remove(course);

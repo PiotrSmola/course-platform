@@ -309,4 +309,17 @@ function formatDate(value: string) {
   width: fit-content;
   padding: 12px 18px;
 }
+.lesson-discussion {
+  --lg-blur: 12px;
+}
+
+.question-form,
+.answer-form {
+  gap: 16px;
+
+  .btn {
+    margin-top: 2px;
+  }
+}
+
 </style>

@@ -168,4 +168,14 @@ const difficultyLabel = computed(() => difficultyLabels[props.path.difficultyLev
 .path-card:hover .card-cta {
   gap: 10px;
 }
+.path-card {
+  --lg-blur: 12px;
+}
+
+.difficulty-badge,
+.hours-badge {
+  -webkit-backdrop-filter: blur(12px) saturate(170%);
+  backdrop-filter: blur(12px) saturate(170%);
+}
+
 </style>

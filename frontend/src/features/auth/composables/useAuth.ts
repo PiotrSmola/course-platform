@@ -45,7 +45,8 @@ export function useAuth() {
     mutationFn: register,
     onSuccess: (data) => {
       toast.success(data.message || 'Konto utworzone. Sprawdź skrzynkę email.')
-      router.push({ name: 'Login' })
+      const redirect = router.currentRoute.value.query.redirect as string | undefined
+      router.push({ name: 'Login', query: redirect ? { redirect } : {} })
     },
     onError: (error) => {
       toast.error(getApiErrorMessage(error) || 'Nie udało się utworzyć konta')

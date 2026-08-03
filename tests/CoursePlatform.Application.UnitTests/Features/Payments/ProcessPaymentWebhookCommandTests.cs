@@ -187,6 +187,48 @@ public class ProcessPaymentWebhookCommandTests
     }
 
     [Fact]
+    public async Task Handle_GiftChargeback_RemovesGiftEnrollment()
+    {
+        var payment = await SeedPendingPaymentAsync(amount: 49);
+        var gift = new GiftPurchase
+        {
+            BuyerUserId = payment.UserId,
+            CourseId = payment.CourseId,
+            RecipientEmail = "recipient@test.com",
+            CodeHash = Guid.NewGuid().ToString("N"),
+            ProtectedCode = "protected-code",
+            Status = GiftStatus.Redeemed,
+            Amount = payment.Amount,
+            Currency = "pln",
+            CompletedAt = DateTime.UtcNow,
+            RedeemedByUserId = payment.UserId,
+            RedeemedAt = DateTime.UtcNow
+        };
+        _context.GiftPurchases.Add(gift);
+        _context.Enrollments.Add(new Enrollment
+        {
+            UserId = payment.UserId,
+            CourseId = payment.CourseId,
+            EnrolledAt = DateTime.UtcNow
+        });
+        await _context.SaveChangesAsync();
+
+        _gateway.EventToReturn = new PaymentGatewayEvent(
+            PaymentGatewayEventType.GiftChargeback,
+            "evt_gift_chargeback",
+            null,
+            4900,
+            "pln",
+            null,
+            GiftId: gift.Id.ToString());
+
+        await CreateHandler().Handle(Command(), CancellationToken.None);
+
+        _context.GiftPurchases.Single().Status.Should().Be(GiftStatus.Chargeback);
+        _context.Enrollments.Should().BeEmpty();
+    }
+
+    [Fact]
     public async Task Handle_UnknownSession_DoesNothing()
     {
         await SeedPendingPaymentAsync();

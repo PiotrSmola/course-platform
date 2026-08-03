@@ -17,17 +17,13 @@
             <span>CoursePlatform</span>
           </router-link>
           <p>Nowoczesna platforma e-learningowa. Ucz się w dowolnym miejscu i czasie, zdobywaj certyfikaty i rozwijaj karierę.</p>
-          <div class="socials">
-            <a href="#" class="glass" aria-label="Facebook">Fb</a>
-            <a href="#" class="glass" aria-label="Instagram">Ig</a>
-            <a href="#" class="glass" aria-label="X">X</a>
-            <a href="#" class="glass" aria-label="YouTube">Yt</a>
-          </div>
+          <FooterSocialLinks />
         </div>
 
         <nav class="footer-col" aria-label="Platforma">
           <h4>Platforma</h4>
           <ul>
+            <li><router-link :to="{ name: 'Business' }">Dla firm</router-link></li>
             <li><router-link :to="{ name: 'Courses' }">Katalog kursów</router-link></li>
             <li><router-link v-if="authStore.isAuthenticated" :to="{ name: 'MyCourses' }">Moje kursy</router-link></li>
             <li><router-link v-if="authStore.isInstructor" :to="{ name: 'InstructorDashboard' }">Panel instruktora</router-link></li>
@@ -38,42 +34,37 @@
         <nav class="footer-col" aria-label="Pomoc">
           <h4>Pomoc</h4>
           <ul>
-            <li><a href="#">Jak zacząć</a></li>
-            <li><a href="#">Cennik</a></li>
-            <li><a href="#">FAQ</a></li>
-            <li><a href="#">Kontakt</a></li>
+            <li><router-link :to="{ name: 'Help' }">Jak zacz&#261;&#263;</router-link></li>
+            <li><router-link :to="{ name: 'Pricing' }">Cennik</router-link></li>
+            <li><router-link :to="{ name: 'Faq' }">FAQ</router-link></li>
+            <li><router-link :to="{ name: 'Contact' }">Kontakt</router-link></li>
           </ul>
         </nav>
 
         <div class="footer-col footer-news">
           <h4>Newsletter</h4>
           <p>Zapisz się i otrzymuj powiadomienia o nowych kursach i promocjach.</p>
-          <form class="newsletter-form" @submit.prevent="handleSubscribe">
-            <input type="email" v-model="email" placeholder="Twój e-mail" required aria-label="Adres e-mail">
-            <button class="btn btn-primary" type="submit">Zapisz się</button>
-          </form>
+          <FooterNewsletterForm />
         </div>
       </div>
 
       <div class="footer-bottom">
+        <FooterLocale />
         <p>© {{ year }} CoursePlatform. Wszystkie prawa zastrzeżone.</p>
-        <p>Polska 🇵🇱 · PLN</p>
       </div>
     </div>
   </footer>
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue'
 import { useAuthStore } from '@/features/auth/stores/auth.store'
+import FooterLocale from '@/shared/components/layout/FooterLocale.vue'
+import FooterNewsletterForm from '@/shared/components/layout/FooterNewsletterForm.vue'
+import FooterSocialLinks from '@/shared/components/layout/FooterSocialLinks.vue'
 
 const authStore = useAuthStore()
-const email = ref('')
 const year = new Date().getFullYear()
 
-const handleSubscribe = () => {
-  email.value = ''
-}
 </script>
 
 <style lang="scss" scoped>

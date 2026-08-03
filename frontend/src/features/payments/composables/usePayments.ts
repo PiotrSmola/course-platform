@@ -5,6 +5,7 @@ import {
   createCheckoutSession,
   createSubscriptionCheckoutSession,
   getMyPurchases,
+  getMyPaymentHistory,
   getMySubscription,
   getPaymentStatus,
   getSubscriptionOffer,
@@ -73,6 +74,13 @@ export function useMyPurchases(limit = 5) {
   return useQuery({
     queryKey: queryKeys.myPurchases(),
     queryFn: () => getMyPurchases(limit)
+  })
+}
+
+export function useMyPaymentHistory(limit = 5) {
+  return useQuery({
+    queryKey: queryKeys.paymentHistory(),
+    queryFn: () => getMyPaymentHistory(limit)
   })
 }
 

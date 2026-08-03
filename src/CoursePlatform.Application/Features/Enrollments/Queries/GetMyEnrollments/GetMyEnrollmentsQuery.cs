@@ -59,6 +59,11 @@ public class GetMyEnrollmentsQueryHandler : IRequestHandler<GetMyEnrollmentsQuer
                 .OrderBy(m => m.Order)
                 .SelectMany(m => m.Lessons.OrderBy(l => l.Order))
                 .ToList();
+            var lockStates = await ProgressGateHelper.GetLessonLockStatesAsync(
+                _context,
+                _currentUserService,
+                e.CourseId,
+                cancellationToken);
             var totalLessons = orderedLessons.Count;
             var completedIds = progress
                 .Where(p => p.IsCompleted && orderedLessons.Any(l => l.Id == p.LessonId))
@@ -66,7 +71,9 @@ public class GetMyEnrollmentsQueryHandler : IRequestHandler<GetMyEnrollmentsQuer
                 .ToHashSet();
             var completedLessons = completedIds.Count;
             var firstLessonId = orderedLessons.FirstOrDefault()?.Id;
-            var continueLessonId = orderedLessons.FirstOrDefault(l => !completedIds.Contains(l.Id))?.Id
+            var continueLessonId = orderedLessons
+                .FirstOrDefault(lesson => !completedIds.Contains(lesson.Id) && !lockStates.GetValueOrDefault(lesson.Id).IsLocked)?.Id
+                ?? orderedLessons.FirstOrDefault(lesson => !lockStates.GetValueOrDefault(lesson.Id).IsLocked)?.Id
                 ?? firstLessonId;
             result.Add(new EnrollmentDto(
                 e.Id,

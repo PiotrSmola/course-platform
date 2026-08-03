@@ -383,4 +383,20 @@ function levelLabel(level: CourseLevel): string {
 @keyframes spin {
   to { transform: rotate(360deg); }
 }
+.path-course {
+  --lg-blur: 12px;
+}
+
+.difficulty-badge,
+.hours-badge,
+.course-count-badge,
+.course-cta {
+  -webkit-backdrop-filter: blur(12px) saturate(170%);
+  backdrop-filter: blur(12px) saturate(170%);
+}
+
+.course-cta {
+  background: rgba(255, 255, 255, 0.07);
+}
+
 </style>

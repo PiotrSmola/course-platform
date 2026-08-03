@@ -51,6 +51,16 @@
           <router-link class="btn btn-primary" :to="{ name: 'Courses' }">Przeglądaj kursy</router-link>
         </div>
       </template>
+      <template v-else-if="isGiftFlow">
+        <div class="result-icon success">OK</div>
+        <h1>Prezent zostal kupiony</h1>
+        <p>Po potwierdzeniu platnosci kod zostanie wyslany na adres odbiorcy.</p>
+        <div class="result-actions">
+          <router-link class="btn btn-primary" :to="{ name: 'Profile' }">Moje zakupy</router-link>
+          <router-link class="btn btn-ghost" :to="{ name: 'Courses' }">Wroc do kursow</router-link>
+        </div>
+      </template>
+
 
       <template v-else-if="isChecking">
         <div class="spinner" />
@@ -129,11 +139,12 @@ const queryClient = useQueryClient()
 
 const sessionId = computed(() => (route.query.session_id as string) ?? '')
 const isSubscriptionFlow = computed(() => route.query.type === 'subscription')
-const statusQuery = usePaymentStatus(() => (isSubscriptionFlow.value ? '' : sessionId.value))
+const isGiftFlow = computed(() => route.query.type === 'gift')
+const statusQuery = usePaymentStatus(() => (isSubscriptionFlow.value || isGiftFlow.value ? '' : sessionId.value))
 const subscriptionQuery = useMySubscription(() => isSubscriptionFlow.value, true)
 
 const isChecking = computed(() =>
-  !isSubscriptionFlow.value && (
+  !isSubscriptionFlow.value && !isGiftFlow.value && (
   statusQuery.isLoading.value ||
   (!statusQuery.isPollingTimeout.value && statusQuery.data.value?.status === PaymentStatus.Pending)
 ))

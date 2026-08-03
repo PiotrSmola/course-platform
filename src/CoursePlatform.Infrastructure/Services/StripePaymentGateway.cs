@@ -91,6 +91,71 @@ internal sealed class StripePaymentGateway : IPaymentGateway
         return new CheckoutSession(session.Id, session.Url, _options.Currency);
     }
 
+    public async Task<CheckoutSession> CreateGiftCheckoutSessionAsync(
+        Guid giftId,
+        Guid courseId,
+        string courseTitle,
+        decimal amount,
+        string customerEmail,
+        CancellationToken cancellationToken)
+    {
+        if (_client == null)
+        {
+            throw new InvalidOperationException("Stripe is not configured.");
+        }
+
+        var sessionOptions = new SessionCreateOptions
+        {
+            Mode = "payment",
+            ClientReferenceId = giftId.ToString(),
+            CustomerEmail = string.IsNullOrWhiteSpace(customerEmail) ? null : customerEmail,
+            SuccessUrl = $"{_options.SuccessUrl}?type=gift&session_id={{CHECKOUT_SESSION_ID}}",
+            CancelUrl = $"{_options.CancelUrl}?type=gift&courseId={courseId}",
+            LineItems = new List<SessionLineItemOptions>
+            {
+                new()
+                {
+                    Quantity = 1,
+                    PriceData = new SessionLineItemPriceDataOptions
+                    {
+                        Currency = _options.Currency,
+                        UnitAmount = (long)Math.Round(amount * 100, MidpointRounding.AwayFromZero),
+                        ProductData = new SessionLineItemPriceDataProductDataOptions
+                        {
+                            Name = $"Prezent: {courseTitle}"
+                        }
+                    }
+                }
+            },
+            Metadata = new Dictionary<string, string>
+            {
+                ["giftId"] = giftId.ToString(),
+                ["courseId"] = courseId.ToString()
+            },
+            PaymentIntentData = new SessionPaymentIntentDataOptions
+            {
+                Metadata = new Dictionary<string, string>
+                {
+                    ["giftId"] = giftId.ToString(),
+                    ["courseId"] = courseId.ToString()
+                }
+            }
+        };
+
+        var service = new SessionService(_client);
+        var session = await _pipeline.ExecuteAsync(async ct =>
+            await service.CreateAsync(
+                sessionOptions,
+                new RequestOptions
+                {
+                    IdempotencyKey = $"gift-checkout-{giftId:N}"
+                },
+                ct),
+            cancellationToken);
+
+        return new CheckoutSession(session.Id, session.Url, _options.Currency);
+    }
+
     public async Task<CheckoutSession> CreateSubscriptionCheckoutSessionAsync(
         Guid userId,
         string customerEmail,
@@ -205,7 +270,7 @@ internal sealed class StripePaymentGateway : IPaymentGateway
             periodEnd.Value);
     }
 
-    public PaymentGatewayEvent ParseWebhookEvent(string payload, string signature)
+    public async Task<PaymentGatewayEvent> ParseWebhookEventAsync(string payload, string signature, CancellationToken cancellationToken)
     {
         if (!IsConfigured)
         {
@@ -231,7 +296,7 @@ internal sealed class StripePaymentGateway : IPaymentGateway
             "checkout.session.completed" => ToSessionEvent(PaymentGatewayEventType.CheckoutCompleted, stripeEvent),
             "checkout.session.expired" => ToSessionEvent(PaymentGatewayEventType.CheckoutExpired, stripeEvent),
             "charge.refunded" => ToChargeEvent(PaymentGatewayEventType.PaymentRefunded, stripeEvent),
-            "charge.dispute.created" => ToChargeEvent(PaymentGatewayEventType.Chargeback, stripeEvent),
+            "charge.dispute.created" => await ToDisputeEventAsync(stripeEvent, cancellationToken),
             "customer.subscription.updated" => ToSubscriptionEvent(PaymentGatewayEventType.SubscriptionUpdated, stripeEvent),
             "customer.subscription.deleted" => ToSubscriptionEvent(PaymentGatewayEventType.SubscriptionDeleted, stripeEvent),
             "invoice.paid" => ToInvoiceEvent(stripeEvent),
@@ -261,6 +326,20 @@ internal sealed class StripePaymentGateway : IPaymentGateway
                 null);
         }
 
+        var giftId = GetMetadataValue(session?.Metadata, "giftId");
+        if (!string.IsNullOrWhiteSpace(giftId))
+        {
+            var giftEventType = type switch
+            {
+                PaymentGatewayEventType.CheckoutCompleted => PaymentGatewayEventType.GiftCheckoutCompleted,
+                PaymentGatewayEventType.CheckoutExpired => PaymentGatewayEventType.GiftCheckoutExpired,
+                _ => type
+            };
+
+            return new PaymentGatewayEvent(
+                giftEventType, stripeEvent.Id, session?.Id, session?.AmountTotal, session?.Currency, null, GiftId: giftId);
+        }
+
         var paymentId = GetMetadataValue(session?.Metadata, "paymentId") ?? session?.ClientReferenceId;
         return new PaymentGatewayEvent(type, stripeEvent.Id, session?.Id, session?.AmountTotal, session?.Currency, paymentId);
     }
@@ -269,13 +348,58 @@ internal sealed class StripePaymentGateway : IPaymentGateway
     {
         var charge = stripeEvent.Data.Object as Charge;
         var paymentId = GetMetadataValue(charge?.Metadata, "paymentId");
+        var giftId = GetMetadataValue(charge?.Metadata, "giftId");
+        var giftEventType = !string.IsNullOrWhiteSpace(giftId)
+            ? type switch
+            {
+                PaymentGatewayEventType.PaymentRefunded => PaymentGatewayEventType.GiftRefunded,
+                PaymentGatewayEventType.Chargeback => PaymentGatewayEventType.GiftChargeback,
+                _ => type
+            }
+            : type;
+
         return new PaymentGatewayEvent(
-            type,
+            giftEventType,
             stripeEvent.Id,
             null,
             charge?.AmountRefunded,
             charge?.Currency,
-            paymentId);
+            paymentId,
+            GiftId: giftId);
+    }
+
+    private async Task<PaymentGatewayEvent> ToDisputeEventAsync(Event stripeEvent, CancellationToken cancellationToken)
+    {
+        var dispute = stripeEvent.Data.Object as Dispute;
+        var chargeId = dispute?.ChargeId;
+        if (_client == null || string.IsNullOrWhiteSpace(chargeId))
+        {
+            return new PaymentGatewayEvent(
+                PaymentGatewayEventType.Chargeback,
+                stripeEvent.Id,
+                null,
+                dispute?.Amount,
+                dispute?.Currency,
+                null);
+        }
+
+        var service = new ChargeService(_client);
+        var charge = await _pipeline.ExecuteAsync(async ct =>
+            await service.GetAsync(chargeId, cancellationToken: ct), cancellationToken);
+        var paymentId = GetMetadataValue(charge.Metadata, "paymentId");
+        var giftId = GetMetadataValue(charge.Metadata, "giftId");
+        var eventType = !string.IsNullOrWhiteSpace(giftId)
+            ? PaymentGatewayEventType.GiftChargeback
+            : PaymentGatewayEventType.Chargeback;
+
+        return new PaymentGatewayEvent(
+            eventType,
+            stripeEvent.Id,
+            null,
+            dispute?.Amount,
+            dispute?.Currency ?? charge.Currency,
+            paymentId,
+            GiftId: giftId);
     }
 
     private static PaymentGatewayEvent ToSubscriptionEvent(PaymentGatewayEventType type, Event stripeEvent)

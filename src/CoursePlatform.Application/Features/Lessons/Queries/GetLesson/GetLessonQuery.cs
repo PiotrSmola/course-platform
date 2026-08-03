@@ -39,15 +39,7 @@ public class GetLessonQueryHandler : IRequestHandler<GetLessonQuery, LessonDto>
             throw new ForbiddenAccessException("User not authenticated.");
         }
 
-        var hasAccess = await CourseAccessHelper.CanAccessCourseContentAsync(
-            _context, _currentUserService, request.CourseId, cancellationToken);
-
-        if (!hasAccess)
-        {
-            throw new ForbiddenAccessException("You are not enrolled in this course.");
-        }
-
-        await ProgressGateHelper.EnsureLessonUnlockedAsync(
+        await CourseContentAccessHelper.EnsureCanViewLessonAsync(
             _context, _currentUserService, request.CourseId, request.LessonId, cancellationToken);
 
         var lesson = await _context.Lessons

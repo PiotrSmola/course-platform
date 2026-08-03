@@ -33,17 +33,18 @@
         <div class="lesson-info glass">
           <div class="lesson-header">
             <h1>{{ lesson.title }}</h1>
-            <div class="progress-badge">{{ progressPercent }}%</div>
+            <div v-if="!isTrialAccess" class="progress-badge">{{ progressPercent }}%</div>
           </div>
-          <div class="progress-bar">
+          <div v-if="!isTrialAccess" class="progress-bar">
             <div class="progress-fill" :style="{ width: `${progressPercent}%` }"></div>
           </div>
           <p v-if="lesson.description">{{ lesson.description }}</p>
+          <p v-if="isTrialAccess" class="trial-notice">Trial obejmuje odtwarzanie dwoch pierwszych lekcji.</p>
           <div class="lesson-meta">
             <span>{{ lesson.moduleTitle }}</span>
             <span>{{ lesson.duration }} min</span>
           </div>
-          <button class="btn btn-primary" @click="complete" :disabled="!!lesson?.isCompleted || isSubmitting">
+          <button v-if="!isTrialAccess" class="btn btn-primary" @click="complete" :disabled="!!lesson?.isCompleted || isSubmitting">
             {{ lesson.isCompleted ? 'Ukończono' : 'Oznacz jako ukończone' }}
           </button>
           <div class="lesson-navigation">
@@ -65,9 +66,9 @@
             </button>
           </div>
         </div>
-        <LessonQuizPanel :course-id="courseId" :lesson-id="lessonId" />
-        <LessonResourcesPanel :course-id="courseId" :lesson-id="lessonId" />
-        <LessonDiscussionPanel :course-id="courseId" :lesson-id="lessonId" />
+        <LessonQuizPanel v-if="!isTrialAccess" :course-id="courseId" :lesson-id="lessonId" />
+        <LessonResourcesPanel v-if="!isTrialAccess" :course-id="courseId" :lesson-id="lessonId" />
+        <LessonDiscussionPanel v-if="!isTrialAccess" :course-id="courseId" :lesson-id="lessonId" />
       </div>
     </div>
   </div>
@@ -86,6 +87,7 @@
 <script setup lang="ts">
 import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { useRouter } from 'vue-router'
+import { useAuthStore } from '@/features/auth/stores/auth.store'
 import {
   useLesson,
   useCompleteLesson,
@@ -110,6 +112,7 @@ const props = defineProps<{
 }>()
 
 const router = useRouter()
+const authStore = useAuthStore()
 const lessonQuery = useLesson(() => props.courseId, () => props.lessonId)
 const courseQuery = useCourseDetails(() => props.courseId)
 const videoUrlQuery = useLessonVideoUrl(() => props.courseId, () => props.lessonId)
@@ -125,6 +128,16 @@ let lastSavedAt = 0
 let lastSavedPosition = -1
 
 const isSubmitting = computed(() => completeMutation.isPending.value)
+const isTrialAccess = computed(() => {
+  const currentCourse = course.value
+  return Boolean(
+    currentCourse?.canAccessContent &&
+    !currentCourse.isEnrolled &&
+    !currentCourse.hasSubscriptionAccess &&
+    currentCourse.instructorId !== authStore.user?.id &&
+    !authStore.isAdmin
+  )
+})
 
 const allLessons = computed<LessonListDto[]>(() => {
   return course.value?.modules.flatMap((m) => m.lessons) ?? []
@@ -196,6 +209,7 @@ function onLoadedMetadata() {
 
 function savePosition() {
   const video = videoRef.value
+  if (isTrialAccess.value) return
   if (!video || !Number.isFinite(video.currentTime)) return
   const positionSeconds = Math.floor(video.currentTime)
   if (positionSeconds === lastSavedPosition) return
@@ -214,6 +228,7 @@ function onTimeUpdate() {
 }
 
 function complete() {
+  if (isTrialAccess.value) return
   completeMutation.mutate(
     { courseId: props.courseId, lessonId: props.lessonId },
     {
@@ -265,6 +280,7 @@ onBeforeUnmount(() => {
 
 <style lang="scss" scoped>
 @use "@/assets/styles/abstracts/variables" as *;
+@use "@/assets/styles/abstracts/mixins" as *;
 
 .learning-page {
   padding: calc($header-height + 40px) 0 80px;
@@ -379,6 +395,13 @@ onBeforeUnmount(() => {
   }
 }
 
+.trial-notice {
+  margin: 0 0 20px;
+  color: $color-gold !important;
+  font-size: 0.9rem !important;
+  line-height: 1.5;
+}
+
 .lesson-meta {
   display: flex;
   gap: 12px;
@@ -414,4 +437,57 @@ onBeforeUnmount(() => {
     margin-bottom: 24px;
   }
 }
+.learning-layout {
+  grid-template-columns: 320px minmax(0, 1fr);
+}
+
+.video-container,
+.lesson-info {
+  --lg-blur: 12px;
+}
+
+.playback-controls select {
+  min-height: 40px;
+  border-radius: 12px;
+  background: rgba(15, 23, 42, 0.7);
+}
+
+.progress-badge,
+.lesson-meta span {
+  @include liquid-glass;
+  --lg-r: 999px;
+  --lg-blur: 10px;
+  --lg-tint: rgba(255, 255, 255, 0.06);
+  background: transparent;
+}
+
+@media (max-width: 880px) {
+  .learning-layout {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 560px) {
+  .learning-page {
+    padding-top: calc($header-height + 20px);
+  }
+
+  .lesson-info {
+    padding: 20px;
+  }
+
+  .lesson-header,
+  .lesson-navigation,
+  .playback-controls {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .lesson-navigation .btn,
+  .playback-controls select {
+    width: 100%;
+    max-width: none;
+  }
+}
+
 </style>

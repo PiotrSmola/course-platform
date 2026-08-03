@@ -168,7 +168,19 @@
           <button class="btn btn-ghost" @click="logout">Wyloguj</button>
         </template>
       </div>
+      <button
+        type="button"
+        class="menu-toggle"
+        :aria-expanded="mobileMenuOpen"
+        aria-controls="mobile-navigation"
+        aria-label="Otw&#243;rz menu"
+        @click="mobileMenuOpen = !mobileMenuOpen"
+      >
+        <span /><span /><span />
+      </button>
     </div>
+    <MobileNavigationPanel v-model="mobileMenuOpen" @open-search="openMobileSearch" />
+    <MobileSearchOverlay v-model="mobileSearchOpen" />
   </header>
 </template>
 
@@ -178,6 +190,8 @@ import { useRoute } from 'vue-router'
 import { useAuth } from '@/features/auth/composables/useAuth'
 import { useAuthStore } from '@/features/auth/stores/auth.store'
 import { useCategories, useTechnologies, useCourseSearch } from '@/features/courses/composables/useCourseMeta'
+import MobileNavigationPanel from '@/shared/components/layout/MobileNavigationPanel.vue'
+import MobileSearchOverlay from '@/shared/components/layout/MobileSearchOverlay.vue'
 
 const authStore = useAuthStore()
 const { logout } = useAuth()
@@ -200,6 +214,8 @@ const debouncedQuery = ref('')
 const searchInputRef = ref<HTMLInputElement | null>(null)
 const searchDropdownRef = ref<HTMLElement | null>(null)
 let searchTimer: ReturnType<typeof setTimeout> | null = null
+const mobileMenuOpen = ref(false)
+const mobileSearchOpen = ref(false)
 
 const isCatalogRoute = computed(() => {
   const path = route.path
@@ -276,7 +292,17 @@ function formatMatchedBy(matchedBy: string[]): string {
 }
 
 function toggleSearch() {
+  if (window.matchMedia('(max-width: 880px)').matches) {
+    mobileMenuOpen.value = false
+    mobileSearchOpen.value = true
+    return
+  }
   searchOpen.value = !searchOpen.value
+}
+
+function openMobileSearch() {
+  mobileMenuOpen.value = false
+  mobileSearchOpen.value = true
 }
 
 function closeSearch() {
@@ -322,7 +348,7 @@ function moveBlob(e: PointerEvent) {
 
 function syncBlobToActive() {
   if (!listEl.value) return
-  const activeLink = listEl.value.querySelector('.router-link-active') || listEl.value.querySelector('.force-active')
+  const activeLink = listEl.value.querySelector('.force-active') || listEl.value.querySelector('.router-link-exact-active')
   if (activeLink) {
     moveBlobToElement(activeLink as HTMLElement)
   } else {
@@ -385,6 +411,8 @@ watch(() => route.path, async () => {
   syncBlobToActive()
   catalogOpen.value = false
   searchOpen.value = false
+  mobileMenuOpen.value = false
+  mobileSearchOpen.value = false
 })
 
 onUnmounted(() => {
@@ -888,5 +916,73 @@ onUnmounted(() => {
   color: $color-gold;
   text-transform: uppercase;
   letter-spacing: 0.03em;
+}
+
+.avatar-btn {
+  display: grid;
+  place-items: center;
+  line-height: 1;
+}
+
+.menu-toggle {
+  display: none;
+  width: 42px;
+  height: 42px;
+  flex-shrink: 0;
+  place-content: center;
+  gap: 5px;
+  padding: 0;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.06);
+  color: $color-ink;
+  cursor: pointer;
+
+  span {
+    display: block;
+    width: 18px;
+    height: 2px;
+    margin-inline: auto;
+    border-radius: 999px;
+    background: currentColor;
+  }
+}
+
+@media (max-width: 880px) {
+  .site-header .header-inner {
+    width: min($container-max, 100% - 24px);
+    height: 64px;
+    padding: 0 10px 0 16px;
+    gap: 10px;
+  }
+
+  .main-nav,
+  .nav-actions {
+    display: none;
+  }
+
+  .menu-toggle {
+    display: grid;
+  }
+
+  .search-dropdown {
+    display: none !important;
+  }
+
+  .logo span {
+    display: none;
+  }
+}
+
+@media (max-width: 420px) {
+  .site-header .header-inner {
+    width: calc(100% - 16px);
+  }
+
+  .search-trigger,
+  .menu-toggle {
+    width: 40px;
+    height: 40px;
+  }
 }
 </style>

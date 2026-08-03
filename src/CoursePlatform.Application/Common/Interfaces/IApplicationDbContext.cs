@@ -39,6 +39,9 @@ public interface IApplicationDbContext
     DbSet<ApplicationUser> Users { get; }
     DbSet<WishlistItem> WishlistItems { get; }
     DbSet<CourseWaitlistEntry> CourseWaitlistEntries { get; }
+    DbSet<TrialAccess> TrialAccesses { get; }
+    DbSet<GiftPurchase> GiftPurchases { get; }
+    DbSet<NewsletterSubscription> NewsletterSubscriptions { get; }
 
     DatabaseFacade Database { get; }
 

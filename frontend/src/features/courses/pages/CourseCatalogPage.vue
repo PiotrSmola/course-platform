@@ -25,7 +25,7 @@
                 <path d="M5 12h14M13 5l7 7-7 7"/>
               </svg>
             </router-link>
-            <router-link class="btn btn-ghost" :to="{ name: 'Register' }" v-if="!authStore.isAuthenticated">
+            <router-link class="btn btn-ghost" :to="trialDestination">
               Wypróbuj za darmo
             </router-link>
           </div>
@@ -103,7 +103,7 @@
     <div class="container">
       <div class="section-head">
         <span class="eyebrow">Ścieżki kariery</span>
-        <h2>Wyierz kierunek, w którym chcesz się rozwijać</h2>
+        <h2>Wybierz kierunek, w którym chcesz się rozwijać</h2>
         <p>Spójne programy złożone z kilku kursów — od fundamentu po zaawansowane tematy.</p>
       </div>
 
@@ -271,11 +271,23 @@
         </div>
         <div class="cta-actions">
           <router-link class="btn btn-primary" :to="{ name: 'Courses' }">Wybierz kurs</router-link>
-          <router-link class="btn btn-ghost" :to="{ name: 'Register' }" v-if="!authStore.isAuthenticated">Utwórz konto</router-link>
+          <router-link class="btn btn-ghost" :to="trialDestination">Wypr&#243;buj za darmo</router-link>
         </div>
       </div>
     </div>
   </section>
+  <section class="home-faq">
+    <div class="container">
+      <div class="section-head">
+        <span class="eyebrow">Pomoc</span>
+        <h2>Najcz&#281;&#347;ciej zadawane pytania</h2>
+        <p>Kr&#243;tkie odpowiedzi przed wyborem kursu.</p>
+      </div>
+      <FaqList :compact="true" />
+      <router-link class="faq-link" :to="{ name: 'Faq' }">Zobacz wszystkie odpowiedzi</router-link>
+    </div>
+  </section>
+
 </template>
 
 <script setup lang="ts">
@@ -285,6 +297,8 @@ import { useAuthStore } from '@/features/auth/stores/auth.store'
 import { getCourses } from '@/features/courses/api/courses.api'
 import { queryKeys } from '@/shared/queryKeys'
 import CourseThumbnail from '@/shared/components/media/CourseThumbnail.vue'
+import { usePopularCourses } from '@/features/courses/composables/usePopularCourses'
+import FaqList from '@/features/public/components/FaqList.vue'
 
 const authStore = useAuthStore()
 
@@ -293,12 +307,19 @@ const { data: stats } = useQuery({
   queryFn: () => getCourses({ pageSize: 1 })
 })
 
-const { data: featuredData } = useQuery({
-  queryKey: [...queryKeys.courses(), 'featured'],
-  queryFn: () => getCourses({ pageSize: 6, sortBy: 'rating' })
+const { data: featuredData } = usePopularCourses()
+
+const featuredCourses = computed(() => {
+  const courses = featuredData.value ?? []
+  if (courses.length >= 8) return courses.slice(0, 8)
+  return courses.length >= 4 ? courses.slice(0, 4) : []
 })
 
-const featuredCourses = computed(() => featuredData.value?.items ?? [])
+const trialDestination = computed(() =>
+  authStore.isAuthenticated
+    ? { name: 'Trial' }
+    : { name: 'Register', query: { redirect: '/trial' } }
+)
 
 const featuredRating = computed(() => {
   const items = featuredCourses.value
@@ -433,25 +454,25 @@ const featuredCount = computed(() => featuredCourses.value.length || '—')
 
 .hero-visual {
   position: relative;
-  height: 460px;
+  height: 520px;
 
   @media (max-width: 980px) {
-    height: 380px;
+    height: 420px;
   }
 }
 
 .float-card {
   --lg-r: 22px;
-  --lg-blur: 0px;
+  --lg-blur: 1.5px;
   position: absolute;
-  padding: 18px 20px;
+  padding: 24px 26px;
   animation: float 7s ease-in-out infinite;
 }
 
 .card-1 {
   top: 0;
   left: 0;
-  width: 78%;
+  width: 84%;
   z-index: 3;
   animation-delay: 0s;
 }
@@ -459,7 +480,7 @@ const featuredCount = computed(() => featuredCourses.value.length || '—')
 .card-2 {
   top: 40%;
   right: 0;
-  width: 64%;
+  width: 70%;
   z-index: 2;
   animation-delay: -2.5s;
 }
@@ -467,7 +488,7 @@ const featuredCount = computed(() => featuredCourses.value.length || '—')
 .card-3 {
   bottom: 0;
   left: 8%;
-  width: 56%;
+  width: 62%;
   z-index: 1;
   animation-delay: -4.5s;
 }
@@ -634,7 +655,7 @@ const featuredCount = computed(() => featuredCourses.value.length || '—')
 
 .path-card {
   --lg-r: 22px;
-  --lg-blur: 0px;
+  --lg-blur: 1.5px;
   padding: 26px 24px;
   cursor: pointer;
   transition: transform 0.35s, box-shadow 0.35s;
@@ -725,7 +746,7 @@ const featuredCount = computed(() => featuredCourses.value.length || '—')
 
 .feature-card {
   --lg-r: 22px;
-  --lg-blur: 0px;
+  --lg-blur: 1.5px;
   padding: 28px 24px;
   display: flex;
   flex-direction: column;
@@ -776,8 +797,16 @@ const featuredCount = computed(() => featuredCourses.value.length || '—')
 
 .featured-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  grid-template-columns: repeat(4, minmax(0, 1fr));
   gap: 20px;
+
+  @media (max-width: 980px) {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  @media (max-width: 540px) {
+    grid-template-columns: 1fr;
+  }
 }
 
 .featured-card {
@@ -819,7 +848,7 @@ const featuredCount = computed(() => featuredCourses.value.length || '—')
 
 .cta-card {
   --lg-r: 32px;
-  --lg-blur: 0px;
+  --lg-blur: 1.5px;
   padding: 50px 56px;
   display: flex;
   align-items: center;
@@ -875,4 +904,26 @@ const featuredCount = computed(() => featuredCourses.value.length || '—')
     }
   }
 }
+
+.home-faq {
+  padding: 16px 0 72px;
+
+  .section-head {
+    margin-bottom: 28px;
+  }
+}
+
+.faq-link {
+  display: flex;
+  width: fit-content;
+  margin: 22px auto 0;
+  color: $color-gold;
+  font-weight: 600;
+  text-decoration: none;
+
+  &:hover {
+    color: $color-ink;
+  }
+}
+
 </style>

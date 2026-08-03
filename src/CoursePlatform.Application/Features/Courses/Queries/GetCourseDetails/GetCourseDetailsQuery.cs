@@ -52,6 +52,7 @@ public class GetCourseDetailsQueryHandler : IRequestHandler<GetCourseDetailsQuer
 
         var isEnrolled = false;
         var canAccessContent = false;
+        var contentAccess = new CourseContentAccess(CourseContentAccessLevel.None);
         var hasSubscriptionAccess = false;
         var hasUserReviewed = false;
         Guid? userReviewId = null;
@@ -69,15 +70,17 @@ public class GetCourseDetailsQueryHandler : IRequestHandler<GetCourseDetailsQuer
                 userId,
                 cancellationToken);
 
+            contentAccess = await CourseContentAccessHelper.GetAsync(
+                _context, _currentUserService, request.Id, cancellationToken);
             var userReview = await _context.Reviews
                 .AsNoTracking()
                 .FirstOrDefaultAsync(r => r.UserId == userId && r.CourseId == request.Id, cancellationToken);
             hasUserReviewed = userReview != null;
             userReviewId = userReview?.Id;
 
-            canAccessContent = isEnrolled || hasSubscriptionAccess;
+            canAccessContent = contentAccess.CanViewLessons;
 
-            if (canAccessContent)
+            if (contentAccess.HasFullAccess)
             {
                 var lessonIds = course.Modules.SelectMany(m => m.Lessons).Select(l => l.Id).ToList();
                 completedLessonIds = (await _context.LessonProgresses
@@ -105,10 +108,13 @@ public class GetCourseDetailsQueryHandler : IRequestHandler<GetCourseDetailsQuer
 
         canAccessContent = canAccessContent || canManage;
 
-        var lockStates = canAccessContent
-            ? await ProgressGateHelper.GetLessonLockStatesAsync(
-                _context, _currentUserService, course.Id, cancellationToken)
-            : new Dictionary<Guid, (bool IsLocked, string? LockReason)>();
+        var lockStates = contentAccess.IsTrial
+            ? await CourseContentAccessHelper.GetTrialLockStatesAsync(
+                _context, course.Id, cancellationToken)
+            : canAccessContent
+                ? await ProgressGateHelper.GetLessonLockStatesAsync(
+                    _context, _currentUserService, course.Id, cancellationToken)
+                : new Dictionary<Guid, (bool IsLocked, string? LockReason)>();
 
         var modules = course.Modules.OrderBy(m => m.Order).Select(m => new ModuleDto(
             m.Id,

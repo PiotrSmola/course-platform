@@ -3,13 +3,16 @@
     <h2>Rejestracja</h2>
     <RegisterForm />
     <p class="auth-switch">
-      Masz już konto? <router-link :to="{ name: 'Login' }">Zaloguj się</router-link>
+      Masz już konto? <router-link :to="{ name: 'Login', query: route.query }">Zaloguj się</router-link>
     </p>
   </div>
 </template>
 
 <script setup lang="ts">
 import RegisterForm from '@/features/auth/components/RegisterForm.vue'
+import { useRoute } from 'vue-router'
+
+const route = useRoute()
 </script>
 
 <style lang="scss" scoped>

@@ -214,7 +214,7 @@ public class MinioFileStorageService : IFileStorageService
                     UploadIdMarker = uploadIdMarker
                 }, ct), cancellationToken);
 
-            foreach (var upload in response.MultipartUploads)
+            foreach (var upload in response.MultipartUploads ?? [])
             {
                 var initiated = upload.Initiated?.ToUniversalTime() ?? DateTime.MinValue;
                 if (initiated > cutoff)

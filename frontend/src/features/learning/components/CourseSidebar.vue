@@ -1,6 +1,17 @@
 <template>
-  <aside class="course-sidebar">
-    <div class="course-sidebar__panel glass">
+  <aside class="course-sidebar" :class="{ 'is-open': isOpen }">
+    <button
+      type="button"
+      class="course-sidebar__toggle"
+      :aria-expanded="isOpen"
+      aria-controls="course-program"
+      aria-label="Pokaz lub ukryj program kursu"
+      @click="isOpen = !isOpen"
+    >
+      <span>Program kursu</span>
+      <span aria-hidden="true">{{ isOpen ? '-' : '+' }}</span>
+    </button>
+    <div id="course-program" class="course-sidebar__panel glass">
       <div class="course-sidebar__scroll">
         <h2>Program kursu</h2>
         <div v-for="(module, mIdx) in modules" :key="module.id" class="sidebar-module">
@@ -11,6 +22,7 @@
                 v-if="!lesson.isLocked"
                 :to="{ name: 'Learning', params: { courseId, lessonId: lesson.id } }"
                 :class="{ active: lesson.id === currentLessonId, completed: lesson.isCompleted }"
+                @click="isOpen = false"
               >
                 <span class="icon">{{ lesson.isCompleted ? '✓' : '▶' }}</span>
                 <span class="title">{{ lesson.title }}</span>
@@ -34,6 +46,7 @@
 </template>
 
 <script setup lang="ts">
+import { ref } from 'vue'
 import type { ModuleDto } from '@/features/courses/types/course.types'
 
 defineProps<{
@@ -41,6 +54,8 @@ defineProps<{
   currentLessonId: string
   modules: ModuleDto[]
 }>()
+
+const isOpen = ref(false)
 </script>
 
 <style lang="scss" scoped>
@@ -134,4 +149,69 @@ defineProps<{
     font-size: 0.75rem;
   }
 }
+.course-sidebar {
+  width: 320px;
+}
+
+.course-sidebar__panel {
+  --lg-blur: 12px;
+}
+
+.course-sidebar__scroll h2 {
+  font-size: 1.125rem;
+}
+
+.sidebar-module h3 {
+  font-size: 0.975rem;
+}
+
+.sidebar-module a,
+.sidebar-module .locked {
+  background: rgba(255, 255, 255, 0.035);
+  -webkit-backdrop-filter: blur(8px) saturate(150%);
+  backdrop-filter: blur(8px) saturate(150%);
+}
+
+.course-sidebar__toggle {
+  display: none;
+}
+
+@media (max-width: 880px) {
+  .course-sidebar {
+    position: static;
+    top: auto;
+    width: 100%;
+    max-height: none;
+  }
+
+  .course-sidebar__toggle {
+    @include liquid-glass;
+    --lg-r: 16px;
+    --lg-blur: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    width: 100%;
+    min-height: 52px;
+    padding: 0 16px;
+    border: 0;
+    color: $color-ink;
+    background: transparent;
+    font: inherit;
+    font-weight: 700;
+    cursor: pointer;
+  }
+
+  .course-sidebar__panel {
+    display: none;
+    max-height: none;
+    margin-top: 10px;
+  }
+
+  .course-sidebar.is-open .course-sidebar__panel {
+    display: flex;
+    max-height: min(60vh, 520px);
+  }
+}
+
 </style>

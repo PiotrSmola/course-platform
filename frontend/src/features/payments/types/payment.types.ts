@@ -31,6 +31,18 @@ export interface PurchaseDto {
   completedAt: string
 }
 
+export interface PurchaseHistoryItemDto {
+  kind: 'course' | 'subscription' | 'gift'
+  id: string
+  courseId: string | null
+  courseTitle: string | null
+  recipientEmail: string | null
+  amount: number
+  currency: string
+  completedAt: string
+  giftCode: string | null
+}
+
 export interface SubscriptionCheckoutSessionDto {
   redirectUrl: string
 }

@@ -13,6 +13,10 @@ body {
   @include liquid-glass-scrollbar;
 }
 
+body.is-overlay-open {
+  overflow: hidden;
+}
+
 html {
   @include liquid-glass-scrollbar;
 }
@@ -64,19 +68,19 @@ html {
 
 @keyframes jelly {
   0% {
-    transform: translateY(0) scale(1, 1);
+    scale: 1 1;
   }
   30% {
-    transform: translateY(-4px) scale(1.05, 0.93);
+    scale: 1.05 0.93;
   }
   55% {
-    transform: translateY(-2px) scale(0.97, 1.05);
+    scale: 0.97 1.05;
   }
   78% {
-    transform: translateY(-2px) scale(1.015, 0.985);
+    scale: 1.015 0.985;
   }
   100% {
-    transform: translateY(-2px) scale(1, 1);
+    scale: 1 1;
   }
 }
 
@@ -119,11 +123,11 @@ html {
   cursor: pointer;
   overflow: hidden;
   background: none;
-  transition: transform 0.2s, box-shadow 0.3s, background 0.3s;
+  transition: transform 0.32s cubic-bezier(0.34, 1.4, 0.5, 1), box-shadow 0.3s, background 0.3s;
 
   &:hover {
     transform: translateY(-2px);
-    animation: jelly 0.6s cubic-bezier(0.34, 0.8, 0.4, 1) forwards;
+    animation: jelly 0.6s cubic-bezier(0.34, 0.8, 0.4, 1);
   }
 }
 
@@ -196,5 +200,20 @@ html {
 
   p {
     color: $color-muted;
+  }
+}
+
+:where(a, button, input, select, textarea):focus-visible {
+  outline: 2px solid $color-cyan;
+  outline-offset: 3px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
   }
 }

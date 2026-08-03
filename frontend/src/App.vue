@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { useLiquidGlass } from '@/shared/composables/useLiquidGlass'
 import { useRealtime } from '@/shared/composables/useRealtime'
+import BackToTop from '@/shared/components/ui/BackToTop.vue'
 
 useLiquidGlass()
 useRealtime()
@@ -15,6 +16,7 @@ useRealtime()
       <div class="orb orb-4"></div>
     </div>
     <router-view />
+    <BackToTop />
   </div>
 </template>
 

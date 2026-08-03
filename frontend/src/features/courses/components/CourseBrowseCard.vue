@@ -241,4 +241,13 @@ const levelLabel = computed(() => {
   padding: 10px 18px;
   font-size: 0.86rem;
 }
+.course-card {
+  --lg-blur: 12px;
+}
+
+.course-badge {
+  -webkit-backdrop-filter: blur(12px) saturate(160%);
+  backdrop-filter: blur(12px) saturate(160%);
+}
+
 </style>

@@ -95,20 +95,23 @@
             Nie masz jeszcze żadnych zakupionych kursów.
           </div>
           <div v-else class="purchases-list">
-            <router-link
+            <component :is="purchase.courseId ? 'router-link' : 'div'"
               v-for="purchase in purchases.data.value"
-              :key="purchase.courseId + purchase.completedAt"
+              :key="purchase.kind + purchase.id"
               class="purchase-item"
-              :to="{ name: 'CourseDetails', params: { id: purchase.courseId } }"
+              :to="purchase.courseId ? { name: 'CourseDetails', params: { id: purchase.courseId } } : undefined"
             >
               <div class="purchase-info">
+                <span class="purchase-kind">{{ purchaseKindLabel(purchase.kind) }}</span>
                 <span class="purchase-title">{{ purchase.courseTitle }}</span>
                 <span class="purchase-date">
                   {{ new Date(purchase.completedAt).toLocaleDateString('pl-PL') }}
                 </span>
+                <span v-if="purchase.recipientEmail" class="purchase-date">Dla: {{ purchase.recipientEmail }}</span>
+                <span v-if="purchase.giftCode" class="purchase-date">Kod: {{ purchase.giftCode }}</span>
               </div>
               <span class="purchase-amount">{{ formatPrice(purchase.amount, purchase.currency) }}</span>
-            </router-link>
+            </component>
           </div>
         </div>
 
@@ -181,13 +184,13 @@ import { useRouter } from 'vue-router'
 import { useForm } from 'vee-validate'
 import { toTypedSchema } from '@vee-validate/zod'
 import { useProfile } from '@/features/profile/composables/useProfile'
-import { useMyPurchases } from '@/features/payments/composables/usePayments'
+import { useMyPaymentHistory } from '@/features/payments/composables/usePayments'
 import { useMyCertificates, useDownloadCertificate } from '@/features/certificates/composables/useCertificates'
 import { useAuthStore } from '@/features/auth/stores/auth.store'
 import { updateProfileSchema } from '@/features/profile/schemas/profile.schema'
 
 const { profile, update, deleteAccount } = useProfile()
-const purchases = useMyPurchases()
+const purchases = useMyPaymentHistory()
 const certificates = useMyCertificates()
 const downloadCertificate = useDownloadCertificate()
 const authStore = useAuthStore()
@@ -238,6 +241,14 @@ const stats = computed(() => {
 
 function formatPrice(amount: number, currency: string): string {
   return new Intl.NumberFormat('pl-PL', { style: 'currency', currency: currency.toUpperCase() }).format(amount)
+}
+
+function purchaseKindLabel(kind: 'course' | 'subscription' | 'gift'): string {
+  switch (kind) {
+    case 'subscription': return 'Subskrypcja All-access'
+    case 'gift': return 'Prezent'
+    default: return 'Kurs'
+  }
 }
 
 function formatTime(seconds: number): string {
@@ -485,6 +496,13 @@ function confirmDelete() {
   font-weight: 600;
   color: $color-ink;
 }
+.purchase-kind {
+  color: $color-cyan;
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-transform: uppercase;
+}
+
 
 .purchase-date {
   font-size: 0.8rem;

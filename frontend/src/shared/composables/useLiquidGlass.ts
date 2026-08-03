@@ -187,19 +187,6 @@ export function useLiquidGlass() {
     }
   }
 
-  const onSplash = (e: PointerEvent) => {
-    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return
-    const target = e.target as Element | null
-    const btn = target?.closest?.('.btn')
-    if (!(btn instanceof HTMLElement)) return
-    const rect = btn.getBoundingClientRect()
-    const drop = document.createElement('span')
-    drop.className = 'splash'
-    drop.style.left = `${e.clientX - rect.left}px`
-    drop.style.top = `${e.clientY - rect.top}px`
-    btn.appendChild(drop)
-    drop.addEventListener('animationend', () => drop.remove())
-  }
 
   onMounted(() => {
     defs = fe<SVGSVGElement>('svg', { width: 0, height: 0, 'aria-hidden': 'true', focusable: 'false' })
@@ -230,11 +217,9 @@ export function useLiquidGlass() {
 
     scanAdded(document.body)
     mutationObserver.observe(document.body, { childList: true, subtree: true })
-    document.addEventListener('pointerdown', onSplash)
   })
 
   onUnmounted(() => {
-    document.removeEventListener('pointerdown', onSplash)
     mutationObserver?.disconnect()
     resizeObserver?.disconnect()
     window.clearTimeout(rebuildTimer)

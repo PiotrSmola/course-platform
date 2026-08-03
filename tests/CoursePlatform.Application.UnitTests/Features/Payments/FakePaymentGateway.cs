@@ -59,8 +59,8 @@ public sealed class FakePaymentGateway : IPaymentGateway
         return Task.FromResult(SubscriptionStateToReturn);
     }
 
-    public PaymentGatewayEvent ParseWebhookEvent(string payload, string signature)
+    public Task<PaymentGatewayEvent> ParseWebhookEventAsync(string payload, string signature, CancellationToken cancellationToken)
     {
-        return EventToReturn ?? new PaymentGatewayEvent(PaymentGatewayEventType.Ignored, string.Empty, null, null, null, null);
+        return Task.FromResult(EventToReturn ?? new PaymentGatewayEvent(PaymentGatewayEventType.Ignored, string.Empty, null, null, null, null));
     }
 }

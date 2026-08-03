@@ -125,4 +125,22 @@ const items = computed(() => data.value?.items ?? [])
 @keyframes spin {
   to { transform: rotate(360deg); }
 }
+.eyebrow {
+  --lg-blur: 12px;
+  background: rgba(139, 92, 246, 0.14);
+  -webkit-backdrop-filter: blur(12px) saturate(170%);
+  backdrop-filter: blur(12px) saturate(170%);
+  box-shadow: inset 0 1px 1px rgba(255, 255, 255, 0.28), inset 0 0 0 1px rgba(139, 92, 246, 0.32);
+}
+
+@media (max-width: 560px) {
+  .paths-hero {
+    padding: 40px 0 28px;
+  }
+
+  .paths-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
 </style>

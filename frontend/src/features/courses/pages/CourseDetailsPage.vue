@@ -3,7 +3,7 @@
     <div class="container">
       <div class="hero-section">
         <div class="hero-content">
-          <span class="eyebrow">{{ course.instructorName }}</span>
+          <span class="eyebrow course-author glass">{{ course.instructorName }}</span>
           <h1>{{ course.title }}</h1>
           <div class="title-actions">
             <button
@@ -42,7 +42,16 @@
           <div class="actions" v-if="!isInstructor && isPublished">
             <template v-if="authStore.isAuthenticated && !canAccessContent">
               <div v-if="isPaid" class="checkout-box">
-                <div class="coupon-row">
+                <button
+                  type="button"
+                  class="coupon-toggle"
+                  :aria-expanded="showCouponField"
+                  aria-controls="coupon-field"
+                  @click="showCouponField = !showCouponField"
+                >
+                  {{ showCouponField ? 'Ukryj kod rabatowy' : 'Mam kod rabatowy' }}
+                </button>
+                <div v-if="showCouponField" id="coupon-field" class="coupon-row">
                   <input
                     v-model="couponCode"
                     type="text"
@@ -63,8 +72,9 @@
                   {{ couponPreview.finalAmount }} zł
                   (−{{ couponPreview.discountAmount }} zł)
                 </p>
-                <button
-                  class="btn btn-primary"
+                <div class="checkout-actions">
+                  <button
+                    class="btn btn-primary"
                   :disabled="checkoutMutation.isPending.value"
                   @click="buy"
                 >
@@ -87,7 +97,40 @@
                   }}
                 </button>
               </div>
-              <button v-else class="btn btn-primary" @click="enroll">Zapisz się</button>
+                <div v-if="isPaid" class="gift-purchase">
+                  <button
+                    type="button"
+                    class="gift-purchase__toggle"
+                    :aria-expanded="showGiftForm"
+                    aria-controls="gift-purchase-form"
+                    @click="showGiftForm = !showGiftForm"
+                  >
+                    {{ showGiftForm ? 'Anuluj prezent' : 'Kup w prezencie' }}
+                  </button>
+                  <form v-if="showGiftForm" id="gift-purchase-form" @submit.prevent="buyGift">
+                    <label for="gift-recipient-email">Email odbiorcy</label>
+                    <div class="gift-purchase__fields">
+                      <input
+                        id="gift-recipient-email"
+                        v-model.trim="giftRecipientEmail"
+                        type="email"
+                        autocomplete="email"
+                        required
+                        placeholder="email@example.com"
+                        :disabled="giftCheckoutMutation.isPending.value"
+                      />
+                      <button
+                        type="submit"
+                        class="btn btn-ghost"
+                        :disabled="!giftRecipientEmail || giftCheckoutMutation.isPending.value"
+                      >
+                        {{ giftCheckoutMutation.isPending.value ? 'Przekierowujemy...' : 'Kup prezent' }}
+                      </button>
+                    </div>
+                  </form>
+                </div>
+              </div>
+              <button v-if="!isPaid" class="btn btn-primary" @click="enroll">Zapisz się</button>
             </template>
             <router-link
               v-else-if="authStore.isAuthenticated && firstAccessibleLesson"
@@ -245,6 +288,7 @@ import { toTypedSchema } from '@vee-validate/zod'
 import { useAuthStore } from '@/features/auth/stores/auth.store'
 import { useCourseDetails } from '@/features/courses/composables/useCourses'
 import { useEnroll } from '@/features/enrollment/composables/useEnrollment'
+import { useCreateGiftCheckout } from '@/features/gifts/composables/useGifts'
 import {
   useCreateBillingPortalSession,
   useCreateCheckout,
@@ -304,12 +348,16 @@ const [editRating] = defineEditField('rating')
 const [editComment] = defineEditField('comment')
 
 const checkoutMutation = useCreateCheckout()
+const giftCheckoutMutation = useCreateGiftCheckout()
 const subscriptionCheckoutMutation = useCreateSubscriptionCheckout()
 const billingPortalMutation = useCreateBillingPortalSession()
 const subscriptionQuery = useMySubscription(() => authStore.isAuthenticated)
 const subscriptionOfferQuery = useSubscriptionOffer()
 const previewCouponMutation = usePreviewCoupon()
 const couponCode = ref('')
+const showCouponField = ref(false)
+const showGiftForm = ref(false)
+const giftRecipientEmail = ref('')
 const couponPreview = ref<{
   originalAmount: number
   discountAmount: number
@@ -381,6 +429,14 @@ const buy = () => {
   })
 }
 
+const buyGift = () => {
+  if (!course.value || !giftRecipientEmail.value.trim()) return
+  giftCheckoutMutation.mutate({
+    courseId: course.value.id,
+    recipientEmail: giftRecipientEmail.value.trim()
+  })
+}
+
 const startSubscription = () => {
   subscriptionCheckoutMutation.mutate()
 }
@@ -448,6 +504,7 @@ watch(() => course.value?.userReviewId, () => {
 
 <style lang="scss" scoped>
 @use "@/assets/styles/abstracts/variables" as *;
+@use "@/assets/styles/abstracts/mixins" as *;
 
 .course-details {
   padding: calc($header-height + 40px) 0 80px;
@@ -470,8 +527,8 @@ watch(() => course.value?.userReviewId, () => {
 
 .hero-section {
   display: grid;
-  grid-template-columns: 1.2fr 0.8fr;
-  gap: 60px;
+  grid-template-columns: minmax(0, 1fr) minmax(420px, 0.95fr);
+  gap: clamp(36px, 5vw, 72px);
   align-items: center;
   margin-bottom: 80px;
 
@@ -535,17 +592,29 @@ watch(() => course.value?.userReviewId, () => {
 }
 
 .badge {
+  @include liquid-glass;
+  --lg-r: 999px;
+  --lg-blur: 12px;
+  --lg-tint: rgba(255, 255, 255, 0.05);
   padding: 6px 14px;
-  border-radius: 999px;
   font-size: 0.82rem;
   font-weight: 600;
-  background: rgba(255, 255, 255, 0.06);
-  box-shadow: inset 0 1px 1px rgba(255, 255, 255, 0.25), 0 0 0 1px rgba(255, 255, 255, 0.08);
 }
 
 .price {
-  background: rgba(139, 92, 246, 0.2);
+  --lg-tint: rgba(139, 92, 246, 0.2);
   color: #d6c9ff;
+}
+
+.course-author {
+  --lg-r: 999px;
+  --lg-blur: 12px;
+  --lg-tint: rgba(139, 92, 246, 0.14);
+  display: inline-flex;
+  width: fit-content;
+  padding: 6px 13px;
+  font-size: 0.8rem;
+  font-weight: 600;
 }
 
 .actions .btn {
@@ -558,14 +627,15 @@ watch(() => course.value?.userReviewId, () => {
 
 .subscription-access {
   --lg-r: 20px;
-  --lg-blur: 0px;
+  --lg-blur: 12px;
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 16px;
-  padding: 18px 20px;
+  padding: 14px 16px;
   margin-bottom: 24px;
 
+  max-width: 660px;
   strong {
     display: block;
     margin-bottom: 6px;
@@ -857,4 +927,206 @@ watch(() => course.value?.userReviewId, () => {
   padding: 120px;
   color: $color-muted;
 }
+.coupon-toggle {
+  appearance: none;
+  border: 0;
+  padding: 0;
+  background: transparent;
+  color: $color-gold;
+  font: inherit;
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+
+  &:hover,
+  &:focus-visible {
+    color: #fcd34d;
+    text-decoration: underline;
+  }
+}
+
+.coupon-row input {
+  min-width: min(100%, 260px);
+  min-height: 46px;
+  border-radius: 14px;
+  padding: 10px 12px;
+  font: inherit;
+  font-size: 1rem;
+  outline: none;
+
+  &:focus {
+    border-color: rgba(245, 158, 11, 0.58);
+    box-shadow: 0 0 0 3px rgba(245, 158, 11, 0.14);
+  }
+}
+
+.checkout-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  width: 100%;
+
+  .btn {
+    flex: 1 1 210px;
+    white-space: nowrap;
+  }
+}
+
+.course-thumb {
+  max-width: 560px;
+  aspect-ratio: 16 / 9;
+  border-radius: 32px;
+  --lg-blur: 14px;
+}
+
+.content-grid {
+  grid-template-columns: minmax(0, 0.8fr) minmax(340px, 1.2fr);
+  gap: 48px;
+}
+
+.review-form,
+.review-card {
+  --lg-blur: 12px;
+  padding: 28px;
+}
+
+.review-form select {
+  width: min(100%, 190px);
+  min-height: 44px;
+  padding: 9px 38px 9px 13px;
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  border-radius: 13px;
+  background-color: rgba(15, 23, 42, 0.72);
+  color: $color-ink;
+  font: inherit;
+  font-size: 0.95rem;
+  font-weight: 600;
+  cursor: pointer;
+  outline: none;
+  box-shadow: inset 0 1px 1px rgba(255, 255, 255, 0.18), 0 6px 16px rgba(3, 6, 24, 0.22);
+
+  &:focus {
+    border-color: rgba(245, 158, 11, 0.6);
+    box-shadow: 0 0 0 3px rgba(245, 158, 11, 0.14);
+  }
+
+  option {
+    background: #111827;
+    color: $color-ink;
+  }
+}
+
+.module-item {
+  --lg-blur: 10px;
+  padding: 18px;
+}
+
+.lessons-list {
+  gap: 8px;
+}
+
+.lesson-item {
+  padding: 9px 12px;
+}
+
+@media (max-width: 880px) {
+  .content-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 560px) {
+  .checkout-actions .btn {
+    flex-basis: 100%;
+  }
+
+  .subscription-access {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .coupon-row {
+    width: 100%;
+
+    input,
+    .btn {
+      width: 100%;
+    }
+  }
+}
+
+.gift-purchase {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  width: 100%;
+  padding-top: 4px;
+}
+
+.gift-purchase__toggle {
+  align-self: flex-start;
+  border: 0;
+  padding: 0;
+  background: transparent;
+  color: $color-cyan;
+  font: inherit;
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+
+  &:hover,
+  &:focus-visible {
+    color: #67e8f9;
+    text-decoration: underline;
+  }
+}
+
+.gift-purchase form {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  max-width: 560px;
+
+  label {
+    color: $color-muted;
+    font-size: 0.85rem;
+    font-weight: 600;
+  }
+}
+
+.gift-purchase__fields {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+
+  input {
+    flex: 1 1 220px;
+    min-height: 46px;
+    min-width: 0;
+    padding: 10px 12px;
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    border-radius: 14px;
+    background: rgba(255, 255, 255, 0.04);
+    color: $color-ink;
+    font: inherit;
+    font-size: 1rem;
+    outline: none;
+
+    &:focus {
+      border-color: rgba(34, 211, 238, 0.58);
+      box-shadow: 0 0 0 3px rgba(34, 211, 238, 0.14);
+    }
+  }
+
+  .btn {
+    flex: 0 1 auto;
+  }
+}
+
+@media (max-width: 560px) {
+  .gift-purchase__fields .btn {
+    width: 100%;
+  }
+}
+
 </style>

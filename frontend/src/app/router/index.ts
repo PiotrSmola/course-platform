@@ -18,6 +18,14 @@ const routes: RouteRecordRaw[] = [
       { path: 'paths', component: () => import('@/features/learning-paths/pages/PathsListPage.vue'), name: 'PathsList' },
       { path: 'paths/:slug', component: () => import('@/features/learning-paths/pages/PathDetailsPage.vue'), name: 'PathDetails', props: true },
       { path: 'business', component: () => import('@/features/business/pages/BusinessPage.vue'), name: 'Business' },
+      { path: 'help', component: () => import('@/features/public/pages/HelpPage.vue'), name: 'Help' },
+      { path: 'pricing', component: () => import('@/features/public/pages/PricingPage.vue'), name: 'Pricing' },
+      { path: 'faq', component: () => import('@/features/public/pages/FaqPage.vue'), name: 'Faq' },
+      { path: 'contact', component: () => import('@/features/support/pages/ContactPage.vue'), name: 'Contact' },
+      { path: 'trial', component: () => import('@/features/trial/pages/TrialSelectionPage.vue'), name: 'Trial' },
+      { path: 'gifts/redeem', component: () => import('@/features/gifts/pages/GiftRedeemPage.vue'), name: 'GiftRedeem' },
+      { path: 'newsletter/confirm', component: () => import('@/features/newsletter/pages/NewsletterConfirmationPage.vue'), name: 'NewsletterConfirmation' },
+      { path: 'newsletter/unsubscribe', component: () => import('@/features/newsletter/pages/NewsletterUnsubscribePage.vue'), name: 'NewsletterUnsubscribe' },
       { path: 'certificates/verify/:number', component: () => import('@/features/certificates/pages/CertificateVerifyPage.vue'), name: 'CertificateVerify', props: true }
     ]
   },

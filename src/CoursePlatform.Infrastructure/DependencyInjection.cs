@@ -1,3 +1,4 @@
+using System.IO;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -6,6 +7,7 @@ using CoursePlatform.Application.Common.Interfaces;
 using CoursePlatform.Infrastructure.Persistence;
 using CoursePlatform.Infrastructure.Services;
 using CoursePlatform.Infrastructure.Options;
+using CoursePlatform.Application.Common.Options;
 using CoursePlatform.Infrastructure.Resilience;
 using CoursePlatform.Infrastructure.Search;
 using CoursePlatform.Infrastructure.Hubs;
@@ -14,6 +16,7 @@ using Amazon.S3;
 using Amazon.Runtime;
 using Elastic.Clients.Elasticsearch;
 using Elastic.Transport;
+using Microsoft.AspNetCore.DataProtection;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.SignalR;
 using Polly;
@@ -52,6 +55,17 @@ public static class DependencyInjection
             configuration.GetSection(CoursePlatform.Application.Common.Options.FrontendOptions.SectionName));
         services.Configure<CoursePlatform.Application.Common.Options.SubscriptionOptions>(
             configuration.GetSection(CoursePlatform.Application.Common.Options.SubscriptionOptions.SectionName));
+        services.Configure<SupportOptions>(
+            configuration.GetSection(SupportOptions.SectionName));
+
+        var dataProtection = services
+            .AddDataProtection()
+            .SetApplicationName("CoursePlatform");
+        var dataProtectionKeysDirectory = configuration["DataProtection:KeysDirectory"];
+        if (!string.IsNullOrWhiteSpace(dataProtectionKeysDirectory))
+        {
+            dataProtection.PersistKeysToFileSystem(new DirectoryInfo(dataProtectionKeysDirectory));
+        }
 
         services.AddSingleton<IAmazonS3>(sp =>
         {
@@ -112,6 +126,7 @@ public static class DependencyInjection
         services.AddSingleton<IDateTimeService, DateTimeService>();
         services.AddSingleton<IHtmlSanitizer, HtmlSanitizerWrapper>();
         services.AddSingleton<IPaymentGateway, StripePaymentGateway>();
+        services.AddSingleton<IGiftCodeProtector, GiftCodeProtector>();
 
         services.AddSingleton<ICertificatePdfGenerator, QuestPdfCertificateGenerator>();
 

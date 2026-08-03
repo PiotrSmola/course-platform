@@ -13,6 +13,7 @@ export const queryKeys = {
   businessPlans: () => ['business-plans'] as const,
 
   courses: () => ['courses'] as const,
+  popularCourses: () => ['courses', 'popular'] as const,
   course: (id: string) => ['course', id] as const,
   courseSearch: (term: string) => ['course-search', term] as const,
   coursesBrowse: (filter: CoursesFilter) => ['courses-browse', filter] as const,
@@ -39,6 +40,8 @@ export const queryKeys = {
 
 
   myPurchases: () => ['my-purchases'] as const,
+  paymentHistory: () => ['payment-history'] as const,
+  trialEligibleCourses: () => ['trial', 'eligible-courses'] as const,
   myCertificates: () => ['my-certificates'] as const,
   certificateVerification: (number: string) => ['certificate-verification', number] as const,
 

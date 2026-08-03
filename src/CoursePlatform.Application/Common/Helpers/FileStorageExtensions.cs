@@ -8,7 +8,7 @@ public static class FileStorageExtensions
 
     public static async Task<string?> GetThumbnailUrlOrNullAsync(
         this IFileStorageService fileStorage,
-        string objectKey,
+        string? objectKey,
         CancellationToken cancellationToken)
     {
         if (string.IsNullOrWhiteSpace(objectKey))

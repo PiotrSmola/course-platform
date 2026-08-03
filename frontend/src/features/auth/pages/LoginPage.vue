@@ -6,13 +6,16 @@
       <router-link :to="{ name: 'ForgotPassword' }">Nie pamiętasz hasła?</router-link>
     </p>
     <p class="auth-switch">
-      Nie masz konta? <router-link :to="{ name: 'Register' }">Zarejestruj się</router-link>
+      Nie masz konta? <router-link :to="{ name: 'Register', query: route.query }">Zarejestruj się</router-link>
     </p>
   </div>
 </template>
 
 <script setup lang="ts">
 import LoginForm from '@/features/auth/components/LoginForm.vue'
+import { useRoute } from 'vue-router'
+
+const route = useRoute()
 </script>
 
 <style lang="scss" scoped>

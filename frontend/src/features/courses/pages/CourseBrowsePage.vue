@@ -1031,4 +1031,71 @@ function openBillingPortal() {
     box-shadow: 0 0 0 1px rgba(245, 158, 11, 0.4);
   }
 }
+.subscription-banner {
+  --lg-blur: 12px;
+  gap: 18px;
+  padding: 18px 20px;
+
+  h2 {
+    font-size: 1.12rem;
+  }
+
+  p {
+    font-size: 0.9rem;
+  }
+}
+
+.search-box {
+  --lg-blur: 12px;
+}
+
+.sort-box {
+  width: min(100%, 280px);
+}
+
+.sort-trigger {
+  width: 100%;
+  min-width: 0;
+  --lg-blur: 12px;
+}
+
+.sort-menu {
+  width: 100%;
+  min-width: 0;
+  --lg-blur: 12px;
+}
+
+.browse-body {
+  grid-template-columns: 330px minmax(0, 1fr);
+  gap: 36px;
+}
+
+.filter-group {
+  --lg-blur: 12px;
+  padding: 26px;
+}
+
+@media (max-width: 860px) {
+  .browse-body {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 620px) {
+  .browse-toolbar {
+    flex-direction: column;
+  }
+
+  .search-box,
+  .sort-box {
+    width: 100%;
+    min-width: 0;
+  }
+
+  .subscription-banner__actions {
+    width: 100%;
+    align-items: stretch;
+  }
+}
+
 </style>

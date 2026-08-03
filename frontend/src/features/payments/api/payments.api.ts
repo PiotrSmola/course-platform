@@ -4,6 +4,7 @@ import type {
   CheckoutSessionDto,
   MySubscriptionDto,
   PaymentStatusDto,
+  PurchaseHistoryItemDto,
   PurchaseDto,
   SubscriptionCheckoutSessionDto,
   SubscriptionOfferDto
@@ -35,6 +36,11 @@ export async function getPaymentStatus(sessionId: string): Promise<PaymentStatus
 
 export async function getMyPurchases(limit = 5): Promise<PurchaseDto[]> {
   const response = await client.get('/payments/my', { params: { limit } })
+  return response.data
+}
+
+export async function getMyPaymentHistory(limit = 5): Promise<PurchaseHistoryItemDto[]> {
+  const response = await client.get('/payments/history', { params: { limit } })
   return response.data
 }
 

@@ -46,6 +46,13 @@ public class DeleteAccountCommandHandler : IRequestHandler<DeleteAccountCommand>
             throw new ValidationException(new[] { new ValidationFailure("", "Cannot delete account with payment history.") });
         }
 
+        var hasGiftPurchases = await _context.GiftPurchases.AnyAsync(
+            gift => gift.BuyerUserId == user.Id || gift.RedeemedByUserId == user.Id,
+            cancellationToken);
+        if (hasGiftPurchases)
+        {
+            throw new ValidationException(new[] { new ValidationFailure("", "Cannot delete account with gift purchase history.") });
+        }
         var result = await _identityService.DeleteUserAsync(user, cancellationToken);
         if (!result.Succeeded)
         {

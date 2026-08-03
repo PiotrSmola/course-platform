@@ -186,4 +186,12 @@ const priceLabel = computed(() => formatPlanPrice(props.plan))
     transform: translateY(-2px);
   }
 }
+.plan-card {
+  --lg-blur: 12px;
+}
+
+.plan-cta {
+  --lg-blur: 10px;
+}
+
 </style>

@@ -13,7 +13,11 @@ public enum PaymentGatewayEventType
     SubscriptionCheckoutCompleted = 5,
     SubscriptionUpdated = 6,
     SubscriptionDeleted = 7,
-    InvoicePaid = 8
+    InvoicePaid = 8,
+    GiftCheckoutCompleted = 9,
+    GiftCheckoutExpired = 10,
+    GiftRefunded = 11,
+    GiftChargeback = 12
 }
 
 public record PaymentGatewayEvent(
@@ -30,7 +34,8 @@ public record PaymentGatewayEvent(
     string? InvoiceId = null,
     CoursePlatform.Domain.Enums.SubscriptionStatus? SubscriptionStatus = null,
     DateTime? CurrentPeriodEnd = null,
-    DateTime? PaidAt = null);
+    DateTime? PaidAt = null,
+    string? GiftId = null);
 
 public record SubscriptionGatewayState(
     string SubscriptionId,
@@ -51,6 +56,15 @@ public interface IPaymentGateway
         string customerEmail,
         CancellationToken cancellationToken);
 
+    Task<CheckoutSession> CreateGiftCheckoutSessionAsync(
+        Guid giftId,
+        Guid courseId,
+        string courseTitle,
+        decimal amount,
+        string customerEmail,
+        CancellationToken cancellationToken) =>
+        throw new NotSupportedException("Gift checkout is not supported by this payment gateway.");
+
     Task<CheckoutSession> CreateSubscriptionCheckoutSessionAsync(
         Guid userId,
         string customerEmail,
@@ -67,5 +81,5 @@ public interface IPaymentGateway
         string stripeSubscriptionId,
         CancellationToken cancellationToken);
 
-    PaymentGatewayEvent ParseWebhookEvent(string payload, string signature);
+    Task<PaymentGatewayEvent> ParseWebhookEventAsync(string payload, string signature, CancellationToken cancellationToken);
 }

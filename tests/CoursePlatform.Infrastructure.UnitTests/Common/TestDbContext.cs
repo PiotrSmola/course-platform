@@ -41,6 +41,9 @@ public class TestDbContext : DbContext, IApplicationDbContext
     public DbSet<ApplicationUser> Users => Set<ApplicationUser>();
     public DbSet<WishlistItem> WishlistItems => Set<WishlistItem>();
     public DbSet<CourseWaitlistEntry> CourseWaitlistEntries => Set<CourseWaitlistEntry>();
+    public DbSet<TrialAccess> TrialAccesses => Set<TrialAccess>();
+    public DbSet<GiftPurchase> GiftPurchases => Set<GiftPurchase>();
+    public DbSet<NewsletterSubscription> NewsletterSubscriptions => Set<NewsletterSubscription>();
 
     public TestDbContext(DbContextOptions<TestDbContext> options) : base(options) { }
 

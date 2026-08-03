@@ -6,6 +6,20 @@ using CoursePlatform.Domain.Enums;
 
 namespace CoursePlatform.Application.Common.Helpers;
 
+public enum CourseContentAccessLevel
+{
+    None = 0,
+    Trial = 1,
+    Full = 2
+}
+
+public readonly record struct CourseContentAccess(CourseContentAccessLevel Level)
+{
+    public bool CanViewLessons => Level != CourseContentAccessLevel.None;
+    public bool HasFullAccess => Level == CourseContentAccessLevel.Full;
+    public bool IsTrial => Level == CourseContentAccessLevel.Trial;
+}
+
 public static class CourseAccessHelper
 {
     public static async Task<Course> GetManagedCourseAsync(
@@ -41,35 +55,9 @@ public static class CourseAccessHelper
         Guid courseId,
         CancellationToken cancellationToken)
     {
-        if (currentUser.UserId == null)
-        {
-            return false;
-        }
-
-        if (currentUser.IsAdmin)
-        {
-            return true;
-        }
-
-        var userId = currentUser.UserId.Value;
-
-        var isOwner = await context.Courses
-            .AnyAsync(c => c.Id == courseId && c.InstructorId == userId, cancellationToken);
-
-        if (isOwner)
-        {
-            return true;
-        }
-
-        var isEnrolled = await context.Enrollments
-            .AnyAsync(e => e.CourseId == courseId && e.UserId == userId, cancellationToken);
-
-        if (isEnrolled)
-        {
-            return true;
-        }
-
-        return await HasActiveSubscriptionAsync(context, userId, cancellationToken);
+        var access = await CourseContentAccessHelper.GetAsync(
+            context, currentUser, courseId, cancellationToken);
+        return access.HasFullAccess;
     }
 
     public static async Task<bool> HasActiveSubscriptionAsync(

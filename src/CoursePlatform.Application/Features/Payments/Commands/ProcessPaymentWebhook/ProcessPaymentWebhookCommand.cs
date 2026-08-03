@@ -2,8 +2,10 @@ using FluentValidation;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 using CoursePlatform.Application.Common.Helpers;
 using CoursePlatform.Application.Common.Interfaces;
+using CoursePlatform.Application.Common.Options;
 using CoursePlatform.Domain.Entities;
 using CoursePlatform.Domain.Enums;
 
@@ -27,24 +29,30 @@ public class ProcessPaymentWebhookCommandHandler : IRequestHandler<ProcessPaymen
     private readonly INotificationService _notifications;
     private readonly IEmailQueue _emailQueue;
     private readonly ILogger<ProcessPaymentWebhookCommandHandler> _logger;
+    private readonly IGiftCodeProtector? _giftCodeProtector;
+    private readonly FrontendOptions? _frontendOptions;
 
     public ProcessPaymentWebhookCommandHandler(
         IApplicationDbContext context,
         IPaymentGateway paymentGateway,
         INotificationService notifications,
         IEmailQueue emailQueue,
-        ILogger<ProcessPaymentWebhookCommandHandler> logger)
+        ILogger<ProcessPaymentWebhookCommandHandler> logger,
+        IGiftCodeProtector? giftCodeProtector = null,
+        IOptions<FrontendOptions>? frontendOptions = null)
     {
         _context = context;
         _paymentGateway = paymentGateway;
         _notifications = notifications;
         _emailQueue = emailQueue;
         _logger = logger;
+        _giftCodeProtector = giftCodeProtector;
+        _frontendOptions = frontendOptions?.Value;
     }
 
     public async Task Handle(ProcessPaymentWebhookCommand request, CancellationToken cancellationToken)
     {
-        var gatewayEvent = _paymentGateway.ParseWebhookEvent(request.Payload, request.Signature);
+        var gatewayEvent = await _paymentGateway.ParseWebhookEventAsync(request.Payload, request.Signature, cancellationToken);
 
         if (gatewayEvent.Type == PaymentGatewayEventType.Ignored || string.IsNullOrWhiteSpace(gatewayEvent.EventId))
         {
@@ -78,6 +86,18 @@ public class ProcessPaymentWebhookCommandHandler : IRequestHandler<ProcessPaymen
                 break;
             case PaymentGatewayEventType.Chargeback:
                 await HandleRefundedAsync(gatewayEvent, PaymentStatus.Chargeback, cancellationToken);
+                break;
+            case PaymentGatewayEventType.GiftCheckoutCompleted:
+                await HandleGiftCompletedAsync(gatewayEvent, cancellationToken);
+                break;
+            case PaymentGatewayEventType.GiftCheckoutExpired:
+                await HandleGiftExpiredAsync(gatewayEvent, cancellationToken);
+                break;
+            case PaymentGatewayEventType.GiftRefunded:
+                await HandleGiftReversedAsync(gatewayEvent, GiftStatus.Refunded, cancellationToken);
+                break;
+            case PaymentGatewayEventType.GiftChargeback:
+                await HandleGiftReversedAsync(gatewayEvent, GiftStatus.Chargeback, cancellationToken);
                 break;
             case PaymentGatewayEventType.SubscriptionCheckoutCompleted:
                 await HandleSubscriptionCheckoutCompletedAsync(gatewayEvent, cancellationToken);
@@ -261,6 +281,156 @@ public class ProcessPaymentWebhookCommandHandler : IRequestHandler<ProcessPaymen
             payment.Id, status, payment.UserId, payment.CourseId);
     }
 
+    private async Task HandleGiftCompletedAsync(
+        PaymentGatewayEvent gatewayEvent,
+        CancellationToken cancellationToken)
+    {
+        var gift = await FindGiftAsync(gatewayEvent, cancellationToken);
+        if (gift == null)
+        {
+            return;
+        }
+
+        if (gift.Status is GiftStatus.Active or GiftStatus.Redeemed)
+        {
+            await _context.SaveChangesAsync(cancellationToken);
+            return;
+        }
+
+        if (gift.Status != GiftStatus.Pending)
+        {
+            _logger.LogWarning(
+                "Gift {GiftId} cannot be completed from status {Status}.",
+                gift.Id,
+                gift.Status);
+            await _context.SaveChangesAsync(cancellationToken);
+            return;
+        }
+
+        if (!string.Equals(gatewayEvent.Currency, gift.Currency, StringComparison.OrdinalIgnoreCase)
+            || gatewayEvent.AmountTotalMinorUnits != ToMinorUnits(gift.Amount))
+        {
+            _logger.LogError(
+                "Gift {GiftId} payment mismatch. Expected {ExpectedAmount} {ExpectedCurrency}, received {ActualAmount} {ActualCurrency}.",
+                gift.Id,
+                ToMinorUnits(gift.Amount),
+                gift.Currency,
+                gatewayEvent.AmountTotalMinorUnits,
+                gatewayEvent.Currency);
+
+            gift.Status = GiftStatus.Expired;
+            gift.MarkUpdated();
+            await _context.SaveChangesAsync(cancellationToken);
+            return;
+        }
+
+        gift.Status = GiftStatus.Active;
+        gift.CompletedAt = DateTime.UtcNow;
+        gift.MarkUpdated();
+        await _context.SaveChangesAsync(cancellationToken);
+
+        await SendGiftEmailAsync(gift, cancellationToken);
+    }
+
+    private async Task HandleGiftExpiredAsync(
+        PaymentGatewayEvent gatewayEvent,
+        CancellationToken cancellationToken)
+    {
+        var gift = await FindGiftAsync(gatewayEvent, cancellationToken);
+        if (gift == null)
+        {
+            return;
+        }
+
+        if (gift.Status == GiftStatus.Pending)
+        {
+            gift.Status = GiftStatus.Expired;
+            gift.MarkUpdated();
+        }
+
+        await _context.SaveChangesAsync(cancellationToken);
+    }
+
+    private async Task HandleGiftReversedAsync(
+        PaymentGatewayEvent gatewayEvent,
+        GiftStatus status,
+        CancellationToken cancellationToken)
+    {
+        var gift = await FindGiftAsync(gatewayEvent, cancellationToken);
+        if (gift == null)
+        {
+            return;
+        }
+
+        if (status == GiftStatus.Refunded
+            && gatewayEvent.AmountTotalMinorUnits != ToMinorUnits(gift.Amount))
+        {
+            _logger.LogInformation(
+                "Gift {GiftId} was partially refunded ({Refunded} of {Expected} minor units); keeping it active.",
+                gift.Id,
+                gatewayEvent.AmountTotalMinorUnits,
+                ToMinorUnits(gift.Amount));
+
+            await _context.SaveChangesAsync(cancellationToken);
+            return;
+        }
+
+        if (gift.Status == status)
+        {
+            await _context.SaveChangesAsync(cancellationToken);
+            return;
+        }
+
+        gift.Status = status;
+        gift.MarkUpdated();
+
+        if (gift.RedeemedByUserId.HasValue)
+        {
+            var enrollment = await _context.Enrollments
+                .FirstOrDefaultAsync(
+                    item => item.UserId == gift.RedeemedByUserId.Value && item.CourseId == gift.CourseId,
+                    cancellationToken);
+
+            if (enrollment != null)
+            {
+                _context.Enrollments.Remove(enrollment);
+            }
+        }
+
+        await _context.SaveChangesAsync(cancellationToken);
+
+        _logger.LogInformation(
+            "Gift {GiftId} marked as {Status}.",
+            gift.Id,
+            status);
+    }
+
+    private async Task SendGiftEmailAsync(GiftPurchase gift, CancellationToken cancellationToken)
+    {
+        if (_giftCodeProtector == null || _frontendOptions == null)
+        {
+            _logger.LogWarning("Gift {GiftId} was activated but email dependencies are unavailable.", gift.Id);
+            return;
+        }
+
+        try
+        {
+            var courseTitle = await _context.Courses
+                .Where(course => course.Id == gift.CourseId)
+                .Select(course => course.Title)
+                .FirstOrDefaultAsync(cancellationToken) ?? "kurs";
+            var code = _giftCodeProtector.Unprotect(gift.ProtectedCode);
+            var redeemUrl = $"{_frontendOptions.BaseUrl.TrimEnd('/')}/gifts/redeem";
+            var (subject, html) = GiftEmailTemplates.GiftReceived(courseTitle, code, redeemUrl);
+
+            _emailQueue.Enqueue(new EmailMessage(gift.RecipientEmail, subject, html));
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(ex, "Failed to queue gift email for gift {GiftId}.", gift.Id);
+        }
+    }
+
     private static long ToMinorUnits(decimal amount) =>
         (long)Math.Round(amount * 100, MidpointRounding.AwayFromZero);
 
@@ -389,6 +559,37 @@ public class ProcessPaymentWebhookCommandHandler : IRequestHandler<ProcessPaymen
         }
 
         return payment;
+    }
+
+    private async Task<GiftPurchase?> FindGiftAsync(
+        PaymentGatewayEvent gatewayEvent,
+        CancellationToken cancellationToken)
+    {
+        GiftPurchase? gift = null;
+
+        if (!string.IsNullOrWhiteSpace(gatewayEvent.SessionId))
+        {
+            gift = await _context.GiftPurchases
+                .FirstOrDefaultAsync(item => item.StripeSessionId == gatewayEvent.SessionId, cancellationToken);
+        }
+
+        if (gift == null
+            && !string.IsNullOrWhiteSpace(gatewayEvent.GiftId)
+            && Guid.TryParse(gatewayEvent.GiftId, out var giftId))
+        {
+            gift = await _context.GiftPurchases
+                .FirstOrDefaultAsync(item => item.Id == giftId, cancellationToken);
+        }
+
+        if (gift == null)
+        {
+            _logger.LogWarning(
+                "Gift webhook for unknown reference session {SessionId}, gift {GiftId}.",
+                gatewayEvent.SessionId,
+                gatewayEvent.GiftId);
+        }
+
+        return gift;
     }
 
     private async Task<Subscription?> GetOrCreateSubscriptionAsync(
