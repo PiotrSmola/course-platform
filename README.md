@@ -254,9 +254,41 @@ npx playwright install
 npm run test:e2e
 ```
 
-See `IMPLEMENTATION_PLAN.md` for architecture details and historical roadmap. Status of stages **1–13: done** (domain MVP, MinIO, Stripe, Q&A, quizzes, coupons, player UX, progress gates, lesson materials, wishlist/waitlist, Q&A moderation, All-access subscription, analytics — plus certificates, search, realtime, auth recovery, error pages, tests).
+Implemented: domain MVP, MinIO, Stripe, Q&A, quizzes, coupons, player UX, progress gates, lesson materials, wishlist/waitlist, Q&A moderation, All-access subscription, analytics — plus certificates, search, realtime, auth recovery, error pages, tests.
 
 ### Waitlist note
 
 - **Wishlist** — Published courses only.
 - **Waitlist** — unpublished courses (`Draft` via shareable teaser URL; `Hidden` also appears in the public catalog as “coming soon”). Joining requires login; publishing a course emails waitlisted users (MailHog in dev).
+
+## Screenshots
+
+![Home page](docs/screenshots/home.jpg)
+
+| Course catalog | Course details |
+| -------------- | -------------- |
+| ![Course catalog with filters](docs/screenshots/courses.jpg) | ![Course details](docs/screenshots/course-details.jpg) |
+
+| Lesson player | My courses |
+| ------------- | ---------- |
+| ![Lesson player with curriculum and progress](docs/screenshots/learning.jpg) | ![Enrolled courses with progress](docs/screenshots/my-courses.jpg) |
+
+| Learning paths | Pricing |
+| -------------- | ------- |
+| ![Learning paths](docs/screenshots/paths.jpg) | ![Pricing: single course, All-access, business](docs/screenshots/pricing.jpg) |
+
+| For business | Help center |
+| ------------ | ----------- |
+| ![Business plans](docs/screenshots/business.jpg) | ![Help center](docs/screenshots/help.jpg) |
+
+| Instructor dashboard | Course editor |
+| -------------------- | ------------- |
+| ![Instructor dashboard](docs/screenshots/instructor-dashboard.jpg) | ![Course editor](docs/screenshots/course-editor.jpg) |
+
+| Admin panel | Profile |
+| ----------- | ------- |
+| ![Admin panel: users and roles](docs/screenshots/admin-dashboard.jpg) | ![User profile with learning stats](docs/screenshots/profile.jpg) |
+
+| Login | Mobile |
+| ----- | ------ |
+| ![Login](docs/screenshots/login.jpg) | <img src="docs/screenshots/mobile-home.jpg" alt="Home on mobile" width="190"> <img src="docs/screenshots/mobile-menu.jpg" alt="Mobile navigation" width="190"> |
