@@ -119,16 +119,17 @@ onBeforeUnmount(() => document.removeEventListener('mousedown', handleClickOutsi
 
 .select-trigger {
   @include liquid-glass;
-  --lg-r: 14px;
+  --lg-r: #{$radius-md};
   --lg-blur: 0px;
-  --lg-tint: rgba(255, 255, 255, 0.04);
+  --lg-tint: rgba(13, 15, 19, 0.45);
+  --lg-glow: 0.06;
   appearance: none;
   background: none;
   border: none;
   font: inherit;
   font-size: 0.9rem;
   color: $color-ink;
-  padding: 13px 16px;
+  padding: 12px 14px 12px 16px;
   cursor: pointer;
   outline: none;
   width: 100%;
@@ -138,29 +139,24 @@ onBeforeUnmount(() => document.removeEventListener('mousedown', handleClickOutsi
   gap: 10px;
   text-align: left;
   box-shadow:
-    0 10px 30px rgba(3, 6, 24, 0.35),
-    0 2px 8px rgba(3, 6, 24, 0.22),
-    0 18px 30px -22px rgba(170, 200, 255, 0.35),
-    inset 0 1px 1px rgba(255, 255, 255, 0.3),
-    inset 0 0 0 1px rgba(255, 255, 255, 0.1);
-  transition: --lg-tint 0.35s, box-shadow 0.35s, transform 0.2s;
+    0 8px 22px -10px rgba(0, 0, 0, 0.45),
+    inset 0 0 0 1px $color-hairline;
+  transition: --lg-tint 0.3s, box-shadow 0.2s;
 
   &:hover {
-    --lg-tint: rgba(245, 158, 11, 0.08);
+    --lg-tint: rgba(13, 15, 19, 0.3);
     box-shadow:
-      0 10px 30px rgba(3, 6, 24, 0.4),
-      0 2px 8px rgba(3, 6, 24, 0.25),
-      0 18px 30px -22px rgba(245, 158, 11, 0.4),
-      inset 0 1px 1px rgba(255, 255, 255, 0.35),
-      inset 0 0 0 1px rgba(245, 158, 11, 0.3);
+      0 8px 22px -10px rgba(0, 0, 0, 0.45),
+      inset 0 0 0 1px rgba($color-ink, 0.2);
   }
 
-  &.open {
-    --lg-tint: rgba(245, 158, 11, 0.1);
-  }
-
+  &.open,
   &:focus-visible {
     outline: none;
+    box-shadow:
+      0 8px 22px -10px rgba(0, 0, 0, 0.45),
+      inset 0 0 0 1px $color-hairline,
+      0 0 0 2px rgba($color-accent, 0.6);
   }
 }
 
@@ -170,21 +166,19 @@ onBeforeUnmount(() => document.removeEventListener('mousedown', handleClickOutsi
 }
 
 .select-label {
+  @include mono-label;
+  font-size: 0.62rem;
   color: $color-faint;
-  font-size: 0.78rem;
-  font-weight: 500;
-  text-transform: uppercase;
-  letter-spacing: 0.06em;
 }
 
 .select-value {
   flex: 1;
   color: $color-ink;
-  font-weight: 600;
+  font-weight: 500;
 }
 
 .select-arrow {
-  color: $color-gold;
+  color: $color-muted;
   transition: transform 0.25s;
   flex-shrink: 0;
 
@@ -199,54 +193,39 @@ onBeforeUnmount(() => document.removeEventListener('mousedown', handleClickOutsi
 
 .select-menu {
   @include liquid-glass;
-  --lg-r: 16px;
-  --lg-blur: 2px;
-  --lg-tint: rgba(17, 24, 39, 0.55);
+  --lg-r: #{$radius-md};
+  --lg-blur: 14px;
+  --lg-sat: 140%;
+  --lg-tint: rgba(13, 15, 19, 0.66);
+  --lg-glow: 0.05;
   position: absolute;
   top: calc(100% + 8px);
   left: 0;
   right: 0;
   min-width: 180px;
   margin: 0;
-  padding: 8px;
+  padding: 6px;
   list-style: none;
   z-index: 30;
   box-shadow:
-    0 24px 60px rgba(3, 6, 24, 0.55),
-    0 4px 14px rgba(3, 6, 24, 0.35),
-    inset 0 1px 1px rgba(255, 255, 255, 0.18),
-    inset 0 0 0 1px rgba(255, 255, 255, 0.1);
-  transition: --lg-tint 0.35s, box-shadow 0.35s;
-}
-
-.select-menu::before {
-  content: "";
-  position: absolute;
-  inset: 0;
-  border-radius: inherit;
-  pointer-events: none;
-  background:
-    radial-gradient(180px 100px at 18% 0%, rgba(255, 255, 255, 0.07), transparent 65%),
-    radial-gradient(120px 80px at 100% 100%, rgba(245, 158, 11, 0.05), transparent 70%);
+    0 24px 50px -16px rgba(0, 0, 0, 0.65),
+    0 4px 12px rgba(0, 0, 0, 0.3);
 }
 
 .select-blob {
   position: absolute;
   top: 0;
   left: 0;
-  border-radius: 12px;
-  background: linear-gradient(135deg, rgba(245, 158, 11, 0.16), rgba(245, 158, 11, 0.08));
-  box-shadow:
-    inset 1.5px 1.5px 2px -1px rgba(255, 255, 255, 0.35),
-    inset -1.5px -1.5px 2px -1px rgba(255, 255, 255, 0.08),
-    inset 0 -8px 16px -10px rgba(245, 158, 11, 0.25);
+  border-radius: 10px;
+  background: rgba($color-ink, 0.08);
+  box-shadow: inset 0 0 0 1px rgba($color-ink, 0.08);
   opacity: 0;
   pointer-events: none;
   transition:
-    left 0.45s cubic-bezier(0.3, 1.55, 0.35, 1),
-    width 0.45s cubic-bezier(0.3, 1.55, 0.35, 1),
-    top 0.45s cubic-bezier(0.3, 1.55, 0.35, 1),
-    height 0.45s cubic-bezier(0.3, 1.55, 0.35, 1),
+    left 0.45s $ease-jelly,
+    width 0.45s $ease-jelly,
+    top 0.45s $ease-jelly,
+    height 0.45s $ease-jelly,
     opacity 0.2s;
 }
 
@@ -257,20 +236,28 @@ onBeforeUnmount(() => document.removeEventListener('mousedown', handleClickOutsi
   align-items: center;
   justify-content: space-between;
   gap: 12px;
-  padding: 12px 14px;
+  padding: 10px 12px;
   font-size: 0.9rem;
-  color: $color-ink;
+  color: $color-muted;
   cursor: pointer;
   transition: color 0.18s;
 
+  & + & {
+    box-shadow: 0 -1px 0 rgba($color-ink, 0.06);
+  }
+
+  &:hover {
+    color: $color-ink;
+  }
+
   svg {
-    color: $color-gold;
+    color: $color-accent;
     flex-shrink: 0;
   }
 
   &.active {
     color: $color-ink;
-    font-weight: 600;
+    font-weight: 500;
   }
 
   &:focus-visible {

@@ -3,18 +3,20 @@
     <div class="container">
       <div class="section-head">
         <span class="eyebrow">Panel administratora</span>
-        <h2>Zarządzanie platformą</h2>
+        <h2>Zarządzanie <em>platformą</em></h2>
       </div>
 
-      <div class="tabs">
-        <button type="button" class="glass no-warp" :class="{ active: tab === 'users' }" @click="tab = 'users'">Użytkownicy</button>
-        <button type="button" class="glass no-warp" :class="{ active: tab === 'courses' }" @click="tab = 'courses'">Kursy</button>
-        <button type="button" class="glass no-warp" :class="{ active: tab === 'reviews' }" @click="tab = 'reviews'">Recenzje</button>
-        <button type="button" class="glass no-warp" :class="{ active: tab === 'audit' }" @click="tab = 'audit'">Audit log</button>
-        <button type="button" class="glass no-warp" :class="{ active: tab === 'coupons' }" @click="tab = 'coupons'">Kupony</button>
-        <button type="button" class="glass no-warp" :class="{ active: tab === 'revenue' }" @click="tab = 'revenue'">Przychody</button>
-        <button type="button" class="glass no-warp" :class="{ active: tab === 'qa' }" @click="tab = 'qa'">Q&A</button>
-        <button type="button" class="glass no-warp" :class="{ active: tab === 'search' }" @click="tab = 'search'">Wyszukiwarka</button>
+      <div class="tabs-scroll">
+        <div class="tabs glass">
+          <button type="button" :class="{ active: tab === 'users' }" @click="tab = 'users'">Użytkownicy</button>
+          <button type="button" :class="{ active: tab === 'courses' }" @click="tab = 'courses'">Kursy</button>
+          <button type="button" :class="{ active: tab === 'reviews' }" @click="tab = 'reviews'">Recenzje</button>
+          <button type="button" :class="{ active: tab === 'audit' }" @click="tab = 'audit'">Audit log</button>
+          <button type="button" :class="{ active: tab === 'coupons' }" @click="tab = 'coupons'">Kupony</button>
+          <button type="button" :class="{ active: tab === 'revenue' }" @click="tab = 'revenue'">Przychody</button>
+          <button type="button" :class="{ active: tab === 'qa' }" @click="tab = 'qa'">Q&A</button>
+          <button type="button" :class="{ active: tab === 'search' }" @click="tab = 'search'">Wyszukiwarka</button>
+        </div>
       </div>
 
       <section v-if="tab === 'users'" class="panel glass-card">
@@ -31,14 +33,19 @@
           </thead>
           <tbody>
             <tr v-for="user in users" :key="user.id">
-              <td>{{ user.email }}</td>
+              <td class="mono">{{ user.email }}</td>
               <td>{{ user.firstName }} {{ user.lastName }}</td>
-              <td>{{ user.roles.join(', ') || '—' }}</td>
+              <td>
+                <span v-if="!user.roles.length" class="muted">—</span>
+                <span class="chips">
+                  <span v-for="role in user.roles" :key="role" class="chip" :class="`role-${role.toLowerCase()}`">{{ role }}</span>
+                </span>
+              </td>
               <td>
                 <button
                   v-if="!user.roles.includes('Instructor')"
                   type="button"
-                  class="btn btn-ghost"
+                  class="btn btn-ghost btn-sm"
                   @click="assignInstructor(user.id)"
                 >
                   Nadaj Instructor
@@ -65,13 +72,21 @@
           <tbody>
             <tr v-for="course in adminCourses" :key="course.id">
               <td>{{ course.title }}</td>
-              <td>{{ statusLabel(course.status) }}</td>
+              <td>
+                <span
+                  class="chip"
+                  :class="{
+                    'status-published': course.status === CourseStatus.Published,
+                    'status-hidden': course.status === CourseStatus.Hidden
+                  }"
+                >{{ statusLabel(course.status) }}</span>
+              </td>
               <td>{{ course.instructorName }}</td>
               <td class="actions-cell">
                 <button
                   v-if="course.status !== CourseStatus.Published"
                   type="button"
-                  class="btn btn-ghost"
+                  class="btn btn-ghost btn-sm"
                   @click="publish(course.id)"
                 >
                   Opublikuj
@@ -79,7 +94,7 @@
                 <button
                   v-if="course.status !== CourseStatus.Hidden"
                   type="button"
-                  class="btn btn-ghost danger"
+                  class="btn btn-sm danger"
                   @click="hide(course.id)"
                 >
                   Ukryj
@@ -109,13 +124,13 @@
               <tr v-for="review in adminReviews" :key="review.id">
                 <td>{{ review.courseTitle }}</td>
                 <td>{{ review.authorName }}</td>
-                <td>{{ review.rating }}/5</td>
+                <td class="rating">{{ review.rating }}<span>/5</span></td>
                 <td class="review-comment">{{ review.comment }}</td>
-                <td>{{ formatDate(review.createdAt) }}</td>
+                <td class="mono">{{ formatDate(review.createdAt) }}</td>
                 <td>
                   <button
                     type="button"
-                    class="btn btn-ghost danger"
+                    class="btn btn-sm danger"
                     @click="removeReview(review.id)"
                   >
                     Usuń
@@ -143,10 +158,10 @@
               </thead>
               <tbody>
                 <tr v-for="log in auditLogs" :key="log.id">
-                  <td>{{ formatDate(log.createdAt) }}</td>
-                  <td>{{ log.action }}</td>
-                  <td>{{ log.entityType }} ({{ log.entityId.slice(0, 8) }})</td>
-                  <td>{{ log.adminEmail ?? '—' }}</td>
+                  <td class="mono">{{ formatDate(log.createdAt) }}</td>
+                  <td><span class="chip">{{ log.action }}</span></td>
+                  <td>{{ log.entityType }} <span class="mono muted">{{ log.entityId.slice(0, 8) }}</span></td>
+                  <td class="mono">{{ log.adminEmail ?? '—' }}</td>
                   <td class="audit-details">{{ log.details }}</td>
                 </tr>
               </tbody>
@@ -155,7 +170,7 @@
           <div class="pagination">
             <button
               type="button"
-              class="btn btn-ghost"
+              class="btn btn-ghost btn-sm"
               :disabled="auditPageNumber <= 1"
               @click="auditPageNumber--"
             >
@@ -164,7 +179,7 @@
             <span>Strona {{ auditPageNumber }}</span>
             <button
               type="button"
-              class="btn btn-ghost"
+              class="btn btn-ghost btn-sm"
               :disabled="!auditLogsData || auditLogs.length < auditPageSize"
               @click="auditPageNumber++"
             >
@@ -251,52 +266,65 @@ function removeReview(reviewId: string) {
 </script>
 
 <style lang="scss" scoped>
-@use "@/assets/styles/abstracts/variables" as *;
-
 .admin-dashboard {
-  padding: calc($header-height + 40px) 0 80px;
+  padding: 24px 0 80px;
+}
+
+.tabs-scroll {
+  margin: -8px -8px 22px;
+  padding: 8px 8px 14px;
+  overflow-x: auto;
+  scrollbar-width: none;
+
+  &::-webkit-scrollbar {
+    display: none;
+  }
 }
 
 .tabs {
-  display: flex;
-  gap: 10px;
-  margin-bottom: 24px;
+  --lg-r: 999px;
+  --lg-blur: 12px;
+  --lg-tint: rgba(13, 15, 19, 0.3);
+  display: inline-flex;
+  gap: 2px;
+  padding: 5px;
 
   button {
-    --lg-r: 999px;
-    --lg-blur: 0px;
-    padding: 10px 20px;
+    padding: 9px 18px;
     border: none;
-    background: none;
+    border-radius: 999px;
+    background: transparent;
     color: $color-muted;
     cursor: pointer;
     font: inherit;
+    font-size: 0.88rem;
     font-weight: 500;
-    transition: color 0.25s, transform 0.2s;
+    white-space: nowrap;
+    transition: background 0.25s, color 0.25s;
 
     &:hover {
       color: $color-ink;
-      transform: translateY(-1px);
     }
 
     &.active {
-      --lg-tint: rgba(245, 158, 11, 0.14);
       color: $color-ink;
-      font-weight: 600;
-
-      &::after {
-        box-shadow:
-          inset 2px 2px 1px -1px rgba(255, 255, 255, 0.6),
-          inset -2px -2px 1px -1px rgba(255, 255, 255, 0.22),
-          inset 0 0 0 1px rgba(251, 191, 36, 0.4),
-          inset 0 -10px 18px -12px rgba(245, 158, 11, 0.5);
-      }
+      background: rgba($color-ink, 0.12);
+      box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.12);
     }
   }
 }
 
 .panel {
-  padding: 24px;
+  --lg-blur: 12px;
+  padding: 12px 24px 20px;
+
+  &.glass-card:hover {
+    transform: none;
+  }
+
+  @media (max-width: 560px) {
+    padding: 8px 14px 16px;
+  }
 }
 
 .table-scroll {
@@ -310,45 +338,90 @@ function removeReview(reviewId: string) {
 
 .data-table {
   width: 100%;
-  border-collapse: separate;
-  border-spacing: 0;
+  border-collapse: collapse;
   font-size: 0.9rem;
 
-  th, td {
+  th,
+  td {
     text-align: left;
-    padding: 13px 14px;
+    padding: 14px 14px;
+    border-bottom: 1px solid $color-hairline;
+    vertical-align: middle;
+
+    &:first-child {
+      padding-left: 4px;
+    }
   }
 
   th {
-    color: $color-muted;
-    font-weight: 600;
-    font-size: 0.8rem;
-    letter-spacing: 0.05em;
-    text-transform: uppercase;
-    background: rgba(255, 255, 255, 0.05);
-    box-shadow:
-      inset 0 1px 1px rgba(255, 255, 255, 0.22),
-      inset 0 -1px 0 rgba(255, 255, 255, 0.08);
-
-    &:first-child { border-radius: 14px 0 0 14px; }
-    &:last-child { border-radius: 0 14px 14px 0; }
-  }
-
-  td {
-    box-shadow: inset 0 -1px 0 rgba(255, 255, 255, 0.05);
-    transition: background 0.2s;
+    @include mono-label;
+    padding-top: 16px;
+    padding-bottom: 12px;
+    font-size: 0.62rem;
+    color: $color-faint;
+    white-space: nowrap;
   }
 
   tbody tr:last-child td {
-    box-shadow: none;
+    border-bottom: none;
   }
 
-  tbody tr:hover td {
-    background: rgba(255, 255, 255, 0.045);
+  tbody tr {
+    transition: background 0.2s;
+
+    &:hover {
+      background: rgba($color-ink, 0.03);
+    }
+  }
+}
+
+.mono {
+  font-family: $font-mono;
+  font-size: 0.78rem;
+  color: $color-muted;
+}
+
+.muted {
+  color: $color-faint;
+}
+
+.chips {
+  display: inline-flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.chip {
+  @include tag;
+  white-space: nowrap;
+
+  &.role-admin {
+    color: $color-coral;
+    box-shadow: inset 0 0 0 1px rgba($color-coral, 0.4);
   }
 
-  tbody td:first-child { border-radius: 12px 0 0 12px; }
-  tbody td:last-child { border-radius: 0 12px 12px 0; }
+  &.role-instructor,
+  &.status-published {
+    color: $color-accent;
+    box-shadow: inset 0 0 0 1px rgba($color-accent, 0.35);
+  }
+
+  &.status-hidden {
+    color: $color-coral;
+    box-shadow: inset 0 0 0 1px rgba($color-coral, 0.4);
+  }
+}
+
+.rating {
+  font-family: $font-display;
+  font-size: 1.05rem;
+  font-weight: 600;
+
+  span {
+    font-family: $font-mono;
+    font-size: 0.72rem;
+    color: $color-faint;
+  }
 }
 
 .actions-cell {
@@ -357,11 +430,26 @@ function removeReview(reviewId: string) {
   flex-wrap: wrap;
 }
 
+.btn-sm {
+  padding: 7px 14px;
+  font-size: 0.8rem;
+  white-space: nowrap;
+}
+
+.btn.danger {
+  --lg-tint: #{rgba($color-danger, 0.22)};
+
+  &:hover {
+    --lg-tint: #{rgba($color-danger, 0.32)};
+  }
+}
+
 .review-comment {
   max-width: 320px;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+  color: $color-muted;
 }
 
 .audit-details {
@@ -369,26 +457,29 @@ function removeReview(reviewId: string) {
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+  font-family: $font-mono;
+  font-size: 0.74rem;
+  color: $color-muted;
 }
 
 .pagination {
   display: flex;
   align-items: center;
-  justify-content: center;
+  justify-content: space-between;
   gap: 16px;
-  margin-top: 20px;
+  margin-top: 8px;
+  padding-top: 16px;
+  border-top: 1px solid $color-hairline;
 
   span {
+    @include mono-label;
+    font-size: 0.64rem;
     color: $color-muted;
-    font-size: 0.9rem;
   }
 }
 
-.danger {
-  color: #f87171;
-}
-
 .loading {
+  @include mono-label;
   text-align: center;
   padding: 32px;
   color: $color-muted;

@@ -60,16 +60,18 @@ function formatType(contentType: string): string {
 </script>
 
 <style lang="scss" scoped>
-@use "@/assets/styles/abstracts/variables" as *;
-
 .lesson-resources {
-  margin-top: 16px;
-  padding: 20px;
-  border-radius: 20px;
+  --lg-r: #{$radius-card};
+  --lg-blur: 12px;
+  --lg-tint: rgba(13, 15, 19, 0.28);
+  padding: 28px;
 
   h2 {
-    margin: 0 0 12px;
-    font-size: 1.1rem;
+    margin: 0;
+    padding-bottom: 14px;
+    font-size: 1.35rem;
+    font-weight: 600;
+    border-bottom: 1px solid $color-hairline;
   }
 }
 
@@ -79,7 +81,6 @@ function formatType(contentType: string): string {
   padding: 0;
   display: flex;
   flex-direction: column;
-  gap: 8px;
 }
 
 .resource-item {
@@ -87,15 +88,24 @@ function formatType(contentType: string): string {
   align-items: center;
   justify-content: space-between;
   gap: 12px;
-  padding: 10px 12px;
-  border-radius: 12px;
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  padding: 14px 0;
+  border-bottom: 1px solid $color-hairline;
+
+  &:last-child {
+    border-bottom: none;
+    padding-bottom: 0;
+  }
+
+  .btn {
+    padding: 8px 16px;
+    font-size: 0.82rem;
+  }
 }
 
 .resource-info {
   display: flex;
   flex-direction: column;
-  gap: 2px;
+  gap: 4px;
   min-width: 0;
 }
 
@@ -108,7 +118,8 @@ function formatType(contentType: string): string {
 }
 
 .resource-meta {
-  font-size: 0.85rem;
-  color: $color-muted;
+  font-family: $font-mono;
+  font-size: 0.72rem;
+  color: $color-faint;
 }
 </style>

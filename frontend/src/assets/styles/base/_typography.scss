@@ -4,10 +4,17 @@
 h1, h2, h3, h4, h5, h6 {
   font-family: $font-display;
   font-weight: 600;
-  line-height: 1.15;
-  letter-spacing: -0.02em;
+  font-optical-sizing: none;
+  line-height: 1.12;
+  letter-spacing: 0;
 }
 
-h1 { font-size: $font-size-2xl; }
-h2 { font-size: $font-size-xl; }
-h3 { font-size: $font-size-lg; }
+h1 { font-size: $font-size-2xl; font-weight: 500; }
+h2 { font-size: $font-size-xl; font-weight: 500; }
+h3 { font-size: $font-size-lg; font-weight: 500; }
+
+h1 em,
+h2 em,
+h3 em {
+  @include highlight;
+}

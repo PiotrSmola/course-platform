@@ -3,7 +3,7 @@
     <div class="container">
       <div class="section-head">
         <span class="eyebrow">Moje konto</span>
-        <h2>Profil użytkownika</h2>
+        <h2>Profil <em>użytkownika</em></h2>
       </div>
 
       <div v-if="profile.isLoading.value" class="loading">Ładowanie...</div>
@@ -59,7 +59,7 @@
         </div>
 
         <div class="stats-card glass-card">
-          <h3>Statystyki nauki</h3>
+          <h3 class="card-label">Statystyki nauki</h3>
           <div class="stats-grid">
             <div class="stat-item">
               <span class="stat-value">{{ stats.totalEnrollments }}</span>
@@ -89,7 +89,7 @@
         </div>
 
         <div class="purchases-card glass-card">
-          <h3>Ostatnie zakupy</h3>
+          <h3 class="card-label">Ostatnie zakupy</h3>
           <div v-if="purchases.isLoading.value" class="purchases-empty">Ładowanie...</div>
           <div v-else-if="!purchases.data.value?.length" class="purchases-empty">
             Nie masz jeszcze żadnych zakupionych kursów.
@@ -116,7 +116,7 @@
         </div>
 
         <div class="certificates-card glass-card">
-          <h3>Certyfikaty</h3>
+          <h3 class="card-label">Certyfikaty</h3>
           <div v-if="certificates.isLoading.value" class="purchases-empty">Ładowanie...</div>
           <div v-else-if="!certificates.data.value?.length" class="purchases-empty">
             Ukończ kurs w 100%, aby otrzymać certyfikat.
@@ -150,7 +150,7 @@
         </div>
 
         <div class="danger-card glass-card">
-          <h3>Strefa niebezpieczna</h3>
+          <h3 class="card-label">Strefa niebezpieczna</h3>
           <p>Usunięcie konta jest nieodwracalne. Wszystkie Twoje dane, postępy i recenzje zostaną trwale usunięte.</p>
           <button class="btn btn-danger" @click="showDeleteModal = true">
             Usuń konto
@@ -273,22 +273,61 @@ function confirmDelete() {
 </script>
 
 <style lang="scss" scoped>
-@use "@/assets/styles/abstracts/variables" as *;
-@use "@/assets/styles/abstracts/mixins" as *;
-
 .profile-page {
-  padding: calc($header-height + 40px) 0 80px;
+  padding: 24px 0 80px;
 }
 
 .profile-grid {
   display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 24px;
+
+  > .profile-card,
+  > .stats-card,
+  > .danger-card {
+    grid-column: 1 / -1;
+  }
+
+  @media (max-width: 860px) {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+.glass-card {
+  --lg-blur: 10px;
+
+  &:hover {
+    transform: none;
+  }
 }
 
 .profile-card,
 .stats-card,
+.purchases-card,
+.certificates-card,
 .danger-card {
   padding: 28px;
+
+  @media (max-width: 560px) {
+    padding: 22px 18px;
+  }
+}
+
+.card-label {
+  @include mono-label;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin: 0 0 20px;
+  color: $color-faint;
+
+  &::before {
+    content: "";
+    width: 28px;
+    height: 1px;
+    background: currentColor;
+    opacity: 0.7;
+  }
 }
 
 .profile-header {
@@ -296,35 +335,43 @@ function confirmDelete() {
   align-items: center;
   gap: 20px;
   margin-bottom: 28px;
+  padding-bottom: 24px;
+  border-bottom: 1px solid $color-hairline;
 
   .avatar {
     width: 72px;
     height: 72px;
     border-radius: 50%;
-    background: $color-grad;
+    background: $color-accent;
     display: flex;
     align-items: center;
     justify-content: center;
-    color: #0a0e17;
-    font-size: 1.6rem;
-    font-weight: 700;
+    color: $color-on-accent;
+    font-family: $font-display;
+    font-size: 1.9rem;
+    font-weight: 600;
     flex-shrink: 0;
   }
 
   .profile-meta {
+    min-width: 0;
+
     h3 {
-      font-size: 1.25rem;
-      margin-bottom: 4px;
+      font-size: 1.5rem;
+      font-weight: 600;
+      margin-bottom: 6px;
     }
 
     .email {
-      font-size: 0.9rem;
+      font-size: 0.92rem;
       color: $color-muted;
       margin-bottom: 4px;
+      overflow-wrap: anywhere;
     }
 
     .joined {
-      font-size: 0.82rem;
+      @include mono-label;
+      font-size: 0.62rem;
       color: $color-faint;
     }
   }
@@ -333,12 +380,14 @@ function confirmDelete() {
 .profile-form {
   display: flex;
   flex-direction: column;
+  align-items: flex-start;
   gap: 20px;
 
   .form-row {
     display: grid;
     grid-template-columns: repeat(2, 1fr);
     gap: 16px;
+    width: 100%;
 
     @media (max-width: 560px) {
       grid-template-columns: 1fr;
@@ -348,112 +397,77 @@ function confirmDelete() {
   .form-group {
     display: flex;
     flex-direction: column;
-    gap: 6px;
+    gap: 8px;
 
     label {
-      font-size: 0.85rem;
-      font-weight: 500;
+      @include mono-label;
+      font-size: 0.64rem;
       color: $color-muted;
     }
   }
 
   .form-input {
-    height: 44px;
-    padding: 0 14px;
-    border-radius: 10px;
-    border: 1px solid rgba(255, 255, 255, 0.1);
-    background: rgba(255, 255, 255, 0.04);
+    height: 46px;
+    padding: 0 16px;
+    border: none;
+    border-radius: $radius-md;
+    background: rgba(13, 15, 19, 0.45);
+    box-shadow: inset 0 0 0 1px $color-hairline;
     color: $color-ink;
     font: inherit;
     font-size: 0.94rem;
     outline: none;
-    transition: border-color 0.2s, box-shadow 0.2s;
+    transition: box-shadow 0.2s;
 
     &:focus {
-      border-color: rgba(167, 139, 250, 0.5);
-      box-shadow: 0 0 0 3px rgba(139, 92, 246, 0.15);
+      box-shadow: inset 0 0 0 1px $color-hairline, 0 0 0 2px rgba($color-accent, 0.6);
     }
 
     &.error {
-      border-color: #ef4444;
+      box-shadow: inset 0 0 0 1px rgba($color-danger, 0.7);
     }
   }
 
   .error-text {
-    font-size: 0.82rem;
-    color: #ef4444;
-  }
-}
-
-.stats-card {
-  h3 {
-    font-size: 1.1rem;
-    margin-bottom: 20px;
+    font-size: 0.8rem;
+    color: $color-danger;
   }
 }
 
 .stats-grid {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 16px;
-
-  @media (max-width: 720px) {
-    grid-template-columns: repeat(2, 1fr);
-  }
+  display: flex;
+  flex-wrap: wrap;
+  overflow: hidden;
+  border-top: 1px solid $color-hairline;
+  border-bottom: 1px solid $color-hairline;
 }
 
 .stat-item {
+  flex: 1 1 150px;
   display: flex;
   flex-direction: column;
-  gap: 6px;
-  padding: 16px;
-  border-radius: 12px;
-  background: rgba(255, 255, 255, 0.04);
+  gap: 10px;
+  margin: -1px 0 0 -1px;
+  padding: 22px 20px 20px;
+  border-top: 1px solid $color-hairline;
+  border-left: 1px solid $color-hairline;
 
   .stat-value {
-    font-size: 1.5rem;
-    font-weight: 700;
-    background: linear-gradient(90deg, #a78bfa, #22d3ee);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
+    font-family: $font-display;
+    font-size: clamp(1.9rem, 3vw, 2.5rem);
+    font-weight: 600;
+    line-height: 1;
+    letter-spacing: -0.015em;
+    font-variant-numeric: lining-nums;
+    color: $color-ink;
+    white-space: nowrap;
   }
 
   .stat-label {
-    font-size: 0.82rem;
-    color: $color-muted;
+    @include mono-label;
+    font-size: 0.62rem;
+    color: $color-faint;
   }
-}
-
-.purchases-card,
-.certificates-card {
-  padding: 28px;
-
-  h3 {
-    font-size: 1.1rem;
-    margin-bottom: 20px;
-  }
-}
-
-.certificate-item {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 16px;
-  padding: 14px 16px;
-  border-radius: 12px;
-  background: rgba(255, 255, 255, 0.04);
-  box-shadow: inset 0 1px 1px rgba(255, 255, 255, 0.14), inset 0 0 0 1px rgba(255, 255, 255, 0.05);
-}
-
-.certificate-actions {
-  display: flex;
-  gap: 8px;
-  flex-shrink: 0;
-}
-
-.btn-sm {
-  padding: 8px 14px;
-  font-size: 0.82rem;
 }
 
 .purchases-empty {
@@ -464,116 +478,120 @@ function confirmDelete() {
 .purchases-list {
   display: flex;
   flex-direction: column;
-  gap: 8px;
 }
 
-.purchase-item {
+.purchase-item,
+.certificate-item {
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 16px;
-  padding: 14px 16px;
-  border-radius: 12px;
-  background: rgba(255, 255, 255, 0.04);
+  padding: 14px 0;
+  border-bottom: 1px solid $color-hairline;
   text-decoration: none;
   color: inherit;
-  transition: background 0.2s;
 
-  &:hover {
-    background: rgba(255, 255, 255, 0.08);
+  &:first-child {
+    padding-top: 0;
+  }
+
+  &:last-child {
+    border-bottom: none;
+    padding-bottom: 0;
+  }
+}
+
+.purchase-item {
+  transition: color 0.2s;
+
+  &:hover .purchase-title {
+    color: $color-accent;
   }
 }
 
 .purchase-info {
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  align-items: flex-start;
+  gap: 5px;
   min-width: 0;
 }
 
 .purchase-title {
-  font-size: 0.94rem;
-  font-weight: 600;
+  font-size: 0.96rem;
+  font-weight: 500;
   color: $color-ink;
-}
-.purchase-kind {
-  color: $color-cyan;
-  font-size: 0.75rem;
-  font-weight: 700;
-  text-transform: uppercase;
+  transition: color 0.2s;
 }
 
+.purchase-kind {
+  @include tag;
+  color: $color-sky;
+  box-shadow: inset 0 0 0 1px rgba($color-sky, 0.35);
+}
 
 .purchase-date {
-  font-size: 0.8rem;
+  font-family: $font-mono;
+  font-size: 0.7rem;
   color: $color-faint;
+  overflow-wrap: anywhere;
 }
 
 .purchase-amount {
   flex-shrink: 0;
-  font-size: 0.94rem;
-  font-weight: 700;
-  color: $color-gold;
+  font-family: $font-display;
+  font-size: 1.2rem;
+  font-weight: 600;
+  line-height: 1;
+  color: $color-ink;
+}
+
+.certificate-actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+.btn-sm {
+  padding: 8px 14px;
+  font-size: 0.8rem;
 }
 
 .danger-card {
-  h3 {
-    font-size: 1.1rem;
-    margin-bottom: 10px;
-    color: #ef4444;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 4px 24px;
+
+  .card-label {
+    flex-basis: 100%;
+    margin-bottom: 8px;
+    color: $color-danger;
   }
 
   p {
+    flex: 1 1 320px;
+    max-width: 62ch;
     font-size: 0.9rem;
     color: $color-muted;
-    margin-bottom: 20px;
-  }
-
-  .btn-danger {
-    background: rgba(239, 68, 68, 0.15);
-    color: #ef4444;
-    border: 1px solid rgba(239, 68, 68, 0.3);
-
-    &:hover {
-      background: rgba(239, 68, 68, 0.25);
-    }
   }
 }
 
-.btn {
-  padding: 10px 20px;
-  font-size: 0.9rem;
-  border-radius: 10px;
-  cursor: pointer;
-  transition: background 0.2s, transform 0.15s;
-  border: none;
-  font-weight: 500;
-
-  &:disabled {
-    opacity: 0.6;
-    cursor: not-allowed;
-  }
-}
-
-.btn-primary {
-  background: linear-gradient(90deg, #f59e0b, #ec4899);
-  color: #fff;
-
-  &:hover:not(:disabled) {
-    transform: translateY(-1px);
-    filter: brightness(1.1);
-  }
-}
-
-.btn-ghost {
-  background: transparent;
-  border: 1px solid rgba(255, 255, 255, 0.15);
-  color: $color-muted;
+.btn-danger {
+  --lg-tint: #{rgba($color-danger, 0.22)};
 
   &:hover {
-    color: $color-ink;
-    border-color: rgba(255, 255, 255, 0.3);
+    --lg-tint: #{rgba($color-danger, 0.32)};
   }
+}
+
+.danger-card .btn,
+.modal-actions .btn {
+  padding: 11px 22px;
+  font-size: 0.88rem;
 }
 
 .modal-overlay {
@@ -583,18 +601,20 @@ function confirmDelete() {
   display: flex;
   align-items: center;
   justify-content: center;
-  background: rgba(3, 6, 24, 0.7);
-  backdrop-filter: blur(6px);
+  background: rgba(8, 9, 12, 0.78);
 }
 
 .modal {
+  --lg-blur: 18px;
+  --lg-tint: rgba(13, 15, 19, 0.6);
   max-width: 440px;
   width: 100%;
   margin: 20px;
   padding: 28px;
 
   h3 {
-    font-size: 1.15rem;
+    font-size: 1.3rem;
+    font-weight: 600;
     margin-bottom: 10px;
   }
 
@@ -612,7 +632,8 @@ function confirmDelete() {
 }
 
 .loading,
-.error {
+div.error {
+  @include mono-label;
   text-align: center;
   padding: 60px;
   color: $color-muted;

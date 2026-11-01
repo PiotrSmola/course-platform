@@ -3,7 +3,7 @@
     <div class="container">
       <div class="section-head">
         <span class="eyebrow">Lista życzeń</span>
-        <h2>Ulubione kursy</h2>
+        <h2>Ulubione <em>kursy</em></h2>
       </div>
 
       <div v-if="!authStore.token" class="state-wrap">
@@ -35,7 +35,7 @@
       </div>
       <div v-else class="courses-grid">
         <article v-for="item in items" :key="item.id" class="course-card glass-card">
-          <CourseThumbnail class="course-thumb" :url="item.courseThumbnailUrl" />
+          <CourseThumbnail class="course-thumb" :url="item.courseThumbnailUrl" :title="item.courseTitle" :seed="item.courseId" />
           <div class="course-info">
             <div class="card-meta">
               <span class="level">{{ levelLabel(item.courseLevel) }}</span>
@@ -43,12 +43,12 @@
             </div>
             <h3>{{ item.courseTitle }}</h3>
             <div class="card-actions">
-              <router-link class="btn btn-primary" :to="{ name: 'CourseDetails', params: { id: item.courseId } }">
+              <router-link class="btn btn-primary btn-pill" :to="{ name: 'CourseDetails', params: { id: item.courseId } }">
                 Zobacz kurs
               </router-link>
               <button
                 type="button"
-                class="btn btn-ghost"
+                class="btn btn-ghost btn-pill"
                 :disabled="removeMutation.isPending.value"
                 @click="remove(item.courseId)"
               >
@@ -93,26 +93,28 @@ function remove(courseId: string) {
 
 <style lang="scss" scoped>
 @use "@/assets/styles/abstracts/variables" as *;
+@use "@/assets/styles/abstracts/mixins" as *;
 
 .wishlist-page {
-  padding: calc($header-height + 40px) 0 80px;
+  padding: 32px 0 96px;
 }
 
 .section-head {
   margin-bottom: 40px;
 
   h2 {
-    font-size: clamp(1.8rem, 3vw, 2.4rem);
-    margin-top: 8px;
+    font-size: clamp(2.2rem, 4.4vw, 3.4rem);
+    margin-top: 18px;
   }
 }
 
 .state-wrap {
-  padding: 40px 0;
+  padding: 24px 0;
 }
 
 .skeletons {
   display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
   gap: 24px;
 }
 
@@ -123,36 +125,65 @@ function remove(courseId: string) {
 }
 
 .course-card {
+  --lg-blur: 10px;
   overflow: hidden;
   display: flex;
   flex-direction: column;
 }
 
 .course-thumb {
-  width: 100%;
-  aspect-ratio: 16/10;
+  position: relative;
+  aspect-ratio: 16 / 9;
+  margin: 12px 12px 0;
+  border-radius: 14px 14px 14px 4px;
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.08);
 }
 
 .course-info {
-  padding: 20px;
+  padding: 16px 20px 20px;
   display: flex;
   flex-direction: column;
   gap: 12px;
   flex: 1;
+
+  h3 {
+    font-size: 1.28rem;
+    font-weight: 600;
+    line-height: 1.2;
+  }
 }
 
 .card-meta {
   display: flex;
+  align-items: baseline;
   justify-content: space-between;
   gap: 12px;
-  font-size: 0.85rem;
-  color: $color-muted;
+
+  .level {
+    @include mono-label;
+    font-size: 0.64rem;
+    color: $color-faint;
+  }
+
+  .price {
+    font-family: $font-display;
+    font-size: 1.35rem;
+    font-weight: 600;
+    line-height: 1;
+  }
 }
 
 .card-actions {
   display: flex;
-  gap: 12px;
+  gap: 10px;
   flex-wrap: wrap;
   margin-top: auto;
+  padding-top: 16px;
+  border-top: 1px dashed $color-hairline;
+
+  .btn {
+    padding: 10px 18px;
+    font-size: 0.86rem;
+  }
 }
 </style>

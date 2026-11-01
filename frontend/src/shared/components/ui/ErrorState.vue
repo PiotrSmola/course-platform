@@ -1,5 +1,6 @@
 <template>
   <div class="error-state">
+    <span class="error-state__label">Błąd</span>
     <h3>{{ title }}</h3>
     <p v-if="description">{{ description }}</p>
     <RouterLink v-if="actionLabel && actionTo" class="btn btn-primary" :to="actionRoute">
@@ -30,6 +31,7 @@ const actionRoute = computed(() => {
 
 <style lang="scss" scoped>
 @use "@/assets/styles/abstracts/variables" as *;
+@use "@/assets/styles/abstracts/mixins" as *;
 
 .error-state {
   display: flex;
@@ -40,9 +42,11 @@ const actionRoute = computed(() => {
   padding: 48px 24px;
 
   h3 {
-    font-size: 1.15rem;
+    font-family: $font-display;
+    font-size: 1.4rem;
     font-weight: 600;
-    color: #f87171;
+    letter-spacing: -0.015em;
+    color: $color-ink;
   }
 
   p {
@@ -51,5 +55,15 @@ const actionRoute = computed(() => {
     max-width: 420px;
     line-height: 1.6;
   }
+
+  .btn {
+    margin-top: 8px;
+  }
+}
+
+.error-state__label {
+  @include tag;
+  color: $color-danger;
+  box-shadow: inset 0 0 0 1px rgba($color-danger, 0.35);
 }
 </style>

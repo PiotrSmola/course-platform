@@ -1,19 +1,24 @@
 @use "variables" as *;
 
-// Liquid Glass — exact copy of the .glass class from the reference Prism CSS.
-// Tune per-element via CSS custom properties:
-//   --lg-r    : border-radius   (default 24px)
-//   --lg-blur : blur amount     (default 0px  → no blur on most elements)
-//   --lg-tint : tint colour     (default rgba(255,255,255,0.03))
-//   --lens    : SVG filter URL  (assigned per element by useLiquidGlass, default none)
+// Liquid Glass in three layers:
+//   ::before  refraction: backdrop-filter bent by a per-element SVG lens (--lens), plus tint
+//   ::after   specular rim, edge luminance and a highlight that follows the pointer (--mx, --my)
+//   content   normal flow on top
+// Per-element knobs:
+//   --lg-r     border-radius, up to four values
+//   --lg-blur  frost amount (0px = clear glass)
+//   --lg-sat   backdrop saturation
+//   --lg-tint  tint colour
+//   --lg-glow  strength of the pointer highlight
+// No ancestor of a glass element may use opacity < 1, filter or mask: each creates a new
+// backdrop root and the glass stops seeing the page behind it.
 @mixin liquid-glass {
   position: relative;
   z-index: 0;
   border-radius: var(--lg-r, 24px);
   box-shadow:
-    0 10px 30px rgba(3, 6, 24, 0.35),
-    0 2px 8px rgba(3, 6, 24, 0.22),
-    0 18px 30px -22px rgba(170, 200, 255, 0.35);
+    0 12px 32px -8px rgba(0, 0, 0, 0.45),
+    0 2px 6px rgba(0, 0, 0, 0.2);
 
   &::before {
     content: "";
@@ -22,14 +27,16 @@
     z-index: -2;
     border-radius: inherit;
     clip-path: inset(12px round var(--lg-r, 24px));
-    -webkit-backdrop-filter: blur(var(--lg-blur, 0px)) saturate(200%);
-    backdrop-filter: blur(var(--lg-blur, 0px)) saturate(200%);
+    background: var(--lg-tint, rgba(255, 255, 255, 0.04));
+    -webkit-backdrop-filter: blur(var(--lg-blur, 1px)) saturate(var(--lg-sat, 180%)) brightness(1.05);
+    backdrop-filter: blur(var(--lg-blur, 1px)) saturate(var(--lg-sat, 180%)) brightness(1.05);
     filter: var(--lens, none);
+    transition: background 0.35s;
   }
 
   @supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
     &::before {
-      background: rgba(15, 23, 42, 0.85);
+      background: rgba(21, 24, 30, 0.9);
       filter: none;
     }
   }
@@ -41,17 +48,65 @@
     z-index: -1;
     border-radius: inherit;
     background:
-      radial-gradient(80px 50px at 16% 10%, rgba(255, 255, 255, 0.14), transparent 70%),
-      linear-gradient(165deg, rgba(255, 255, 255, 0.08), rgba(255, 255, 255, 0) 42%),
-      var(--lg-tint, rgba(255, 255, 255, 0.03));
+      radial-gradient(
+        var(--lg-glow-size, 220px) circle at var(--mx, 18%) var(--my, -30%),
+        rgba(255, 255, 255, var(--lg-glow, 0.1)),
+        transparent 70%
+      ),
+      linear-gradient(180deg, rgba(255, 255, 255, 0.06), rgba(255, 255, 255, 0) 38%);
     box-shadow:
-      inset 2px 2px 1px -1px rgba(255, 255, 255, 0.65),
-      inset -2px -2px 1px -1px rgba(255, 255, 255, 0.25),
-      inset 0 0 0 1px rgba(255, 255, 255, 0.07),
-      inset 0 -12px 28px -16px rgba(255, 255, 255, 0.25);
+      inset 1.5px 1.5px 0.5px -0.5px rgba(255, 255, 255, 0.7),
+      inset -1px -1px 0.5px -0.5px rgba(255, 255, 255, 0.32),
+      inset 0 0 0 0.5px rgba(255, 255, 255, 0.14),
+      inset 0 0 14px rgba(255, 255, 255, 0.05),
+      inset 0 -10px 24px -18px rgba(255, 255, 255, 0.3);
     pointer-events: none;
-    transition: background 0.35s, box-shadow 0.35s;
+    transition: box-shadow 0.35s;
   }
+}
+
+@mixin glass-press {
+  transition:
+    transform 0.45s $ease-jelly,
+    box-shadow 0.3s;
+
+  &:hover {
+    --lg-glow: 0.2;
+  }
+
+  &:active {
+    transform: scale(0.965);
+    transition-duration: 0.12s;
+  }
+}
+
+@mixin mono-label {
+  font-family: $font-mono;
+  font-size: 0.7rem;
+  font-weight: 500;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+
+@mixin tag {
+  @include mono-label;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 8px;
+  border-radius: $radius-xs;
+  font-size: 0.64rem;
+  letter-spacing: 0.1em;
+  line-height: 1.3;
+  color: $color-muted;
+  background: rgba(13, 15, 19, 0.35);
+  box-shadow: inset 0 0 0 1px $color-hairline;
+}
+
+@mixin highlight {
+  font-family: $font-display;
+  font-style: normal;
+  color: $color-accent;
 }
 
 @mixin container {
@@ -60,10 +115,7 @@
 }
 
 @mixin grad-text {
-  background: $color-grad-text;
-  -webkit-background-clip: text;
-  background-clip: text;
-  color: transparent;
+  @include highlight;
 }
 
 @mixin section-padding {
@@ -81,7 +133,7 @@
 
 @mixin liquid-glass-scrollbar {
   scrollbar-width: thin;
-  scrollbar-color: rgba(245, 158, 11, 0.5) rgba(255, 255, 255, 0.05);
+  scrollbar-color: rgba($color-ink, 0.28) transparent;
 
   &::-webkit-scrollbar {
     width: 10px;
@@ -89,33 +141,19 @@
   }
 
   &::-webkit-scrollbar-track {
-    background: rgba(255, 255, 255, 0.03);
-    border-radius: 999px;
-    box-shadow:
-      inset 0 1px 1px rgba(255, 255, 255, 0.18),
-      inset 0 0 0 1px rgba(255, 255, 255, 0.06);
+    background: transparent;
   }
 
   &::-webkit-scrollbar-thumb {
     border-radius: 999px;
-    background: linear-gradient(
-      160deg,
-      rgba(245, 158, 11, 0.65) 0%,
-      rgba(236, 72, 153, 0.45) 100%
-    );
-    box-shadow:
-      inset 1.5px 1.5px 1px -1px rgba(255, 255, 255, 0.55),
-      inset -1.5px -1.5px 1px -1px rgba(255, 255, 255, 0.2);
-    border: 2px solid transparent;
+    background: rgba($color-ink, 0.22);
+    border: 3px solid transparent;
     background-clip: padding-box;
   }
 
   &::-webkit-scrollbar-thumb:hover {
-    background: linear-gradient(
-      160deg,
-      rgba(245, 158, 11, 0.85) 0%,
-      rgba(236, 72, 153, 0.6) 100%
-    );
+    background: rgba($color-ink, 0.4);
+    background-clip: padding-box;
   }
 
   &::-webkit-scrollbar-corner {

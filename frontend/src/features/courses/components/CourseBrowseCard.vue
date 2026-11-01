@@ -1,36 +1,37 @@
 <template>
   <article class="course-card glass-card">
     <div class="course-thumb-wrap">
-      <CourseThumbnail class="course-thumb" :url="course.thumbnailUrl" />
-      <span v-if="isComingSoon" class="course-badge coming-soon">Wkrótce</span>
-      <span v-else-if="levelLabel" class="course-badge">{{ levelLabel }}</span>
+      <CourseThumbnail
+        class="course-thumb"
+        :url="course.thumbnailUrl"
+        :title="course.title"
+        :label="course.technologyNames?.[0] ?? course.categoryNames?.[0]"
+        :seed="course.id"
+      />
+      <span v-if="isComingSoon" class="course-badge">Wkrótce</span>
     </div>
     <div class="course-body">
+      <p class="course-kicker">
+        <span v-if="levelLabel">{{ levelLabel }}</span>
+        <span>{{ course.lessonCount }} lekcji</span>
+      </p>
       <h3 class="course-title">{{ course.title }}</h3>
       <p class="course-instructor">{{ course.instructorName }}</p>
       <div class="course-tags" v-if="course.categoryNames.length || course.technologyNames.length">
         <span v-for="cat in course.categoryNames" :key="cat" class="tag">{{ cat }}</span>
         <span v-for="tech in course.technologyNames" :key="tech" class="tag tech">{{ tech }}</span>
       </div>
-      <div class="course-meta">
-        <div class="course-rating">
-          <span class="rating-value">{{ course.averageRating.toFixed(1) }}</span>
-          <div class="stars">
-            <span
-              v-for="i in 5"
-              :key="i"
-              class="star"
-              :class="{ filled: i <= Math.round(course.averageRating) }"
-            >★</span>
-          </div>
-          <span class="rating-count">({{ course.reviewCount }})</span>
-        </div>
-        <span class="course-lessons">{{ course.lessonCount }} lekcji</span>
-      </div>
       <div class="course-footer">
-        <span class="course-price"><strong>{{ isComingSoon ? 'Powiadom o starcie' : `${course.price} zł` }}</strong></span>
+        <div class="course-numbers">
+          <span class="course-price">{{ isComingSoon ? 'Wkrótce' : `${course.price} zł` }}</span>
+          <span class="course-rating" :title="`Średnia ocen ${course.averageRating.toFixed(1)} z ${course.reviewCount} opinii`">
+            <span class="star" aria-hidden="true">★</span>
+            {{ course.averageRating.toFixed(1) }}
+            <span class="rating-count">/ {{ course.reviewCount }} opinii</span>
+          </span>
+        </div>
         <router-link
-          class="btn btn-primary course-btn"
+          class="btn btn-ghost btn-pill course-btn"
           :to="{ name: 'CourseDetails', params: { id: course.id } }"
         >
           {{ isComingSoon ? 'Lista oczekujących' : 'Zobacz' }}
@@ -69,75 +70,65 @@ const levelLabel = computed(() => {
 </script>
 
 <style lang="scss" scoped>
-@use "@/assets/styles/abstracts/variables" as *;
-@use "@/assets/styles/abstracts/mixins" as *;
-
 .course-card {
-  --lg-r: 20px;
-  --lg-blur: 0px;
+  --lg-blur: 10px;
   overflow: hidden;
-  transition: transform 0.35s, box-shadow 0.35s;
   display: flex;
   flex-direction: column;
   height: 100%;
-
-  &:hover {
-    --lg-tint: rgba(255, 255, 255, 0.06);
-    transform: translateY(-6px);
-    box-shadow: 0 24px 56px rgba(3, 6, 24, 0.55), 0 4px 12px rgba(3, 6, 24, 0.3);
-  }
 }
 
 .course-thumb-wrap {
   position: relative;
-  margin: 20px 20px 0;
+  margin: 12px 12px 0;
 }
 
 .course-thumb {
   position: relative;
   width: 100%;
   aspect-ratio: 16 / 9;
-  border-radius: 20px;
-  box-shadow:
-    0 12px 28px rgba(3, 6, 24, 0.4),
-    inset 0 1px 1px rgba(255, 255, 255, 0.35),
-    inset 0 0 0 1px rgba(255, 255, 255, 0.12);
+  border-radius: 14px 14px 14px 4px;
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.08);
 }
 
 .course-badge {
+  @include tag;
   position: absolute;
   top: 10px;
-  left: 10px;
-  padding: 4px 10px;
-  border-radius: 999px;
-  font-size: 0.72rem;
-  font-weight: 600;
-  letter-spacing: 0.04em;
-  text-transform: uppercase;
-  color: $color-ink;
-  background: rgba(10, 14, 23, 0.75);
-  backdrop-filter: blur(8px);
-  border: 1px solid rgba(255, 255, 255, 0.12);
-
-  &.coming-soon {
-    background: rgba(59, 130, 246, 0.85);
-    border-color: rgba(147, 197, 253, 0.4);
-  }
+  right: 10px;
+  color: $color-on-accent;
+  background: $color-accent;
+  box-shadow: none;
 }
 
 .course-body {
-  padding: 18px 20px 20px;
+  padding: 16px 20px 20px;
   display: flex;
   flex-direction: column;
   flex: 1;
 }
 
+.course-kicker {
+  @include mono-label;
+  display: flex;
+  gap: 10px;
+  margin-bottom: 10px;
+  font-size: 0.64rem;
+  color: $color-faint;
+
+  span + span::before {
+    content: "/";
+    margin-right: 10px;
+    color: $color-hairline;
+  }
+}
+
 .course-title {
   font-family: $font-display;
-  font-size: 1.05rem;
+  font-size: 1.08rem;
   font-weight: 600;
-  line-height: 1.35;
-  letter-spacing: -0.01em;
+  line-height: 1.25;
+  letter-spacing: -0.005em;
   margin-bottom: 6px;
   display: -webkit-box;
   -webkit-line-clamp: 2;
@@ -146,108 +137,62 @@ const levelLabel = computed(() => {
 }
 
 .course-instructor {
-  font-size: 0.82rem;
-  color: $color-faint;
-  margin-bottom: 8px;
+  font-size: 0.84rem;
+  color: $color-muted;
+  margin-bottom: 14px;
 }
 
 .course-tags {
   display: flex;
   flex-wrap: wrap;
   gap: 6px;
-  margin-bottom: 10px;
+  margin-bottom: 18px;
 }
 
-.tag {
-  display: inline-block;
-  padding: 3px 10px;
-  border-radius: 999px;
-  font-size: 0.72rem;
-  font-weight: 600;
-  letter-spacing: 0.02em;
-  background: rgba(255, 255, 255, 0.06);
-  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.1);
-  color: $color-muted;
-
-  &.tech {
-    background: rgba(245, 158, 11, 0.1);
-    box-shadow: inset 0 0 0 1px rgba(245, 158, 11, 0.25);
-    color: #fbbf24;
-  }
-}
-
-.course-meta {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 8px;
-  margin-bottom: 14px;
-  margin-top: auto;
-}
-
-.course-rating {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-}
-
-.rating-value {
-  font-size: 0.88rem;
-  font-weight: 700;
-  color: $color-gold;
-}
-
-.stars {
-  display: flex;
-  gap: 1px;
-}
-
-.star {
-  font-size: 0.82rem;
-  color: rgba(255, 255, 255, 0.18);
-  line-height: 1;
-
-  &.filled {
-    color: $color-gold;
-  }
-}
-
-.rating-count {
-  font-size: 0.78rem;
-  color: $color-faint;
-}
-
-.course-lessons {
-  font-size: 0.78rem;
-  color: $color-faint;
-  white-space: nowrap;
+.tag.tech {
+  color: $color-accent;
+  box-shadow: inset 0 0 0 1px rgba($color-accent, 0.35);
 }
 
 .course-footer {
   display: flex;
-  align-items: center;
+  align-items: flex-end;
   justify-content: space-between;
   gap: 12px;
-  padding-top: 12px;
-  border-top: 1px solid rgba(255, 255, 255, 0.06);
+  margin-top: auto;
+  padding-top: 16px;
+  border-top: 1px dashed $color-hairline;
 }
 
-.course-price strong {
-  font-size: 1.15rem;
-  font-weight: 700;
+.course-numbers {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.course-price {
+  font-family: $font-display;
+  font-size: 1.35rem;
+  font-weight: 600;
+  line-height: 1;
+}
+
+.course-rating {
+  font-family: $font-mono;
+  font-size: 0.72rem;
+  color: $color-ink;
+
+  .star {
+    color: $color-accent;
+  }
+}
+
+.rating-count {
+  color: $color-faint;
 }
 
 .course-btn {
   padding: 10px 18px;
   font-size: 0.86rem;
 }
-.course-card {
-  --lg-blur: 12px;
-}
-
-.course-badge {
-  -webkit-backdrop-filter: blur(12px) saturate(160%);
-  backdrop-filter: blur(12px) saturate(160%);
-}
-
 </style>

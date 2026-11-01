@@ -176,11 +176,10 @@ function formatDate(value: string) {
 </script>
 
 <style lang="scss" scoped>
-@use "@/assets/styles/abstracts/variables" as *;
-
 .lesson-discussion {
-  --lg-r: 28px;
-  --lg-blur: 0px;
+  --lg-r: #{$radius-card};
+  --lg-blur: 12px;
+  --lg-tint: rgba(13, 15, 19, 0.28);
   padding: 28px;
   display: flex;
   flex-direction: column;
@@ -188,42 +187,58 @@ function formatDate(value: string) {
 
   h2 {
     margin: 0;
-    font-size: 1.25rem;
+    font-size: 1.35rem;
+    font-weight: 600;
   }
 }
 
 .subtitle {
-  margin: 0;
+  margin: -10px 0 0;
+  padding-bottom: 18px;
+  border-bottom: 1px solid $color-hairline;
   color: $color-muted;
-  font-size: 0.95rem;
+  font-size: 0.92rem;
 }
 
 .question-form,
 .answer-form {
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: 12px;
 
   textarea {
     width: 100%;
     resize: vertical;
-    border-radius: 16px;
-    border: 1px solid rgba(255, 255, 255, 0.1);
-    background: rgba(255, 255, 255, 0.04);
+    border: none;
+    border-radius: $radius-md;
+    background: rgba(13, 15, 19, 0.45);
+    box-shadow: inset 0 0 0 1px $color-hairline;
     color: $color-ink;
     padding: 12px 14px;
     font: inherit;
+    font-size: 0.92rem;
+    transition: box-shadow 0.2s;
+
+    &::placeholder {
+      color: $color-faint;
+    }
+
+    &:focus {
+      outline: none;
+      box-shadow: inset 0 0 0 1px $color-hairline, 0 0 0 2px rgba($color-accent, 0.6);
+    }
   }
 }
 
 .field-error {
   margin: 0;
-  color: #f87171;
-  font-size: 0.85rem;
+  color: $color-danger;
+  font-size: 0.82rem;
 }
 
 .state {
-  color: $color-muted;
+  @include mono-label;
+  color: $color-faint;
 }
 
 .questions,
@@ -237,63 +252,71 @@ function formatDate(value: string) {
 }
 
 .question {
-  padding: 16px 0;
-  border-top: 1px solid rgba(255, 255, 255, 0.08);
+  padding: 20px 0 4px;
+  border-top: 1px solid $color-hairline;
   display: flex;
   flex-direction: column;
   gap: 10px;
 }
 
 .answers {
-  margin-left: 12px;
-  padding-left: 12px;
-  border-left: 2px solid rgba(255, 255, 255, 0.08);
+  margin-left: 4px;
+  padding-left: 16px;
+  border-left: 1px solid $color-hairline;
+
+  &:empty {
+    display: none;
+  }
 }
 
 .answer {
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: 6px;
 }
 
 .post-header {
   display: flex;
   flex-wrap: wrap;
-  gap: 8px;
+  gap: 10px;
   align-items: center;
 
+  strong {
+    font-weight: 600;
+  }
+
   time {
-    color: $color-muted;
-    font-size: 0.82rem;
+    font-family: $font-mono;
+    font-size: 0.7rem;
+    color: $color-faint;
   }
 }
 
 .post-body {
   margin: 0;
   white-space: pre-wrap;
-  line-height: 1.5;
+  line-height: 1.55;
+  color: $color-muted;
 }
 
 .badge {
-  font-size: 0.75rem;
-  font-weight: 700;
-  color: $color-gold;
-  background: rgba(245, 158, 11, 0.12);
-  padding: 4px 8px;
-  border-radius: 999px;
+  @include tag;
+  color: $color-accent;
+  box-shadow: inset 0 0 0 1px rgba($color-accent, 0.35);
 }
 
 .btn-link {
+  @include mono-label;
   align-self: flex-start;
   background: none;
   border: none;
-  color: $color-muted;
+  color: $color-faint;
   cursor: pointer;
   padding: 0;
-  font-size: 0.85rem;
+  font-size: 0.62rem;
 
   &:hover {
-    color: $color-ink;
+    color: $color-danger;
   }
 }
 
@@ -302,24 +325,19 @@ function formatDate(value: string) {
   align-items: center;
   justify-content: space-between;
   gap: 12px;
-  color: $color-muted;
+  padding-top: 16px;
+  border-top: 1px solid $color-hairline;
+
+  span {
+    font-family: $font-mono;
+    font-size: 0.76rem;
+    color: $color-muted;
+  }
 }
 
 .btn {
   width: fit-content;
-  padding: 12px 18px;
+  padding: 10px 20px;
+  font-size: 0.86rem;
 }
-.lesson-discussion {
-  --lg-blur: 12px;
-}
-
-.question-form,
-.answer-form {
-  gap: 16px;
-
-  .btn {
-    margin-top: 2px;
-  }
-}
-
 </style>

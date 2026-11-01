@@ -27,11 +27,11 @@
               <input v-model="option.isCorrect" type="checkbox" />
               Poprawna
             </label>
-            <button type="button" class="btn btn-ghost danger" @click="removeOption(qIndex, oIndex)">×</button>
+            <button type="button" class="btn danger" @click="removeOption(qIndex, oIndex)">×</button>
           </div>
           <div class="row-actions">
             <button type="button" class="btn btn-ghost" @click="addOption(qIndex)">+ Opcja</button>
-            <button type="button" class="btn btn-ghost danger" @click="removeQuestion(qIndex)">Usuń pytanie</button>
+            <button type="button" class="btn danger" @click="removeQuestion(qIndex)">Usuń pytanie</button>
           </div>
         </div>
 
@@ -48,7 +48,7 @@
           <button
             v-if="quizQuery.data.value"
             type="button"
-            class="btn btn-ghost danger"
+            class="btn danger"
             :disabled="remove.isPending.value"
             @click="remove.mutate()"
           >
@@ -170,34 +170,52 @@ async function save() {
 </script>
 
 <style lang="scss" scoped>
-@use "@/assets/styles/abstracts/variables" as *;
-
 .quiz-editor {
-  margin-top: 8px;
   grid-column: 1 / -1;
 }
 
 .editor-panel {
   margin-top: 12px;
-  padding: 16px;
-  border-radius: 16px;
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  padding: 18px;
+  border-radius: $radius-sm;
+  box-shadow: inset 0 0 0 1px $color-hairline;
+  background: rgba(13, 15, 19, 0.2);
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: 14px;
 }
 
 .form-group {
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  gap: 8px;
+
+  label {
+    @include mono-label;
+    font-size: 0.62rem;
+    color: $color-muted;
+  }
 
   input {
-    border-radius: 12px;
-    border: 1px solid rgba(255, 255, 255, 0.1);
-    background: rgba(255, 255, 255, 0.04);
+    height: 42px;
+    padding: 0 14px;
+    border: none;
+    border-radius: $radius-md;
+    background: rgba(13, 15, 19, 0.45);
+    box-shadow: inset 0 0 0 1px $color-hairline;
     color: $color-ink;
-    padding: 10px 12px;
+    font: inherit;
+    font-size: 0.92rem;
+    transition: box-shadow 0.2s;
+
+    &::placeholder {
+      color: $color-faint;
+    }
+
+    &:focus {
+      outline: none;
+      box-shadow: inset 0 0 0 1px $color-hairline, 0 0 0 2px rgba($color-accent, 0.6);
+    }
   }
 }
 
@@ -206,8 +224,8 @@ async function save() {
 }
 
 .question-block {
-  padding-top: 8px;
-  border-top: 1px solid rgba(255, 255, 255, 0.08);
+  padding-top: 14px;
+  border-top: 1px dashed $color-hairline;
   display: flex;
   flex-direction: column;
   gap: 8px;
@@ -220,21 +238,41 @@ async function save() {
 
   input[type='text'] {
     flex: 1;
-    border-radius: 12px;
-    border: 1px solid rgba(255, 255, 255, 0.1);
-    background: rgba(255, 255, 255, 0.04);
+    min-width: 0;
+    height: 40px;
+    padding: 0 14px;
+    border: none;
+    border-radius: $radius-md;
+    background: rgba(13, 15, 19, 0.45);
+    box-shadow: inset 0 0 0 1px $color-hairline;
     color: $color-ink;
-    padding: 10px 12px;
+    font: inherit;
+    font-size: 0.92rem;
+    transition: box-shadow 0.2s;
+
+    &::placeholder {
+      color: $color-faint;
+    }
+
+    &:focus {
+      outline: none;
+      box-shadow: inset 0 0 0 1px $color-hairline, 0 0 0 2px rgba($color-accent, 0.6);
+    }
   }
 }
 
 .correct {
+  @include mono-label;
   display: flex;
   gap: 6px;
   align-items: center;
   white-space: nowrap;
-  font-size: 0.85rem;
+  font-size: 0.6rem;
   color: $color-muted;
+
+  input {
+    accent-color: $color-accent;
+  }
 }
 
 .row-actions {
@@ -243,11 +281,21 @@ async function save() {
   gap: 8px;
 }
 
-.danger {
-  color: #f87171;
+.btn {
+  padding: 8px 16px;
+  font-size: 0.8rem;
+}
+
+.btn.danger {
+  --lg-tint: #{rgba($color-danger, 0.22)};
+
+  &:hover {
+    --lg-tint: #{rgba($color-danger, 0.32)};
+  }
 }
 
 .state {
+  @include mono-label;
   color: $color-muted;
 }
 </style>

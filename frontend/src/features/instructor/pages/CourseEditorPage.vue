@@ -3,7 +3,7 @@
     <div class="container">
       <div class="section-head">
         <span class="eyebrow">{{ isNew ? 'Nowy kurs' : 'Edycja kursu' }}</span>
-        <h2>{{ isNew ? 'Utwórz kurs' : 'Edytuj kurs' }}</h2>
+        <h2>{{ isNew ? 'Utwórz' : 'Edytuj' }} <em>kurs</em></h2>
       </div>
 
       <form @submit="onSubmit" class="editor-form glass">
@@ -61,7 +61,7 @@
           />
           <button
             type="button"
-            class="file-upload-btn"
+            class="btn btn-ghost file-upload-btn"
             @click="thumbnailInputRef?.click()"
           >
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -283,72 +283,75 @@ function onThumbnailInputChange(event: Event) {
 </script>
 
 <style lang="scss" scoped>
-@use "@/assets/styles/abstracts/variables" as *;
-@use "@/assets/styles/abstracts/mixins" as *;
-
 .course-editor {
-  padding: calc($header-height + 40px) 0 80px;
+  padding: 24px 0 80px;
 }
 
 .editor-form {
-  --lg-r: 28px;
-  --lg-blur: 0px;
+  --lg-r: #{$radius-card};
+  --lg-blur: 12px;
+  --lg-tint: rgba(13, 15, 19, 0.28);
   max-width: 960px;
   margin-inline: auto;
-  padding: 40px;
+  padding: 36px 40px 40px;
+
+  @media (max-width: 560px) {
+    padding: 22px 16px 24px;
+  }
 }
 
 .form-group {
   display: flex;
   flex-direction: column;
   gap: 8px;
-  margin-bottom: 24px;
+  margin-bottom: 22px;
 
   label {
-    font-size: 0.88rem;
-    font-weight: 600;
+    @include mono-label;
+    font-size: 0.64rem;
     color: $color-muted;
   }
 
-  input, textarea, select {
-    height: 48px;
-    padding: 0 18px;
-    border-radius: 16px;
+  input,
+  textarea,
+  select {
+    height: 46px;
+    padding: 0 16px;
     border: none;
-    background: rgba(255, 255, 255, 0.04);
-    box-shadow: inset 0 1px 1px rgba(255, 255, 255, 0.3), inset 0 0 0 1px rgba(255, 255, 255, 0.1);
+    border-radius: $radius-md;
+    background: rgba(13, 15, 19, 0.45);
+    box-shadow: inset 0 0 0 1px $color-hairline;
     color: $color-ink;
     font: inherit;
-    font-size: 0.94rem;
-    outline: none;
-    transition: background 0.3s, box-shadow 0.3s;
+    font-size: 0.92rem;
+    transition: box-shadow 0.2s;
 
     &::placeholder {
       color: $color-faint;
     }
 
     &:focus {
-      background: rgba(255, 255, 255, 0.07);
-      box-shadow: inset 0 1px 1px rgba(255, 255, 255, 0.35), inset 0 0 0 1px rgba(167, 139, 250, 0.5), 0 0 0 4px rgba(139, 92, 246, 0.18);
+      outline: none;
+      box-shadow: inset 0 0 0 1px $color-hairline, 0 0 0 2px rgba($color-accent, 0.6);
     }
   }
 
   textarea {
     height: auto;
-    padding: 14px 18px;
+    padding: 14px 16px;
+    line-height: 1.55;
     resize: vertical;
   }
 
   .error {
-    color: #f87171;
-    font-size: 0.82rem;
-    font-weight: 500;
+    color: $color-danger;
+    font-size: 0.8rem;
   }
 
   .helper {
+    font-family: $font-mono;
+    font-size: 0.72rem;
     color: $color-faint;
-    font-size: 0.82rem;
-    font-weight: 500;
   }
 }
 
@@ -363,19 +366,25 @@ function onThumbnailInputChange(event: Event) {
 }
 
 .multi-select {
-  height: auto;
-  min-height: 120px;
-  padding: 8px 12px;
+  height: auto !important;
+  min-height: 132px;
+  padding: 8px !important;
 
   option {
-    padding: 6px 8px;
-    border-radius: 8px;
+    padding: 7px 10px;
+    border-radius: $radius-xs;
+    color: $color-muted;
+
+    &:checked {
+      color: $color-ink;
+      background: rgba($color-accent, 0.22);
+    }
   }
 }
 
-.btn {
-  height: 48px;
-  margin-top: 8px;
+.editor-form > .btn {
+  margin-top: 10px;
+  padding: 13px 28px;
 }
 
 .sr-only {
@@ -391,48 +400,12 @@ function onThumbnailInputChange(event: Event) {
 }
 
 .file-upload-btn {
-  @include liquid-glass;
-  --lg-r: 14px;
-  --lg-blur: 0px;
-  --lg-tint: rgba(255, 255, 255, 0.04);
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: 10px;
-  height: 48px;
-  padding: 0 20px;
-  border: none;
-  font: inherit;
-  font-size: 0.9rem;
-  font-weight: 600;
-  color: $color-ink;
-  cursor: pointer;
-  background: none;
-  box-shadow:
-    0 10px 30px rgba(3, 6, 24, 0.35),
-    0 2px 8px rgba(3, 6, 24, 0.22),
-    0 18px 30px -22px rgba(170, 200, 255, 0.35),
-    inset 0 1px 1px rgba(255, 255, 255, 0.3),
-    inset 0 0 0 1px rgba(255, 255, 255, 0.1);
-  transition: --lg-tint 0.35s, box-shadow 0.35s, transform 0.2s;
-
-  &:hover {
-    --lg-tint: rgba(245, 158, 11, 0.08);
-    transform: translateY(-2px);
-    box-shadow:
-      0 10px 30px rgba(3, 6, 24, 0.4),
-      0 2px 8px rgba(3, 6, 24, 0.25),
-      0 18px 30px -22px rgba(245, 158, 11, 0.4),
-      inset 0 1px 1px rgba(255, 255, 255, 0.35),
-      inset 0 0 0 1px rgba(245, 158, 11, 0.3);
-  }
-
-  &:focus-visible {
-    outline: none;
-  }
+  align-self: flex-start;
+  padding: 11px 20px;
+  font-size: 0.86rem;
 
   svg {
-    color: $color-gold;
+    color: $color-accent;
     flex-shrink: 0;
   }
 }
@@ -448,31 +421,31 @@ function onThumbnailInputChange(event: Event) {
   display: flex;
   flex-direction: column;
   gap: 6px;
-  width: 120px;
+  width: 140px;
 
   img {
     width: 100%;
     aspect-ratio: 16 / 10;
     object-fit: cover;
-    border-radius: 12px;
-    box-shadow: 0 4px 12px rgba(3, 6, 24, 0.35);
+    border-radius: 12px 12px 12px 4px;
+    box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.08), 0 4px 12px rgba(0, 0, 0, 0.35);
   }
 
   span {
-    font-size: 0.75rem;
+    @include mono-label;
+    font-size: 0.6rem;
     color: $color-faint;
-    text-align: center;
   }
 }
 
 .thumb-arrow {
-  color: $color-gold;
+  color: $color-accent;
   flex-shrink: 0;
 }
 
 .file-name {
+  font-family: $font-mono;
+  font-size: 0.74rem;
   color: $color-muted;
-  font-size: 0.82rem;
-  font-weight: 500;
 }
 </style>

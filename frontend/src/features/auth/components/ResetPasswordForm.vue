@@ -69,6 +69,7 @@ const onSubmit = handleSubmit(async (values) => {
 
 <style lang="scss" scoped>
 @use "@/assets/styles/abstracts/variables" as *;
+@use "@/assets/styles/abstracts/mixins" as *;
 
 .reset-password-form {
   display: flex;
@@ -82,49 +83,55 @@ const onSubmit = handleSubmit(async (values) => {
   gap: 8px;
 
   label {
-    font-size: 0.88rem;
-    font-weight: 600;
-    color: $color-muted;
+    @include mono-label;
+    font-size: 0.64rem;
+    color: $color-faint;
   }
 
   input {
+    box-sizing: border-box;
+    width: 100%;
+    min-width: 0;
     height: 48px;
-    padding: 0 18px;
-    border-radius: 16px;
+    padding: 0 16px;
+    border-radius: $radius-md;
     border: none;
-    background: rgba(255, 255, 255, 0.04);
-    box-shadow: inset 0 1px 1px rgba(255, 255, 255, 0.3), inset 0 0 0 1px rgba(255, 255, 255, 0.1);
+    background: rgba(13, 15, 19, 0.45);
+    box-shadow: inset 0 0 0 1px $color-hairline;
     color: $color-ink;
     font: inherit;
     font-size: 0.94rem;
     outline: none;
-    transition: background 0.3s, box-shadow 0.3s;
+    transition: box-shadow 0.2s;
 
     &::placeholder {
       color: $color-faint;
     }
 
-    &:focus {
-      background: rgba(255, 255, 255, 0.07);
-      box-shadow: inset 0 1px 1px rgba(255, 255, 255, 0.35), inset 0 0 0 1px rgba(167, 139, 250, 0.5), 0 0 0 4px rgba(139, 92, 246, 0.18);
+    &:focus,
+    &:focus-visible {
+      outline: none;
+      box-shadow: inset 0 0 0 1px $color-hairline, 0 0 0 2px rgba($color-accent, 0.6);
     }
   }
 
   .error {
-    color: #f87171;
-    font-size: 0.82rem;
+    color: $color-danger;
+    font-size: 0.8rem;
     font-weight: 500;
   }
-}
-
-.token-error {
-  color: #f87171;
-  font-size: 0.88rem;
-  text-align: center;
 }
 
 .btn {
   height: 48px;
   margin-top: 8px;
+}
+
+.token-error {
+  padding: 10px 12px;
+  border-radius: $radius-xs;
+  box-shadow: inset 3px 0 0 0 $color-danger, inset 0 0 0 1px $color-hairline;
+  color: $color-danger;
+  font-size: 0.86rem;
 }
 </style>

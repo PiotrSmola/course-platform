@@ -3,17 +3,10 @@
     <div class="auth-container">
       <div class="auth-card glass">
         <div class="auth-header">
-          <svg class="logo-mark" viewBox="0 0 64 64" aria-hidden="true">
-            <defs>
-              <linearGradient id="logo-g" x1="0" y1="0" x2="1" y2="1">
-                <stop offset="0" stop-color="#8b5cf6"/>
-                <stop offset="1" stop-color="#22d3ee"/>
-              </linearGradient>
-            </defs>
-            <rect x="14" y="6" width="36" height="52" rx="10" fill="url(#logo-g)"/>
-            <rect x="26" y="11" width="12" height="3" rx="1.5" fill="rgba(255,255,255,.85)"/>
-          </svg>
-          <h1>CoursePlatform</h1>
+          <router-link class="auth-wordmark" :to="{ name: 'Home' }" aria-label="CoursePlatform — strona główna">
+            Course<em>Platform</em>
+          </router-link>
+          <span class="auth-header__label">Konto</span>
         </div>
         <router-view />
       </div>
@@ -23,42 +16,62 @@
 
 <style lang="scss" scoped>
 @use "@/assets/styles/abstracts/variables" as *;
+@use "@/assets/styles/abstracts/mixins" as *;
 
 .auth-layout {
   display: flex;
   align-items: center;
   justify-content: center;
   min-height: 100vh;
-  padding: 2rem;
+  padding: 2rem 1rem;
 }
 
 .auth-container {
   width: 100%;
-  max-width: 440px;
+  max-width: 460px;
 }
 
 .auth-card {
-  --lg-r: 36px;
-  --lg-blur: 1.5px;
-  padding: 48px 40px;
+  --lg-r: #{$radius-card};
+  --lg-blur: 10px;
+  --lg-sat: 150%;
+  --lg-tint: rgba(13, 15, 19, 0.3);
+  --lg-glow: 0.06;
+  padding: 32px 40px 36px;
+
+  @media (max-width: 480px) {
+    padding: 26px 22px 28px;
+  }
 }
 
 .auth-header {
   display: flex;
-  flex-direction: column;
-  align-items: center;
+  align-items: baseline;
+  justify-content: space-between;
   gap: 16px;
-  margin-bottom: 40px;
+  margin-bottom: 32px;
+  padding-bottom: 20px;
+  border-bottom: 1px solid $color-hairline;
+}
 
-  .logo-mark {
-    width: 48px;
-    height: 48px;
-  }
+.auth-wordmark {
+  font-family: $font-display;
+  font-size: 1.3rem;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  line-height: 1;
+  color: $color-ink;
+  text-decoration: none;
 
-  h1 {
-    font-size: 1.5rem;
-    font-weight: 700;
-    letter-spacing: 0.02em;
+  em {
+    font-style: normal;
+    color: $color-muted;
   }
+}
+
+.auth-header__label {
+  @include mono-label;
+  font-size: 0.62rem;
+  color: $color-faint;
 }
 </style>

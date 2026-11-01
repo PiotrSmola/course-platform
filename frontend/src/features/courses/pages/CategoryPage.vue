@@ -2,9 +2,16 @@
   <div class="category-page">
     <div class="category-hero">
       <div class="container">
-        <span class="eyebrow">Kategoria</span>
-        <h1 class="category-title">{{ categoryName }}</h1>
-        <p class="category-desc">{{ categoryDescription }}</p>
+        <header class="category-head">
+          <div class="category-head__main">
+            <span class="eyebrow">Kategoria</span>
+            <h1 class="category-title">{{ categoryName }}</h1>
+          </div>
+          <div class="category-head__aside">
+            <p class="category-count"><span>{{ String(totalCount).padStart(2, '0') }}</span> {{ totalCount === 1 ? 'kurs' : 'kursów' }}</p>
+            <p class="category-desc">{{ categoryDescription }}</p>
+          </div>
+        </header>
 
         <div class="category-toolbar">
           <div class="sort-box" ref="sortBoxRef">
@@ -185,7 +192,7 @@
             :class="{ active: page === state.pageNumber }"
             @click="setPage(page)"
           >
-            {{ page }}
+            {{ String(page).padStart(2, '0') }}
           </button>
           <button class="page-btn" :disabled="state.pageNumber >= totalPages" @click="setPage(state.pageNumber + 1)">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg>
@@ -344,122 +351,110 @@ const visiblePages = computed(() => {
 <style lang="scss" scoped>
 @use "@/assets/styles/abstracts/variables" as *;
 @use "@/assets/styles/abstracts/mixins" as *;
-@use "sass:color";
 
 .category-page {
-  padding-top: $header-height;
   min-height: 100vh;
 }
 
 .category-hero {
-  padding: 48px 0 28px;
-  border-bottom: 1px solid $color-hairline;
+  padding: 32px 0 28px;
 }
 
-.eyebrow {
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  padding: 6px 14px;
-  font-size: 0.78rem;
-  font-weight: 600;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
-  color: $color-ink;
-  background: rgba(245, 158, 11, 0.12);
-  border: 1px solid rgba(245, 158, 11, 0.28);
-  border-radius: 999px;
-  margin-bottom: 16px;
+.category-head {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 420px);
+  column-gap: 48px;
+  align-items: end;
+  padding-bottom: 28px;
+  margin-bottom: 24px;
+  border-bottom: 1px solid $color-hairline;
+
+  @media (max-width: 860px) {
+    grid-template-columns: 1fr;
+    row-gap: 18px;
+  }
 }
 
 .category-title {
-  font-family: $font-display;
-  font-size: $font-size-xl;
-  font-weight: 600;
-  letter-spacing: -0.02em;
-  margin-bottom: 12px;
-  background: $color-grad-text;
-  -webkit-background-clip: text;
-  background-clip: text;
-  -webkit-text-fill-color: transparent;
+  font-size: $font-size-2xl;
+  margin-top: 18px;
+  overflow-wrap: anywhere;
+}
+
+.category-count {
+  @include mono-label;
+  color: $color-muted;
+  margin-bottom: 8px;
+
+  span {
+    color: $color-accent;
+  }
 }
 
 .category-desc {
   color: $color-muted;
-  font-size: 1rem;
-  max-width: 720px;
-  margin-bottom: 24px;
-  line-height: 1.55;
+  font-size: 0.95rem;
+  line-height: 1.6;
 }
 
 .category-toolbar {
   display: flex;
-  gap: 16px;
+  justify-content: flex-end;
+  gap: 12px;
   flex-wrap: wrap;
   align-items: center;
 }
 
 .sort-box {
   position: relative;
+  width: min(100%, 280px);
+}
+
+.sort-trigger::before {
+  inset: 0;
+  clip-path: none;
 }
 
 .sort-trigger {
   @include liquid-glass;
-  --lg-r: 14px;
-  --lg-blur: 0px;
-  --lg-tint: rgba(255, 255, 255, 0.04);
+  --lg-r: #{$radius-md};
+  --lg-blur: 10px;
+  --lg-tint: rgba(13, 15, 19, 0.3);
   appearance: none;
+  width: 100%;
   background: none;
   border: none;
   font: inherit;
   font-size: 0.9rem;
   color: $color-ink;
-  padding: 13px 16px;
+  padding: 0 16px;
+  height: 48px;
   cursor: pointer;
-  outline: none;
-  min-width: 240px;
   display: inline-flex;
   align-items: center;
-  gap: 10px;
+  gap: 12px;
   text-align: left;
-  box-shadow:
-    0 10px 30px rgba(3, 6, 24, 0.35),
-    0 2px 8px rgba(3, 6, 24, 0.22),
-    0 18px 30px -22px rgba(170, 200, 255, 0.35),
-    inset 0 1px 1px rgba(255, 255, 255, 0.3),
-    inset 0 0 0 1px rgba(255, 255, 255, 0.1);
-  transition: --lg-tint 0.35s, box-shadow 0.35s, transform 0.2s;
+  transition: --lg-tint 0.3s;
 
-  &:hover {
-    --lg-tint: rgba(245, 158, 11, 0.08);
-    box-shadow:
-      0 10px 30px rgba(3, 6, 24, 0.4),
-      0 2px 8px rgba(3, 6, 24, 0.25),
-      0 18px 30px -22px rgba(245, 158, 11, 0.4),
-      inset 0 1px 1px rgba(255, 255, 255, 0.35),
-      inset 0 0 0 1px rgba(245, 158, 11, 0.3);
-  }
-
+  &:hover,
   &.open {
-    --lg-tint: rgba(245, 158, 11, 0.1);
+    --lg-tint: rgba(255, 255, 255, 0.07);
   }
 
   .sort-label {
+    @include mono-label;
+    font-size: 0.62rem;
     color: $color-faint;
-    font-size: 0.78rem;
-    font-weight: 500;
-    text-transform: uppercase;
-    letter-spacing: 0.06em;
   }
 
   .sort-value {
     flex: 1;
     color: $color-ink;
-    font-weight: 600;
+    font-weight: 500;
   }
 
   .sort-arrow {
-    color: $color-gold;
+    color: $color-muted;
     transition: transform 0.25s;
     flex-shrink: 0;
 
@@ -467,49 +462,36 @@ const visiblePages = computed(() => {
       transform: rotate(180deg);
     }
   }
-
-  &.open .sort-arrow {
-    color: $color-ink;
-  }
 }
 
 .sort-menu {
   @include liquid-glass;
   --lg-r: 16px;
-  --lg-blur: 2px;
-  --lg-tint: rgba(17, 24, 39, 0.55);
+  --lg-blur: 18px;
+  --lg-tint: #{rgba($color-bg, 0.72)};
   position: absolute;
   top: calc(100% + 8px);
   right: 0;
-  min-width: 260px;
+  width: 100%;
   margin: 0;
-  padding: 8px;
+  padding: 6px;
   list-style: none;
   z-index: 30;
-  box-shadow:
-    0 24px 60px rgba(3, 6, 24, 0.55),
-    0 4px 14px rgba(3, 6, 24, 0.35),
-    inset 0 1px 1px rgba(255, 255, 255, 0.18),
-    inset 0 0 0 1px rgba(255, 255, 255, 0.1);
 }
 
 .sort-blob {
   position: absolute;
   top: 0;
   left: 0;
-  border-radius: 12px;
-  background: linear-gradient(135deg, rgba(245, 158, 11, 0.16), rgba(245, 158, 11, 0.08));
-  box-shadow:
-    inset 1.5px 1.5px 2px -1px rgba(255, 255, 255, 0.35),
-    inset -1.5px -1.5px 2px -1px rgba(255, 255, 255, 0.08),
-    inset 0 -8px 16px -10px rgba(245, 158, 11, 0.25);
+  border-radius: 10px;
+  background: rgba($color-ink, 0.08);
   opacity: 0;
   pointer-events: none;
   transition:
-    left 0.45s cubic-bezier(0.3, 1.55, 0.35, 1),
-    width 0.45s cubic-bezier(0.3, 1.55, 0.35, 1),
-    top 0.45s cubic-bezier(0.3, 1.55, 0.35, 1),
-    height 0.45s cubic-bezier(0.3, 1.55, 0.35, 1),
+    left 0.45s $ease-jelly,
+    width 0.45s $ease-jelly,
+    top 0.45s $ease-jelly,
+    height 0.45s $ease-jelly,
     opacity 0.2s;
 }
 
@@ -520,89 +502,94 @@ const visiblePages = computed(() => {
   align-items: center;
   justify-content: space-between;
   gap: 12px;
-  padding: 12px 14px;
+  padding: 11px 12px;
   font-size: 0.9rem;
-  color: $color-ink;
+  color: $color-muted;
   cursor: pointer;
   transition: color 0.18s;
 
-  svg {
-    color: $color-gold;
-    flex-shrink: 0;
-  }
-
+  &:hover,
   &.active {
     color: $color-ink;
-    font-weight: 600;
+  }
+
+  svg {
+    color: $color-accent;
+    flex-shrink: 0;
   }
 }
 
 .category-body {
   display: grid;
-  grid-template-columns: 260px 1fr;
-  gap: 32px;
-  padding-top: 32px;
-  padding-bottom: 80px;
+  grid-template-columns: 290px minmax(0, 1fr);
+  gap: 36px;
+  padding-top: 12px;
+  padding-bottom: 96px;
 
   @media (max-width: 860px) {
-    grid-template-columns: 1fr;
+    grid-template-columns: minmax(0, 1fr);
   }
 }
 
 .category-sidebar {
+  min-width: 0;
+
   @media (max-width: 860px) {
     order: -1;
   }
 }
 
 .filter-group {
-  --lg-r: 20px;
-  --lg-blur: 0px;
-  padding: 24px;
+  --lg-blur: 10px;
+  padding: 22px 22px 24px;
   position: sticky;
   top: calc($header-height + 24px);
+
+  &:hover {
+    transform: none;
+  }
 }
 
 .filter-header {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  margin-bottom: 20px;
+  padding-bottom: 14px;
+  margin-bottom: 18px;
+  border-bottom: 1px solid $color-hairline;
 
   h3 {
     font-family: $font-display;
-    font-size: 1.05rem;
-    font-weight: 600;
+    font-size: 1.2rem;
+    font-weight: 500;
   }
 }
 
 .filter-reset {
+  @include mono-label;
   background: none;
   border: none;
-  font: inherit;
-  font-size: 0.82rem;
-  color: $color-gold;
+  font-size: 0.62rem;
+  color: $color-accent;
   cursor: pointer;
-  padding: 0;
-  text-decoration: underline;
-
-  &:hover {
-    color: color.adjust($color-gold, $lightness: 10%);
-  }
+  padding: 0 0 2px;
+  border-bottom: 1px dashed rgba($color-accent, 0.5);
 }
 
 .filter-section {
-  margin-bottom: 24px;
+  padding-bottom: 18px;
+  margin-bottom: 18px;
+  border-bottom: 1px dashed $color-hairline;
 
   &:last-child {
+    padding-bottom: 0;
     margin-bottom: 0;
+    border-bottom: none;
   }
 
   h4 {
-    font-size: 0.82rem;
-    font-weight: 600;
-    text-transform: uppercase;
-    letter-spacing: 0.06em;
+    @include mono-label;
+    font-size: 0.62rem;
     color: $color-faint;
     margin-bottom: 12px;
   }
@@ -611,36 +598,32 @@ const visiblePages = computed(() => {
 .filter-options {
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: 9px;
 }
 
 .filter-chips {
   display: flex;
   flex-wrap: wrap;
-  gap: 8px;
+  gap: 6px;
 }
 
 .filter-chip {
+  @include tag;
   appearance: none;
-  background: rgba(255, 255, 255, 0.04);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  border-radius: 999px;
-  padding: 6px 14px;
-  font: inherit;
-  font-size: 0.82rem;
-  color: $color-muted;
+  border: none;
+  padding: 6px 9px;
   cursor: pointer;
-  transition: background 0.2s, color 0.2s, border-color 0.2s;
+  transition: color 0.2s, background 0.2s, box-shadow 0.2s;
 
   &:hover {
-    background: rgba(255, 255, 255, 0.08);
     color: $color-ink;
+    box-shadow: inset 0 0 0 1px rgba($color-ink, 0.3);
   }
 
   &.active {
-    background: rgba(245, 158, 11, 0.15);
-    border-color: rgba(245, 158, 11, 0.4);
-    color: #fbbf24;
+    color: $color-accent;
+    background: rgba($color-accent, 0.1);
+    box-shadow: inset 0 0 0 1px rgba($color-accent, 0.6);
   }
 }
 
@@ -653,31 +636,27 @@ const visiblePages = computed(() => {
   cursor: pointer;
   transition: color 0.2s;
 
-  &:hover {
+  &:hover,
+  &:has(input:checked) {
     color: $color-ink;
   }
 
   input[type="radio"] {
     appearance: none;
-    width: 16px;
-    height: 16px;
-    border: 2px solid $color-faint;
+    width: 14px;
+    height: 14px;
+    margin: 0;
     border-radius: 50%;
+    box-shadow: inset 0 0 0 1px rgba($color-ink, 0.35);
     flex-shrink: 0;
     cursor: pointer;
-    position: relative;
-    transition: border-color 0.2s;
+    transition: box-shadow 0.2s, background 0.2s;
 
     &:checked {
-      border-color: $color-gold;
-
-      &::after {
-        content: "";
-        position: absolute;
-        inset: 3px;
-        border-radius: 50%;
-        background: $color-gold;
-      }
+      background: $color-accent;
+      box-shadow:
+        inset 0 0 0 1px $color-accent,
+        inset 0 0 0 4px rgba(13, 15, 19, 0.9);
     }
   }
 }
@@ -687,13 +666,13 @@ const visiblePages = computed(() => {
 }
 
 .results-header {
+  @include mono-label;
   margin-bottom: 16px;
-  font-size: 0.9rem;
-  color: $color-muted;
+  color: $color-faint;
 
   strong {
-    color: $color-ink;
-    font-weight: 700;
+    color: $color-accent;
+    font-weight: 500;
   }
 }
 
@@ -712,66 +691,82 @@ const visiblePages = computed(() => {
 .category-empty {
   display: flex;
   flex-direction: column;
-  align-items: center;
-  justify-content: center;
+  align-items: flex-start;
   gap: 16px;
-  padding: 80px 20px;
-  text-align: center;
+  padding: 48px 0;
   color: $color-muted;
+  border-top: 1px solid $color-hairline;
+}
+
+.category-loading {
+  flex-direction: row;
+  align-items: center;
+
+  p {
+    @include mono-label;
+    color: $color-faint;
+  }
 }
 
 .category-pagination {
   display: flex;
   justify-content: center;
   align-items: center;
-  gap: 8px;
-  margin-top: 48px;
+  gap: 4px;
+  margin-top: 56px;
+  padding-top: 24px;
+  border-top: 1px solid $color-hairline;
 }
 
 .page-btn {
-  @include liquid-glass;
-  --lg-r: 10px;
-  --lg-blur: 0px;
   min-width: 40px;
   height: 40px;
   display: flex;
   align-items: center;
   justify-content: center;
   border: none;
-  font: inherit;
-  font-size: 0.9rem;
-  font-weight: 600;
-  color: $color-ink;
+  border-radius: $radius-xs;
+  background: none;
+  font-family: $font-mono;
+  font-size: 0.82rem;
+  letter-spacing: 0.06em;
+  color: $color-muted;
   cursor: pointer;
-  padding: 0 12px;
-  transition: transform 0.15s, box-shadow 0.2s;
+  padding: 0 10px;
+  transition: color 0.2s, background 0.2s;
 
   &:hover:not(:disabled) {
-    transform: translateY(-2px);
-    box-shadow: 0 8px 20px rgba(3, 6, 24, 0.4);
+    color: $color-ink;
+    background: rgba($color-ink, 0.06);
   }
 
   &:disabled {
-    opacity: 0.4;
+    color: $color-faint;
     cursor: not-allowed;
   }
 
   &.active {
-    --lg-tint: rgba(245, 158, 11, 0.18);
-    box-shadow: 0 0 0 1px rgba(245, 158, 11, 0.4);
+    color: $color-on-accent;
+    background: $color-accent;
   }
 }
 
 .spinner {
-  width: 40px;
-  height: 40px;
-  border: 3px solid rgba(255, 255, 255, 0.1);
-  border-top-color: $color-gold;
+  width: 22px;
+  height: 22px;
+  border: 2px solid rgba($color-ink, 0.1);
+  border-top-color: $color-accent;
   border-radius: 50%;
   animation: spin 0.8s linear infinite;
 }
 
 @keyframes spin {
   to { transform: rotate(360deg); }
+}
+
+@media (max-width: 620px) {
+  .sort-box {
+    width: 100%;
+  }
 }
 </style>

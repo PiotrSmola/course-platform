@@ -2,11 +2,13 @@
   <div class="list-page">
     <div class="list-hero">
       <div class="container">
-        <span class="eyebrow">Wszystkie technologie</span>
-        <h1 class="list-title">Przeglądaj technologie</h1>
-        <p class="list-subtitle">
-          Kursy pogrupowane według konkretnych technologii i języków — znajdź materiały dopasowane do Twojego stosu technologicznego.
-        </p>
+        <header class="section-head list-head">
+          <span class="eyebrow">Wszystkie technologie</span>
+          <h1 class="list-title">Przeglądaj <em>technologie</em></h1>
+          <p class="list-subtitle">
+            Kursy pogrupowane według konkretnych technologii i języków — znajdź materiały dopasowane do Twojego stosu technologicznego.
+          </p>
+        </header>
       </div>
     </div>
 
@@ -26,18 +28,16 @@
 
       <div v-else class="list-grid">
         <router-link
-          v-for="item in items"
+          v-for="(item, index) in items"
           :key="item.id"
           class="list-card glass-card"
           :to="{ name: 'TechnologyDetails', params: { slug: item.slug } }"
         >
           <div class="card-head">
-            <span class="card-icon" :data-slug="item.slug">{{ initials(item.name) }}</span>
-            <div class="card-meta">
-              <h3 class="card-title">{{ item.name }}</h3>
-              <span class="card-slug">/{{ item.slug }}</span>
-            </div>
+            <span class="card-num">No. {{ String(index + 1).padStart(2, '0') }}</span>
+            <span class="card-slug">/{{ item.slug }}</span>
           </div>
+          <h3 class="card-title">{{ item.name }}</h3>
           <p class="card-desc">{{ item.description || `Kursy z technologii ${item.name}.` }}</p>
           <div class="card-foot">
             <span class="card-count">
@@ -73,11 +73,6 @@ const items = computed(() => data.value ?? [])
 
 const counts = reactive<Record<string, number>>({})
 
-function initials(name: string): string {
-  const parts = name.trim().split(/\s+/).slice(0, 2)
-  return parts.map((p) => p.charAt(0).toUpperCase()).join('') || '·'
-}
-
 async function fetchCount(id: string) {
   try {
     const result = await getCourses({ technologyIds: [id], status: CourseStatus.Published, pageSize: 1 })
@@ -96,69 +91,46 @@ items.value.forEach((tech) => {
 
 <style lang="scss" scoped>
 @use "@/assets/styles/abstracts/variables" as *;
+@use "@/assets/styles/abstracts/mixins" as *;
 
 .list-page {
-  padding-top: $header-height;
   min-height: 100vh;
 }
 
 .list-hero {
-  padding: 56px 0 36px;
-  border-bottom: 1px solid $color-hairline;
-  text-align: center;
+  padding: 32px 0 0;
 }
 
-.eyebrow {
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  padding: 6px 14px;
-  font-size: 0.78rem;
-  font-weight: 600;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
-  color: $color-ink;
-  background: rgba(34, 211, 238, 0.12);
-  border: 1px solid rgba(34, 211, 238, 0.28);
-  border-radius: 999px;
-  margin-bottom: 16px;
+.list-head {
+  margin-bottom: 40px;
 }
 
 .list-title {
-  font-family: $font-display;
-  font-size: $font-size-xl;
-  font-weight: 600;
-  letter-spacing: -0.02em;
-  margin-bottom: 12px;
-  background: $color-grad-text;
-  -webkit-background-clip: text;
-  background-clip: text;
-  -webkit-text-fill-color: transparent;
+  font-size: $font-size-2xl;
+  margin-top: 18px;
 }
 
 .list-subtitle {
-  color: $color-muted;
-  font-size: 1.02rem;
-  max-width: 640px;
-  margin: 0 auto;
-  line-height: 1.55;
+  font-size: 0.98rem;
+  line-height: 1.6;
 }
 
 .list-body {
-  padding-top: 48px;
-  padding-bottom: 80px;
+  padding-bottom: 96px;
 }
 
 .list-loading,
 .list-empty {
   display: flex;
-  flex-direction: column;
   align-items: center;
-  justify-content: center;
-  gap: 16px;
-  padding: 80px 20px;
-  text-align: center;
+  gap: 14px;
+  padding: 48px 0;
   color: $color-muted;
+}
+
+.list-loading p {
+  @include mono-label;
+  color: $color-faint;
 }
 
 .list-grid {
@@ -168,72 +140,46 @@ items.value.forEach((tech) => {
 }
 
 .list-card {
-  --lg-r: 20px;
-  --lg-blur: 0px;
-  padding: 24px;
+  --lg-blur: 10px;
+  padding: 22px 24px 20px;
   text-decoration: none;
   color: inherit;
   display: flex;
   flex-direction: column;
-  gap: 16px;
-  min-height: 220px;
-  transition: transform 0.25s, box-shadow 0.25s, border-color 0.25s;
-
-  &:hover {
-    transform: translateY(-4px);
-    border-color: rgba(34, 211, 238, 0.35);
-    box-shadow:
-      0 24px 60px rgba(3, 6, 24, 0.55),
-      0 4px 14px rgba(3, 6, 24, 0.35),
-      0 0 0 1px rgba(34, 211, 238, 0.3),
-      inset 0 1px 1px rgba(255, 255, 255, 0.18);
-  }
+  min-height: 230px;
 }
 
 .card-head {
   display: flex;
   align-items: center;
-  gap: 14px;
+  justify-content: space-between;
+  gap: 12px;
+  padding-bottom: 14px;
+  margin-bottom: 18px;
+  border-bottom: 1px solid $color-hairline;
 }
 
-.card-icon {
-  width: 48px;
-  height: 48px;
-  flex-shrink: 0;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  border-radius: 14px;
-  background: linear-gradient(135deg, rgba(34, 211, 238, 0.25), rgba(139, 92, 246, 0.18));
-  box-shadow:
-    inset 1.5px 1.5px 2px -1px rgba(255, 255, 255, 0.35),
-    inset -1.5px -1.5px 2px -1px rgba(255, 255, 255, 0.08),
-    inset 0 -8px 16px -10px rgba(34, 211, 238, 0.25);
-  font-family: $font-display;
-  font-weight: 700;
-  font-size: 1rem;
-  color: $color-ink;
-  letter-spacing: -0.02em;
+.card-num {
+  @include mono-label;
+  color: $color-accent;
 }
 
-.card-meta {
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-  min-width: 0;
+.card-slug {
+  font-family: $font-mono;
+  font-size: 0.7rem;
+  color: $color-faint;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .card-title {
   font-family: $font-display;
-  font-size: 1.1rem;
-  font-weight: 600;
+  font-size: 1.4rem;
+  font-weight: 500;
+  line-height: 1.1;
   color: $color-ink;
-}
-
-.card-slug {
-  font-size: 0.78rem;
-  color: $color-faint;
-  font-family: ui-monospace, "SF Mono", Menlo, monospace;
+  margin-bottom: 10px;
 }
 
 .card-desc {
@@ -241,50 +187,57 @@ items.value.forEach((tech) => {
   color: $color-muted;
   line-height: 1.55;
   flex: 1;
+  margin-bottom: 18px;
 }
 
 .card-foot {
   display: flex;
-  align-items: center;
+  align-items: baseline;
   justify-content: space-between;
-  padding-top: 8px;
-  border-top: 1px solid rgba(255, 255, 255, 0.06);
+  padding-top: 14px;
+  border-top: 1px dashed $color-hairline;
 }
 
 .card-count {
   display: flex;
   align-items: baseline;
-  gap: 6px;
-  font-size: 0.85rem;
-  color: $color-muted;
+  gap: 8px;
 
   strong {
-    color: $color-cyan;
     font-family: $font-display;
-    font-size: 1.1rem;
-    font-weight: 700;
+    font-size: 1.6rem;
+    font-weight: 500;
+    line-height: 1;
+    color: $color-ink;
+  }
+
+  span {
+    @include mono-label;
+    font-size: 0.62rem;
+    color: $color-faint;
   }
 }
 
 .card-cta {
+  @include mono-label;
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  font-size: 0.85rem;
-  font-weight: 600;
-  color: $color-cyan;
-  transition: gap 0.2s;
+  font-size: 0.64rem;
+  color: $color-muted;
+  transition: gap 0.2s, color 0.2s;
 }
 
 .list-card:hover .card-cta {
   gap: 10px;
+  color: $color-accent;
 }
 
 .spinner {
-  width: 40px;
-  height: 40px;
-  border: 3px solid rgba(255, 255, 255, 0.1);
-  border-top-color: $color-gold;
+  width: 22px;
+  height: 22px;
+  border: 2px solid rgba($color-ink, 0.1);
+  border-top-color: $color-accent;
   border-radius: 50%;
   animation: spin 0.8s linear infinite;
 }

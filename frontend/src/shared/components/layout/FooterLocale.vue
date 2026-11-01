@@ -16,6 +16,8 @@
   display: inline-flex;
   align-items: center;
   gap: 8px;
+  font-family: $font-mono;
+  letter-spacing: 0.08em;
   color: $color-faint;
 }
 
@@ -23,7 +25,7 @@ svg {
   width: 21px;
   height: 14px;
   overflow: hidden;
-  border-radius: 3px;
-  box-shadow: 0 1px 5px rgba(3, 6, 24, 0.35);
+  border-radius: 2px;
+  box-shadow: 0 0 0 1px $color-hairline;
 }
 </style>

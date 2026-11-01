@@ -19,6 +19,7 @@
             @pause="savePosition"
           ></video>
           <div class="playback-controls">
+            <span class="player-label">Odtwarzacz</span>
             <label for="playback-rate">Prędkość</label>
             <select id="playback-rate" v-model.number="playbackRate" @change="applyPlaybackRate">
               <option :value="0.75">0.75x</option>
@@ -30,35 +31,39 @@
             </select>
           </div>
         </div>
-        <div class="lesson-info glass">
-          <div class="lesson-header">
-            <h1>{{ lesson.title }}</h1>
-            <div v-if="!isTrialAccess" class="progress-badge">{{ progressPercent }}%</div>
-          </div>
-          <div v-if="!isTrialAccess" class="progress-bar">
-            <div class="progress-fill" :style="{ width: `${progressPercent}%` }"></div>
-          </div>
-          <p v-if="lesson.description">{{ lesson.description }}</p>
-          <p v-if="isTrialAccess" class="trial-notice">Trial obejmuje dwie pierwsze lekcje kursu.</p>
-          <div class="lesson-meta">
+        <div class="lesson-info">
+          <p class="lesson-kicker">
+            <span v-if="lessonIndex >= 0">Lekcja {{ String(lessonIndex + 1).padStart(2, '0') }} / {{ String(totalLessons).padStart(2, '0') }}</span>
             <span>{{ lesson.moduleTitle }}</span>
             <span>{{ lesson.duration }} min</span>
+          </p>
+          <div class="lesson-header">
+            <h1>{{ lesson.title }}</h1>
           </div>
-          <button class="btn btn-primary" @click="complete" :disabled="!!lesson?.isCompleted || isSubmitting">
-            {{ lesson.isCompleted ? 'Ukończono' : 'Oznacz jako ukończone' }}
-          </button>
+          <p v-if="lesson.description" class="lesson-description">{{ lesson.description }}</p>
+          <p v-if="isTrialAccess" class="trial-notice">Trial obejmuje dwie pierwsze lekcje kursu.</p>
+          <div v-if="!isTrialAccess" class="course-progress">
+            <span class="progress-label">Postęp kursu</span>
+            <div class="progress-bar" role="progressbar" :aria-valuenow="progressPercent" aria-valuemin="0" aria-valuemax="100">
+              <div class="progress-fill" :style="{ width: `${progressPercent}%` }"></div>
+            </div>
+            <span class="progress-badge">{{ progressPercent }}%</span>
+          </div>
           <div class="lesson-navigation">
             <button
               type="button"
-              class="btn btn-ghost"
+              class="btn btn-ghost nav-btn"
               :disabled="!previousLesson"
               @click="previousLesson && navigateToLesson(previousLesson.id)"
             >
               ← Poprzednia lekcja
             </button>
+            <button class="btn btn-primary complete-btn" @click="complete" :disabled="!!lesson?.isCompleted || isSubmitting">
+              {{ lesson.isCompleted ? 'Ukończono' : 'Oznacz jako ukończone' }}
+            </button>
             <button
               type="button"
-              class="btn btn-ghost"
+              class="btn btn-ghost nav-btn"
               :disabled="!nextLesson"
               @click="nextLesson && navigateToLesson(nextLesson.id)"
             >
@@ -277,153 +282,184 @@ onBeforeUnmount(() => {
 </script>
 
 <style lang="scss" scoped>
-@use "@/assets/styles/abstracts/variables" as *;
-@use "@/assets/styles/abstracts/mixins" as *;
-
 .learning-page {
-  padding: calc($header-height + 40px) 0 80px;
+  padding: 24px 0 80px;
 }
 
 .learning-layout {
   display: grid;
-  grid-template-columns: 280px 1fr;
-  gap: 24px;
+  grid-template-columns: 320px minmax(0, 1fr);
+  gap: 32px;
   align-items: start;
 
   @media (max-width: 880px) {
     grid-template-columns: 1fr;
+    gap: 20px;
   }
 }
 
 .video-section {
   display: flex;
   flex-direction: column;
-  gap: 24px;
+  gap: 28px;
+  min-width: 0;
 }
 
 .video-container {
-  --lg-r: 28px;
-  --lg-blur: 0px;
-  padding: 16px;
+  --lg-r: #{$radius-card};
+  --lg-blur: 12px;
+  --lg-tint: rgba(13, 15, 19, 0.28);
+  padding: 12px;
   overflow: hidden;
 
   video {
-    width: 100%;
-    border-radius: 20px;
     display: block;
+    width: 100%;
+    aspect-ratio: 16 / 9;
+    border-radius: 14px 14px 14px 4px;
+    background: #050608;
+    box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.08);
   }
 }
 
 .playback-controls {
   display: flex;
   align-items: center;
-  gap: 10px;
-  margin-top: 12px;
+  gap: 12px;
+  padding: 12px 6px 2px;
+
+  .player-label {
+    @include mono-label;
+    margin-right: auto;
+    font-size: 0.64rem;
+    color: $color-faint;
+  }
 
   label {
+    @include mono-label;
+    font-size: 0.64rem;
     color: $color-muted;
-    font-size: 0.85rem;
   }
 
   select {
-    border-radius: 10px;
-    border: 1px solid rgba(255, 255, 255, 0.12);
-    background: rgba(255, 255, 255, 0.04);
+    min-height: 36px;
+    padding: 0 12px;
+    border: none;
+    border-radius: $radius-sm;
+    background: rgba(13, 15, 19, 0.45);
+    box-shadow: inset 0 0 0 1px $color-hairline;
     color: $color-ink;
-    padding: 6px 10px;
+    font-family: $font-mono;
+    font-size: 0.8rem;
+
+    &:focus {
+      outline: none;
+      box-shadow: inset 0 0 0 1px $color-hairline, 0 0 0 2px rgba($color-accent, 0.6);
+    }
   }
 }
 
 .lesson-info {
-  --lg-r: 28px;
-  --lg-blur: 0px;
-  padding: 28px;
-
-  h1 {
-    font-size: 1.4rem;
-    margin-bottom: 0;
-  }
-
-  p {
-    color: $color-muted;
-    font-size: 0.95rem;
-    margin-bottom: 20px;
-  }
+  padding: 4px 4px 28px;
+  border-bottom: 1px solid $color-hairline;
 }
 
-.lesson-header {
+.lesson-kicker {
+  @include mono-label;
   display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 12px;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-bottom: 14px;
+  font-size: 0.66rem;
+  color: $color-faint;
+
+  span:first-child {
+    color: $color-accent;
+  }
+
+  span + span::before {
+    content: "/";
+    margin-right: 10px;
+    color: $color-hairline;
+  }
 }
 
-.progress-badge {
-  font-size: 0.85rem;
-  font-weight: 700;
-  color: $color-gold;
-  padding: 6px 12px;
-  border-radius: 999px;
-  background: rgba(245, 158, 11, 0.12);
+.lesson-header h1 {
+  margin: 0;
+  font-size: clamp(1.7rem, 2.8vw, 2.4rem);
+  font-weight: 600;
+  line-height: 1.08;
+}
+
+.lesson-description {
+  max-width: 68ch;
+  margin: 16px 0 0;
+  color: $color-muted;
+  font-size: 0.98rem;
+  line-height: 1.6;
+}
+
+.trial-notice {
+  @include mono-label;
+  margin: 18px 0 0;
+  color: $color-accent;
+}
+
+.course-progress {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 16px;
+  margin-top: 26px;
+}
+
+.progress-label {
+  @include mono-label;
+  font-size: 0.64rem;
+  color: $color-faint;
 }
 
 .progress-bar {
-  height: 6px;
-  border-radius: 999px;
-  background: rgba(255, 255, 255, 0.08);
+  height: 4px;
+  border-radius: 2px;
+  background: rgba($color-ink, 0.1);
   overflow: hidden;
-  margin-bottom: 20px;
 }
 
 .progress-fill {
   height: 100%;
-  border-radius: 999px;
-  background: linear-gradient(90deg, $color-gold, #fbbf24);
-  transition: width 0.4s ease;
+  border-radius: 2px;
+  background: $color-accent;
+  transition: width 0.4s $ease-out;
+}
+
+.progress-badge {
+  font-family: $font-mono;
+  font-size: 0.78rem;
+  font-variant-numeric: tabular-nums;
+  color: $color-ink;
 }
 
 .lesson-navigation {
   display: flex;
-  justify-content: space-between;
+  align-items: center;
   gap: 12px;
-  margin-top: 20px;
+  margin-top: 26px;
 
-  button {
-    flex: 1;
+  .complete-btn {
+    margin-left: auto;
   }
-}
 
-.trial-notice {
-  margin: 0 0 20px;
-  color: $color-gold !important;
-  font-size: 0.9rem !important;
-  line-height: 1.5;
-}
-
-.lesson-meta {
-  display: flex;
-  gap: 12px;
-  margin-bottom: 24px;
-
-  span {
-    padding: 6px 12px;
-    border-radius: 999px;
-    font-size: 0.82rem;
-    background: rgba(255, 255, 255, 0.06);
-    color: $color-muted;
+  .btn {
+    padding: 12px 22px;
+    font-size: 0.9rem;
   }
-}
-
-.btn {
-  width: 100%;
-  max-width: 320px;
-  padding: 14px;
 }
 
 .loading,
 .error-state {
   text-align: center;
-  padding: 120px 24px;
+  padding: 160px 24px 120px;
   color: $color-muted;
 
   h2 {
@@ -435,57 +471,36 @@ onBeforeUnmount(() => {
     margin-bottom: 24px;
   }
 }
-.learning-layout {
-  grid-template-columns: 320px minmax(0, 1fr);
-}
 
-.video-container,
-.lesson-info {
-  --lg-blur: 12px;
-}
-
-.playback-controls select {
-  min-height: 40px;
-  border-radius: 12px;
-  background: rgba(15, 23, 42, 0.7);
-}
-
-.progress-badge,
-.lesson-meta span {
-  @include liquid-glass;
-  --lg-r: 999px;
-  --lg-blur: 10px;
-  --lg-tint: rgba(255, 255, 255, 0.06);
-  background: transparent;
-}
-
-@media (max-width: 880px) {
-  .learning-layout {
-    grid-template-columns: 1fr;
-  }
+.loading {
+  @include mono-label;
 }
 
 @media (max-width: 560px) {
   .learning-page {
-    padding-top: calc($header-height + 20px);
+    padding-top: 12px;
   }
 
-  .lesson-info {
-    padding: 20px;
+  .course-progress {
+    grid-template-columns: minmax(0, 1fr) auto;
+
+    .progress-label {
+      grid-column: 1 / -1;
+    }
   }
 
-  .lesson-header,
-  .lesson-navigation,
-  .playback-controls {
-    align-items: stretch;
+  .lesson-navigation {
     flex-direction: column;
-  }
+    align-items: stretch;
 
-  .lesson-navigation .btn,
-  .playback-controls select {
-    width: 100%;
-    max-width: none;
+    .complete-btn {
+      order: -1;
+      margin-left: 0;
+    }
+
+    .btn {
+      width: 100%;
+    }
   }
 }
-
 </style>

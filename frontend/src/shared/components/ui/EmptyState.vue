@@ -30,6 +30,7 @@ const actionRoute = computed(() => {
 
 <style lang="scss" scoped>
 @use "@/assets/styles/abstracts/variables" as *;
+@use "@/assets/styles/abstracts/mixins" as *;
 
 .empty-state {
   display: flex;
@@ -37,11 +38,15 @@ const actionRoute = computed(() => {
   align-items: center;
   text-align: center;
   gap: 12px;
-  padding: 48px 24px;
+  padding: 56px 24px;
+  border: 1px dashed $color-hairline;
+  border-radius: $radius-card;
 
   h3 {
-    font-size: 1.15rem;
+    font-family: $font-display;
+    font-size: 1.4rem;
     font-weight: 600;
+    letter-spacing: -0.015em;
   }
 
   p {
@@ -49,6 +54,10 @@ const actionRoute = computed(() => {
     font-size: 0.94rem;
     max-width: 420px;
     line-height: 1.6;
+  }
+
+  .btn {
+    margin-top: 8px;
   }
 }
 </style>

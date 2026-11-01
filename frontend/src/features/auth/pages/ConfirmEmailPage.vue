@@ -53,14 +53,10 @@ onMounted(async () => {
 <style lang="scss" scoped>
 @use "@/assets/styles/abstracts/variables" as *;
 
-.confirm-email-page {
-  text-align: center;
-}
-
 .state {
   display: flex;
   flex-direction: column;
-  align-items: center;
+  align-items: flex-start;
   gap: 16px;
 
   p {
@@ -70,15 +66,20 @@ onMounted(async () => {
   }
 
   &.success h2 {
-    font-size: 1.25rem;
+    font-size: 2.4rem;
+    line-height: 1.05;
+  }
+
+  .btn {
+    margin-top: 6px;
   }
 }
 
 .spinner {
-  width: 36px;
-  height: 36px;
-  border: 3px solid rgba(255, 255, 255, 0.1);
-  border-top-color: $color-cyan;
+  width: 28px;
+  height: 28px;
+  border: 2px solid rgba($color-ink, 0.12);
+  border-top-color: $color-accent;
   border-radius: 50%;
   animation: spin 0.8s linear infinite;
 }

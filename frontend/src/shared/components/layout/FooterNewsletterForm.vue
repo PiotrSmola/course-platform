@@ -61,38 +61,38 @@ async function subscribe() {
 input {
   width: 100%;
   min-width: 0;
-  height: 48px;
-  padding: 0 18px;
+  height: 46px;
+  padding: 0 16px;
   border: 0;
-  border-radius: 999px;
+  border-radius: $radius-md;
   outline: 0;
-  background: rgba(255, 255, 255, 0.05);
-  box-shadow: inset 0 1px 1px rgba(255, 255, 255, 0.3), inset 0 0 0 1px rgba(255, 255, 255, 0.1);
+  background: rgba(13, 15, 19, 0.45);
+  box-shadow: inset 0 0 0 1px $color-hairline;
   color: $color-ink;
   font: inherit;
   font-size: 0.92rem;
-  transition: background 160ms ease, box-shadow 160ms ease;
+  transition: box-shadow 160ms ease;
 
   &::placeholder {
     color: $color-faint;
   }
 
   &:focus {
-    background: rgba(255, 255, 255, 0.08);
-    box-shadow: inset 0 1px 1px rgba(255, 255, 255, 0.35), inset 0 0 0 1px rgba(245, 158, 11, 0.5), 0 0 0 4px rgba(245, 158, 11, 0.15);
+    box-shadow: inset 0 0 0 1px $color-hairline, 0 0 0 2px rgba($color-accent, 0.6);
   }
 }
 
 .btn {
-  height: 48px;
+  height: 46px;
   padding-inline: 20px;
   font-size: 0.9rem;
 }
 
 .newsletter-message {
   grid-column: 1 / -1;
-  color: #bbf7d0;
-  font-size: 0.82rem;
+  color: $color-success;
+  font-family: $font-mono;
+  font-size: 0.72rem;
   line-height: 1.45;
 }
 

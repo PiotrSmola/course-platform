@@ -3,13 +3,17 @@
     <div class="container">
       <div class="hero-section">
         <div class="hero-content">
-          <span class="eyebrow course-author glass">{{ course.instructorName }}</span>
+          <span class="eyebrow">{{ course.technologyNames?.[0] ?? course.categoryNames?.[0] ?? 'Kurs' }}</span>
           <h1>{{ course.title }}</h1>
           <div class="title-actions">
+            <p class="byline">
+              <span class="byline-label">Prowadzi —</span>
+              <span class="byline-name">{{ course.instructorName }}</span>
+            </p>
             <button
               v-if="showWishlistButton"
               type="button"
-              class="wishlist-btn"
+              class="wishlist-btn glass"
               :class="{ active: course.isOnWishlist }"
               :disabled="wishlistToggle.isPending.value"
               :aria-label="course.isOnWishlist ? 'Usuń z listy życzeń' : 'Dodaj do listy życzeń'"
@@ -19,13 +23,27 @@
             </button>
           </div>
           <p class="description">{{ course.description }}</p>
-          <div class="meta">
-            <span class="badge level">{{ levelLabel }}</span>
-            <span class="badge modules">{{ course.modules.length }} modułów</span>
-            <span class="badge price">{{ course.price }} zł</span>
-          </div>
+          <dl class="spec">
+            <div class="spec-item">
+              <dt>Poziom</dt>
+              <dd>{{ levelLabel }}</dd>
+            </div>
+            <div class="spec-item">
+              <dt>Moduły</dt>
+              <dd>{{ course.modules.length }}</dd>
+            </div>
+            <div class="spec-item">
+              <dt>Lekcje</dt>
+              <dd>{{ lessonCount }}</dd>
+            </div>
+            <div class="spec-item">
+              <dt>Cena</dt>
+              <dd class="spec-price">{{ course.price }} zł</dd>
+            </div>
+          </dl>
           <div v-if="hasSubscriptionAccess" class="subscription-access glass-card">
             <div>
+              <span class="subscription-label">All-access</span>
               <strong>Masz aktywny All-access</strong>
               <p>Ten kurs jest już dostępny w Twojej subskrypcji.</p>
             </div>
@@ -42,20 +60,57 @@
           <div class="actions" v-if="!isInstructor && isPublished">
             <template v-if="authStore.isAuthenticated && !canAccessContent">
               <div v-if="isPaid" class="checkout-box">
-                <button
-                  type="button"
-                  class="coupon-toggle"
-                  :aria-expanded="showCouponField"
-                  aria-controls="coupon-field"
-                  @click="showCouponField = !showCouponField"
-                >
-                  {{ showCouponField ? 'Ukryj kod rabatowy' : 'Mam kod rabatowy' }}
-                </button>
-                <div v-if="showCouponField" id="coupon-field" class="coupon-row">
+                <div class="checkout-actions">
+                  <button
+                    class="btn btn-primary"
+                    :disabled="checkoutMutation.isPending.value"
+                    @click="buy"
+                  >
+                    {{
+                      checkoutMutation.isPending.value
+                        ? 'Przekierowujemy...'
+                        : `Kup teraz — ${displayPrice} zł`
+                    }}
+                  </button>
+                  <button
+                    type="button"
+                    class="btn btn-ghost"
+                    :disabled="subscriptionCheckoutMutation.isPending.value"
+                    @click="startSubscription"
+                  >
+                    {{
+                      subscriptionCheckoutMutation.isPending.value
+                        ? 'Przekierowujemy...'
+                        : `All-access — ${monthlyPriceLabel}/mies.`
+                    }}
+                  </button>
+                </div>
+                <div class="checkout-links">
+                  <button
+                    type="button"
+                    class="text-toggle"
+                    :aria-expanded="showCouponField"
+                    aria-controls="coupon-field"
+                    @click="showCouponField = !showCouponField"
+                  >
+                    {{ showCouponField ? 'Ukryj kod rabatowy' : 'Mam kod rabatowy' }}
+                  </button>
+                  <button
+                    type="button"
+                    class="text-toggle"
+                    :aria-expanded="showGiftForm"
+                    aria-controls="gift-purchase-form"
+                    @click="showGiftForm = !showGiftForm"
+                  >
+                    {{ showGiftForm ? 'Anuluj prezent' : 'Kup w prezencie' }}
+                  </button>
+                </div>
+                <div v-if="showCouponField" id="coupon-field" class="inline-field">
                   <input
                     v-model="couponCode"
                     type="text"
                     placeholder="Kod rabatowy"
+                    aria-label="Kod rabatowy"
                     :disabled="checkoutMutation.isPending.value || previewCouponMutation.isPending.value"
                   />
                   <button
@@ -68,67 +123,31 @@
                   </button>
                 </div>
                 <p v-if="couponPreview" class="coupon-preview">
-                  Cena: {{ couponPreview.originalAmount }} zł →
-                  {{ couponPreview.finalAmount }} zł
+                  Cena: <s>{{ couponPreview.originalAmount }} zł</s> →
+                  <strong>{{ couponPreview.finalAmount }} zł</strong>
                   (−{{ couponPreview.discountAmount }} zł)
                 </p>
-                <div class="checkout-actions">
-                  <button
-                    class="btn btn-primary"
-                  :disabled="checkoutMutation.isPending.value"
-                  @click="buy"
-                >
-                  {{
-                    checkoutMutation.isPending.value
-                      ? 'Przekierowujemy...'
-                      : `Kup teraz — ${displayPrice} zł`
-                  }}
-                </button>
-                <button
-                  type="button"
-                  class="btn btn-ghost"
-                  :disabled="subscriptionCheckoutMutation.isPending.value"
-                  @click="startSubscription"
-                >
-                  {{
-                    subscriptionCheckoutMutation.isPending.value
-                      ? 'Przekierowujemy...'
-                      : `All-access — ${monthlyPriceLabel}/mies.`
-                  }}
-                </button>
-              </div>
-                <div v-if="isPaid" class="gift-purchase">
-                  <button
-                    type="button"
-                    class="gift-purchase__toggle"
-                    :aria-expanded="showGiftForm"
-                    aria-controls="gift-purchase-form"
-                    @click="showGiftForm = !showGiftForm"
-                  >
-                    {{ showGiftForm ? 'Anuluj prezent' : 'Kup w prezencie' }}
-                  </button>
-                  <form v-if="showGiftForm" id="gift-purchase-form" @submit.prevent="buyGift">
-                    <label for="gift-recipient-email">Email odbiorcy</label>
-                    <div class="gift-purchase__fields">
-                      <input
-                        id="gift-recipient-email"
-                        v-model.trim="giftRecipientEmail"
-                        type="email"
-                        autocomplete="email"
-                        required
-                        placeholder="email@example.com"
-                        :disabled="giftCheckoutMutation.isPending.value"
-                      />
-                      <button
-                        type="submit"
-                        class="btn btn-ghost"
-                        :disabled="!giftRecipientEmail || giftCheckoutMutation.isPending.value"
-                      >
-                        {{ giftCheckoutMutation.isPending.value ? 'Przekierowujemy...' : 'Kup prezent' }}
-                      </button>
-                    </div>
-                  </form>
-                </div>
+                <form v-if="showGiftForm" id="gift-purchase-form" class="gift-form" @submit.prevent="buyGift">
+                  <label for="gift-recipient-email">Email odbiorcy</label>
+                  <div class="inline-field">
+                    <input
+                      id="gift-recipient-email"
+                      v-model.trim="giftRecipientEmail"
+                      type="email"
+                      autocomplete="email"
+                      required
+                      placeholder="email@example.com"
+                      :disabled="giftCheckoutMutation.isPending.value"
+                    />
+                    <button
+                      type="submit"
+                      class="btn btn-ghost"
+                      :disabled="!giftRecipientEmail || giftCheckoutMutation.isPending.value"
+                    >
+                      {{ giftCheckoutMutation.isPending.value ? 'Przekierowujemy...' : 'Kup prezent' }}
+                    </button>
+                  </div>
+                </form>
               </div>
               <button v-if="!isPaid" class="btn btn-primary" @click="enroll">Zapisz się</button>
             </template>
@@ -159,48 +178,65 @@
           </div>
         </div>
         <div class="hero-visual">
-          <CourseThumbnail class="course-thumb" :url="course.thumbnailUrl" />
+          <CourseThumbnail class="course-thumb" :url="course.thumbnailUrl" :title="course.title" :label="course.technologyNames?.[0] ?? course.categoryNames?.[0]" :seed="course.id" />
+          <div v-if="course.categoryNames.length || course.technologyNames.length" class="hero-tags">
+            <span v-for="cat in course.categoryNames" :key="cat" class="tag">{{ cat }}</span>
+            <span v-for="tech in course.technologyNames" :key="tech" class="tag tech">{{ tech }}</span>
+          </div>
         </div>
       </div>
 
       <div class="content-grid">
-        <div class="modules-section">
-          <h2>Program kursu</h2>
-          <div class="module-list">
-            <div v-for="(module, mIdx) in course.modules" :key="module.id" class="module-item glass-card">
+        <section class="modules-section">
+          <header class="block-head">
+            <span class="eyebrow">Spis treści</span>
+            <h2>Program <em>kursu</em></h2>
+          </header>
+          <ol class="module-list">
+            <li v-for="(module, mIdx) in course.modules" :key="module.id" class="module-item">
               <div class="module-header">
-                <span class="module-num">{{ mIdx + 1 }}</span>
+                <span class="module-num">{{ String(mIdx + 1).padStart(2, '0') }}</span>
                 <h3>{{ module.title }}</h3>
+                <span class="module-count">{{ module.lessons.length }} lekcji</span>
               </div>
               <div class="lessons-list">
-                <template v-for="lesson in module.lessons" :key="lesson.id">
+                <template v-for="(lesson, lIdx) in module.lessons" :key="lesson.id">
                   <router-link
                     v-if="canAccessContent && !lesson.isLocked"
                     class="lesson-item link"
+                    :class="{ done: lesson.isCompleted }"
                     :to="{ name: 'Learning', params: { courseId: course.id, lessonId: lesson.id } }"
                   >
-                    <span class="lesson-icon">{{ lesson.isCompleted ? '✓' : '▶' }}</span>
+                    <span class="lesson-num">{{ mIdx + 1 }}.{{ lIdx + 1 }}</span>
                     <span class="lesson-title">{{ lesson.title }}</span>
+                    <span v-if="lesson.isCompleted" class="lesson-state">✓</span>
                     <span class="lesson-duration">{{ lesson.duration }} min</span>
                   </router-link>
                   <div v-else-if="canAccessContent" class="lesson-item locked" :title="lesson.lockReason || undefined">
-                    <span class="lesson-icon">🔒</span>
+                    <span class="lesson-num">{{ mIdx + 1 }}.{{ lIdx + 1 }}</span>
                     <span class="lesson-title">{{ lesson.title }}</span>
+                    <svg class="lesson-state" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-label="Zablokowana"><rect x="4" y="11" width="16" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg>
                     <span class="lesson-duration">{{ lesson.duration }} min</span>
                   </div>
                   <div v-else class="lesson-item">
-                    <span class="lesson-icon">▶</span>
+                    <span class="lesson-num">{{ mIdx + 1 }}.{{ lIdx + 1 }}</span>
                     <span class="lesson-title">{{ lesson.title }}</span>
                     <span class="lesson-duration">{{ lesson.duration }} min</span>
                   </div>
                 </template>
               </div>
-            </div>
-          </div>
-        </div>
+            </li>
+          </ol>
+        </section>
 
-        <div class="reviews-section">
-          <h2>Opinie</h2>
+        <section class="reviews-section">
+          <header class="block-head">
+            <span class="eyebrow">Opinie</span>
+            <h2>Co mówią <em>kursanci</em></h2>
+            <p v-if="course.reviewCount" class="rating-summary">
+              <span class="star">★</span> {{ course.averageRating.toFixed(1) }} / {{ course.reviewCount }} opinii
+            </p>
+          </header>
 
           <form v-if="course.canReview" class="review-form glass-card" @submit="onCreateSubmit">
             <h3>Dodaj opinię</h3>
@@ -244,9 +280,11 @@
           </form>
 
           <div class="reviews-list">
-            <div v-for="review in course.reviews" :key="review.id" class="review-card glass-card">
+            <figure v-for="review in course.reviews" :key="review.id" class="review-card">
               <div class="review-head">
-                <div class="stars">{{ '★'.repeat(review.rating) }}</div>
+                <div class="stars" :aria-label="`Ocena ${review.rating} z 5`">
+                  {{ '★'.repeat(review.rating) }}<span class="stars-empty">{{ '★'.repeat(5 - review.rating) }}</span>
+                </div>
                 <div v-if="course.userReviewId === review.id" class="own-review-actions">
                   <button type="button" class="btn-link" @click="startEdit(review)">Edytuj</button>
                   <button
@@ -259,20 +297,18 @@
                   </button>
                 </div>
               </div>
-              <p>{{ review.comment }}</p>
-              <div class="review-author">
-                <span class="avatar">{{ review.authorName.charAt(0) }}</span>
-                <span>{{ review.authorName }}</span>
-              </div>
-            </div>
+              <blockquote>{{ review.comment }}</blockquote>
+              <figcaption class="review-author">— {{ review.authorName }}</figcaption>
+            </figure>
           </div>
-        </div>
+        </section>
       </div>
     </div>
   </div>
   <div v-else-if="courseQuery.isLoading" class="loading">Ładowanie...</div>
   <div v-else-if="courseQuery.isError" class="error-state">
     <div class="container">
+      <span class="eyebrow">Katalog</span>
       <h2>Nie znaleziono kursu</h2>
       <p>Kurs nie istnieje lub nie masz do niego dostępu.</p>
       <router-link class="btn btn-primary" :to="{ name: 'Courses' }">Przeglądaj kursy</router-link>
@@ -375,6 +411,9 @@ const monthlyPriceLabel = computed(() => {
   return `${price} zł`
 })
 const isPaid = computed(() => (course.value?.price ?? 0) > 0)
+const lessonCount = computed(
+  () => course.value?.modules.reduce((sum, module) => sum + module.lessons.length, 0) ?? 0
+)
 const isPublished = computed(() => course.value?.status === CourseStatus.Published)
 const showWishlistButton = computed(
   () => authStore.isAuthenticated && isPublished.value && !isInstructor.value && !canAccessContent.value
@@ -507,16 +546,14 @@ watch(() => course.value?.userReviewId, () => {
 @use "@/assets/styles/abstracts/mixins" as *;
 
 .course-details {
-  padding: calc($header-height + 40px) 0 80px;
+  padding: 32px 0 96px;
 }
 
 .error-state {
-  padding: calc($header-height + 80px) 0 80px;
-  text-align: center;
+  padding: 64px 0 80px;
 
   h2 {
-    font-size: 1.5rem;
-    margin-bottom: 12px;
+    margin: 16px 0 12px;
   }
 
   p {
@@ -527,10 +564,12 @@ watch(() => course.value?.userReviewId, () => {
 
 .hero-section {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(420px, 0.95fr);
-  gap: clamp(36px, 5vw, 72px);
-  align-items: center;
-  margin-bottom: 80px;
+  grid-template-columns: minmax(0, 1.15fr) minmax(0, 0.85fr);
+  gap: clamp(36px, 5vw, 80px);
+  align-items: start;
+  padding-bottom: 56px;
+  margin-bottom: 64px;
+  border-bottom: 1px solid $color-hairline;
 
   @media (max-width: 880px) {
     grid-template-columns: 1fr;
@@ -538,426 +577,188 @@ watch(() => course.value?.userReviewId, () => {
 }
 
 .hero-content {
+  min-width: 0;
+
   h1 {
-    font-size: clamp(2rem, 4vw, 3.2rem);
-    margin: 16px 0 20px;
-  }
-
-  .title-actions {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    margin: -8px 0 12px;
-  }
-
-  .wishlist-btn {
-    width: 44px;
-    height: 44px;
-    border-radius: 50%;
-    border: none;
-    background: rgba(255, 255, 255, 0.08);
-    color: $color-muted;
-    font-size: 1.4rem;
-    cursor: pointer;
-    transition: color 0.2s, background 0.2s, transform 0.2s;
-
-    &.active {
-      color: #f87171;
-      background: rgba(248, 113, 113, 0.15);
-    }
-
-    &:hover:not(:disabled) {
-      transform: scale(1.05);
-    }
-
-    &:disabled {
-      opacity: 0.6;
-      cursor: not-allowed;
-    }
-  }
-
-  .description {
-    color: $color-muted;
-    font-size: 1.05rem;
-    line-height: 1.7;
-    margin-bottom: 24px;
+    font-size: clamp(2.3rem, 4.6vw, 3.9rem);
+    margin: 18px 0 18px;
   }
 }
 
-.meta {
+.title-actions {
   display: flex;
-  flex-wrap: wrap;
-  gap: 10px;
+  align-items: center;
+  gap: 16px;
+  margin-bottom: 22px;
+}
+
+.byline {
+  font-family: $font-mono;
+  font-size: 0.78rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  margin: 0;
+
+  .byline-label {
+    color: $color-faint;
+    margin-right: 6px;
+  }
+
+  .byline-name {
+    color: $color-ink;
+  }
+}
+
+.wishlist-btn {
+  --lg-r: 999px;
+  --lg-blur: 2px;
+  --lg-tint: rgba(255, 255, 255, 0.05);
+  width: 40px;
+  height: 40px;
+  flex-shrink: 0;
+  border: none;
+  background: none;
+  color: $color-muted;
+  font-size: 1.2rem;
+  line-height: 1;
+  cursor: pointer;
+  transition: color 0.2s, transform 0.3s $ease-jelly;
+
+  &.active {
+    --lg-tint: #{rgba($color-coral, 0.18)};
+    color: $color-coral;
+  }
+
+  &:hover:not(:disabled) {
+    transform: scale(1.06);
+  }
+
+  &:disabled {
+    cursor: not-allowed;
+    color: $color-faint;
+  }
+}
+
+.description {
+  max-width: 62ch;
+  color: $color-muted;
+  font-size: 1.04rem;
+  line-height: 1.7;
   margin-bottom: 32px;
 }
 
-.badge {
-  @include liquid-glass;
-  --lg-r: 999px;
-  --lg-blur: 12px;
-  --lg-tint: rgba(255, 255, 255, 0.05);
-  padding: 6px 14px;
-  font-size: 0.82rem;
-  font-weight: 600;
+.spec {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  margin: 0 0 32px;
+  border-top: 1px solid $color-hairline;
+  border-bottom: 1px solid $color-hairline;
+
+  @media (max-width: 560px) {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
 }
 
-.price {
-  --lg-tint: rgba(139, 92, 246, 0.2);
-  color: #d6c9ff;
+.spec-item {
+  padding: 14px 16px 16px;
+  min-width: 0;
+
+  & + & {
+    border-left: 1px solid $color-hairline;
+  }
+
+  &:first-child {
+    padding-left: 0;
+  }
+
+  @media (max-width: 560px) {
+    &:nth-child(3) {
+      border-left: none;
+      padding-left: 0;
+      border-top: 1px solid $color-hairline;
+    }
+
+    &:nth-child(4) {
+      border-top: 1px solid $color-hairline;
+    }
+  }
+
+  dt {
+    @include mono-label;
+    font-size: 0.62rem;
+    color: $color-faint;
+    margin-bottom: 8px;
+  }
+
+  dd {
+    margin: 0;
+    font-family: $font-mono;
+    font-size: 0.92rem;
+    color: $color-ink;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .spec-price {
+    font-family: $font-display;
+    font-weight: 600;
+    font-size: 1.5rem;
+    line-height: 1;
+  }
 }
 
-.course-author {
-  --lg-r: 999px;
-  --lg-blur: 12px;
-  --lg-tint: rgba(139, 92, 246, 0.14);
-  display: inline-flex;
-  width: fit-content;
-  padding: 6px 13px;
-  font-size: 0.8rem;
-  font-weight: 600;
+.subscription-access {
+  --lg-blur: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  max-width: 660px;
+  padding: 16px 18px;
+  margin-bottom: 24px;
+
+  &:hover {
+    transform: none;
+  }
+
+  .subscription-label {
+    @include tag;
+    color: $color-on-accent;
+    background: $color-accent;
+    box-shadow: none;
+    margin-bottom: 8px;
+  }
+
+  strong {
+    display: block;
+    font-family: $font-display;
+    font-weight: 500;
+    font-size: 1.1rem;
+    margin-bottom: 4px;
+  }
+
+  p {
+    margin: 0;
+    color: $color-muted;
+    font-size: 0.9rem;
+  }
 }
 
 .actions .btn {
-  padding: 14px 32px;
+  padding: 14px 30px;
 }
 
 .waitlist-actions {
   margin-top: 16px;
 }
 
-.subscription-access {
-  --lg-r: 20px;
-  --lg-blur: 12px;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 16px;
-  padding: 14px 16px;
-  margin-bottom: 24px;
-
-  max-width: 660px;
-  strong {
-    display: block;
-    margin-bottom: 6px;
-  }
-
-  p {
-    margin: 0;
-    color: $color-muted;
-    font-size: 0.92rem;
-  }
-}
-
 .checkout-box {
   display: flex;
   flex-direction: column;
-  gap: 12px;
-  align-items: flex-start;
-}
-
-.coupon-row {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-
-  input {
-    min-width: 180px;
-    border-radius: 12px;
-    border: 1px solid rgba(255, 255, 255, 0.12);
-    background: rgba(255, 255, 255, 0.04);
-    color: inherit;
-    padding: 10px 12px;
-  }
-}
-
-.coupon-preview {
-  margin: 0;
-  color: $color-muted;
-  font-size: 0.9rem;
-}
-
-.hero-visual {
-  display: flex;
-  justify-content: center;
-}
-
-.course-thumb {
-  width: 100%;
-  max-width: 420px;
-  aspect-ratio: 16/10;
-  border-radius: 28px;
-  box-shadow: 0 40px 90px rgba(3, 6, 24, 0.6), 0 4px 14px rgba(3, 6, 24, 0.35);
-}
-
-.content-grid {
-  display: grid;
-  grid-template-columns: 1fr 0.4fr;
-  gap: 40px;
-
-  @media (max-width: 880px) {
-    grid-template-columns: 1fr;
-  }
-}
-
-.reviews-section h2 {
-  font-size: 1.5rem;
-  margin-bottom: 28px;
-}
-
-.review-form {
-  padding: 24px;
-  margin-bottom: 24px;
-
-  h3 {
-    font-size: 1rem;
-    margin-bottom: 16px;
-  }
-
-  .form-group {
-    display: flex;
-    flex-direction: column;
-    gap: 8px;
-    margin-bottom: 12px;
-
-    label {
-      font-size: 0.88rem;
-      font-weight: 600;
-      color: $color-muted;
-    }
-  }
-
-  textarea {
-    width: 100%;
-    padding: 12px;
-    border-radius: 12px;
-    border: none;
-    background: rgba(255, 255, 255, 0.04);
-    color: $color-ink;
-    font: inherit;
-    resize: vertical;
-  }
-
-  select {
-    width: fit-content;
-    padding: 6px 12px;
-    border-radius: 8px;
-    background: rgba(255, 255, 255, 0.06);
-    color: $color-ink;
-    border: none;
-  }
-
-  .field-error {
-    color: #f87171;
-    font-size: 0.82rem;
-  }
-
-  .edit-actions {
-    display: flex;
-    gap: 12px;
-    flex-wrap: wrap;
-  }
-}
-
-.lesson-item.link {
-  text-decoration: none;
-  color: inherit;
-  transition: background 0.2s;
-
-  &:hover {
-    background: rgba(255, 255, 255, 0.06);
-  }
-}
-
-.modules-section h2,
-.reviews-section h2 {
-  font-size: 1.5rem;
-  margin-bottom: 28px;
-}
-
-.module-list {
-  display: flex;
-  flex-direction: column;
-  gap: 16px;
-}
-
-.module-item {
-  padding: 24px;
-}
-
-.module-header {
-  display: flex;
-  align-items: center;
   gap: 14px;
-  margin-bottom: 16px;
-
-  .module-num {
-    width: 32px;
-    height: 32px;
-    display: grid;
-    place-items: center;
-    border-radius: 50%;
-    background: rgba(139, 92, 246, 0.25);
-    font-size: 0.85rem;
-    font-weight: 700;
-  }
-
-  h3 {
-    font-size: 1.1rem;
-  }
-}
-
-.lessons-list {
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-  padding-left: 46px;
-}
-
-.lesson-item {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  padding: 10px 14px;
-  border-radius: 12px;
-  background: rgba(255, 255, 255, 0.03);
-  font-size: 0.92rem;
-
-  .lesson-icon {
-    color: $color-gold;
-    font-size: 0.8rem;
-  }
-
-  .lesson-title {
-    flex: 1;
-  }
-
-  .lesson-duration {
-    color: $color-faint;
-    font-size: 0.82rem;
-  }
-}
-
-.lesson-item.locked {
-  opacity: 0.7;
-  cursor: not-allowed;
-}
-
-.reviews-list {
-  display: flex;
-  flex-direction: column;
-  gap: 16px;
-}
-
-.review-card {
-  padding: 24px;
-
-  .review-head {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 12px;
-    margin-bottom: 12px;
-  }
-
-  .stars {
-    color: #fcd34d;
-    font-size: 1.1rem;
-  }
-
-  .own-review-actions {
-    display: flex;
-    gap: 12px;
-  }
-
-  .btn-link {
-    background: none;
-    border: none;
-    padding: 0;
-    font: inherit;
-    font-size: 0.85rem;
-    font-weight: 600;
-    color: $color-cyan;
-    cursor: pointer;
-
-    &:hover {
-      text-decoration: underline;
-    }
-
-    &:disabled {
-      opacity: 0.5;
-      cursor: not-allowed;
-    }
-  }
-
-  .btn-link-danger {
-    color: #f87171;
-  }
-
-  p {
-    color: $color-muted;
-    font-size: 0.95rem;
-    margin-bottom: 16px;
-  }
-
-  .review-author {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-
-    .avatar {
-      width: 32px;
-      height: 32px;
-      border-radius: 50%;
-      display: grid;
-      place-items: center;
-      font-size: 0.8rem;
-      font-weight: 700;
-      background: linear-gradient(135deg, rgba(139, 92, 246, 0.35), rgba(34, 211, 238, 0.25));
-    }
-
-    span:last-child {
-      font-size: 0.9rem;
-      color: $color-muted;
-    }
-  }
-}
-
-.loading {
-  text-align: center;
-  padding: 120px;
-  color: $color-muted;
-}
-.coupon-toggle {
-  appearance: none;
-  border: 0;
-  padding: 0;
-  background: transparent;
-  color: $color-gold;
-  font: inherit;
-  font-size: 0.9rem;
-  font-weight: 600;
-  cursor: pointer;
-
-  &:hover,
-  &:focus-visible {
-    color: #fcd34d;
-    text-decoration: underline;
-  }
-}
-
-.coupon-row input {
-  min-width: min(100%, 260px);
-  min-height: 46px;
-  border-radius: 14px;
-  padding: 10px 12px;
-  font: inherit;
-  font-size: 1rem;
-  outline: none;
-
-  &:focus {
-    border-color: rgba(245, 158, 11, 0.58);
-    box-shadow: 0 0 0 3px rgba(245, 158, 11, 0.14);
-  }
+  align-items: flex-start;
+  max-width: 560px;
 }
 
 .checkout-actions {
@@ -972,71 +773,456 @@ watch(() => course.value?.userReviewId, () => {
   }
 }
 
+.checkout-links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 20px;
+}
+
+.text-toggle {
+  @include mono-label;
+  appearance: none;
+  border: 0;
+  padding: 0 0 3px;
+  background: transparent;
+  color: $color-muted;
+  font-size: 0.66rem;
+  border-bottom: 1px dashed $color-hairline;
+  cursor: pointer;
+  transition: color 0.2s, border-color 0.2s;
+
+  &:hover,
+  &[aria-expanded="true"] {
+    color: $color-accent;
+    border-bottom-color: rgba($color-accent, 0.5);
+  }
+}
+
+.inline-field {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  width: 100%;
+
+  input {
+    flex: 1 1 220px;
+    min-width: 0;
+    min-height: 46px;
+    padding: 10px 14px;
+    border: none;
+    border-radius: $radius-md;
+    background: rgba(13, 15, 19, 0.45);
+    box-shadow: inset 0 0 0 1px $color-hairline;
+    color: $color-ink;
+    font: inherit;
+    font-size: 0.95rem;
+    outline: none;
+    transition: box-shadow 0.2s;
+
+    &::placeholder {
+      color: $color-faint;
+    }
+
+    &:focus {
+      box-shadow:
+        inset 0 0 0 1px $color-hairline,
+        0 0 0 2px rgba($color-accent, 0.6);
+    }
+  }
+
+  .btn {
+    flex: 0 1 auto;
+    padding: 11px 22px;
+  }
+}
+
+.coupon-preview {
+  margin: 0;
+  font-family: $font-mono;
+  font-size: 0.8rem;
+  color: $color-muted;
+
+  s {
+    color: $color-faint;
+  }
+
+  strong {
+    color: $color-accent;
+    font-weight: 500;
+  }
+}
+
+.gift-form {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  width: 100%;
+
+  label {
+    @include mono-label;
+    font-size: 0.62rem;
+    color: $color-faint;
+  }
+}
+
+.hero-visual {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  min-width: 0;
+}
+
 .course-thumb {
-  max-width: 560px;
-  aspect-ratio: 16 / 9;
-  border-radius: 32px;
-  background-size: 150%;
+  position: relative;
+  width: 100%;
+  aspect-ratio: 4 / 3;
+  border-radius: $radius-card;
+  box-shadow:
+    inset 0 0 0 1px rgba(255, 255, 255, 0.08),
+    0 40px 80px -30px rgba(0, 0, 0, 0.7);
+}
+
+.hero-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+
+  .tag.tech {
+    color: $color-accent;
+    box-shadow: inset 0 0 0 1px rgba($color-accent, 0.35);
+  }
 }
 
 .content-grid {
-  grid-template-columns: minmax(0, 0.8fr) minmax(340px, 1.2fr);
-  gap: 48px;
-}
+  display: grid;
+  grid-template-columns: minmax(0, 1.25fr) minmax(0, 0.75fr);
+  gap: clamp(40px, 5vw, 80px);
+  align-items: start;
 
-.review-form,
-.review-card {
-  --lg-blur: 12px;
-  padding: 28px;
-}
-
-.review-form select {
-  width: min(100%, 190px);
-  min-height: 44px;
-  padding: 9px 38px 9px 13px;
-  border: 1px solid rgba(255, 255, 255, 0.16);
-  border-radius: 13px;
-  background-color: rgba(15, 23, 42, 0.72);
-  color: $color-ink;
-  font: inherit;
-  font-size: 0.95rem;
-  font-weight: 600;
-  cursor: pointer;
-  outline: none;
-  box-shadow: inset 0 1px 1px rgba(255, 255, 255, 0.18), 0 6px 16px rgba(3, 6, 24, 0.22);
-
-  &:focus {
-    border-color: rgba(245, 158, 11, 0.6);
-    box-shadow: 0 0 0 3px rgba(245, 158, 11, 0.14);
-  }
-
-  option {
-    background: #111827;
-    color: $color-ink;
-  }
-}
-
-.module-item {
-  --lg-blur: 10px;
-  padding: 18px;
-}
-
-.lessons-list {
-  gap: 8px;
-}
-
-.lesson-item {
-  padding: 9px 12px;
-}
-
-@media (max-width: 880px) {
-  .content-grid {
+  @media (max-width: 960px) {
     grid-template-columns: 1fr;
   }
 }
 
+.block-head {
+  margin-bottom: 28px;
+
+  h2 {
+    font-size: clamp(1.8rem, 3vw, 2.4rem);
+    margin-top: 14px;
+  }
+}
+
+.rating-summary {
+  margin-top: 10px;
+  font-family: $font-mono;
+  font-size: 0.78rem;
+  color: $color-muted;
+
+  .star {
+    color: $color-accent;
+  }
+}
+
+.module-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  border-top: 1px solid $color-ink;
+}
+
+.module-item {
+  padding: 22px 0 18px;
+  border-bottom: 1px solid $color-hairline;
+}
+
+.module-header {
+  display: grid;
+  grid-template-columns: 52px minmax(0, 1fr) auto;
+  align-items: baseline;
+  gap: 12px;
+  margin-bottom: 10px;
+
+  .module-num {
+    font-family: $font-display;
+    font-weight: 600;
+    font-size: 1.5rem;
+    line-height: 1;
+    color: $color-accent;
+  }
+
+  h3 {
+    font-size: 1.25rem;
+    font-weight: 500;
+  }
+
+  .module-count {
+    @include mono-label;
+    font-size: 0.62rem;
+    color: $color-faint;
+  }
+}
+
+.lessons-list {
+  display: flex;
+  flex-direction: column;
+  padding-left: 64px;
+
+  @media (max-width: 560px) {
+    padding-left: 0;
+  }
+}
+
+.lesson-item {
+  display: flex;
+  align-items: baseline;
+  gap: 14px;
+  padding: 10px 6px;
+  font-size: 0.94rem;
+  color: $color-ink;
+  border-top: 1px dashed $color-hairline;
+
+  &:first-child {
+    border-top: none;
+  }
+
+  .lesson-num {
+    width: 30px;
+    flex-shrink: 0;
+    font-family: $font-mono;
+    font-size: 0.7rem;
+    color: $color-faint;
+  }
+
+  .lesson-title {
+    flex: 1;
+    min-width: 0;
+  }
+
+  .lesson-state {
+    flex-shrink: 0;
+    font-family: $font-mono;
+    font-size: 0.8rem;
+    color: $color-accent;
+    align-self: center;
+  }
+
+  .lesson-duration {
+    flex-shrink: 0;
+    font-family: $font-mono;
+    font-size: 0.72rem;
+    color: $color-faint;
+  }
+}
+
+.lesson-item.link {
+  text-decoration: none;
+  border-radius: 6px;
+  transition: background 0.2s, color 0.2s;
+
+  &:hover {
+    background: rgba($color-ink, 0.05);
+
+    .lesson-title {
+      color: $color-accent;
+    }
+  }
+}
+
+.lesson-item.done .lesson-title {
+  color: $color-muted;
+}
+
+.lesson-item.locked {
+  color: $color-faint;
+  cursor: not-allowed;
+
+  .lesson-state {
+    color: $color-faint;
+  }
+}
+
+.review-form {
+  --lg-blur: 10px;
+  padding: 26px;
+  margin-bottom: 32px;
+
+  &:hover {
+    transform: none;
+  }
+
+  h3 {
+    font-size: 1.15rem;
+    font-weight: 500;
+    margin-bottom: 18px;
+  }
+
+  .form-group {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    margin-bottom: 14px;
+
+    label {
+      @include mono-label;
+      font-size: 0.62rem;
+      color: $color-faint;
+    }
+  }
+
+  textarea,
+  select {
+    border: none;
+    border-radius: $radius-md;
+    background: rgba(13, 15, 19, 0.45);
+    box-shadow: inset 0 0 0 1px $color-hairline;
+    color: $color-ink;
+    font: inherit;
+    outline: none;
+    transition: box-shadow 0.2s;
+
+    &:focus {
+      box-shadow:
+        inset 0 0 0 1px $color-hairline,
+        0 0 0 2px rgba($color-accent, 0.6);
+    }
+  }
+
+  textarea {
+    width: 100%;
+    padding: 12px 14px;
+    resize: vertical;
+
+    &::placeholder {
+      color: $color-faint;
+    }
+  }
+
+  select {
+    width: min(100%, 190px);
+    min-height: 44px;
+    padding: 9px 13px;
+    cursor: pointer;
+
+    option {
+      background: $color-bg;
+      color: $color-ink;
+    }
+  }
+
+  .field-error {
+    color: $color-danger;
+    font-size: 0.82rem;
+  }
+
+  .edit-actions {
+    display: flex;
+    gap: 12px;
+    flex-wrap: wrap;
+  }
+}
+
+.reviews-list {
+  display: flex;
+  flex-direction: column;
+  border-top: 1px solid $color-ink;
+}
+
+.review-card {
+  margin: 0;
+  padding: 24px 0 26px;
+  border-bottom: 1px solid $color-hairline;
+
+  .review-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    margin-bottom: 14px;
+  }
+
+  .stars {
+    font-size: 0.8rem;
+    letter-spacing: 0.18em;
+    color: $color-accent;
+  }
+
+  .stars-empty {
+    color: $color-hairline;
+  }
+
+  blockquote {
+    position: relative;
+    margin: 0 0 16px;
+    padding-left: 28px;
+    font-family: $font-display;
+    font-size: 1.06rem;
+    font-weight: 400;
+    line-height: 1.5;
+    color: $color-ink;
+
+    &::before {
+      content: "“";
+      position: absolute;
+      left: 0;
+      top: -0.12em;
+      font-size: 2.2rem;
+      line-height: 1;
+      color: $color-accent;
+    }
+  }
+
+  .review-author {
+    padding-left: 28px;
+    font-family: $font-mono;
+    font-size: 0.72rem;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: $color-faint;
+  }
+
+  .own-review-actions {
+    display: flex;
+    gap: 14px;
+  }
+
+  .btn-link {
+    @include mono-label;
+    background: none;
+    border: none;
+    padding: 0;
+    font-size: 0.62rem;
+    color: $color-sky;
+    cursor: pointer;
+
+    &:hover {
+      text-decoration: underline;
+    }
+
+    &:disabled {
+      color: $color-faint;
+      cursor: not-allowed;
+    }
+  }
+
+  .btn-link-danger {
+    color: $color-danger;
+  }
+}
+
+.loading {
+  padding: 64px 0 80px;
+  text-align: center;
+  font-family: $font-mono;
+  font-size: 0.8rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: $color-faint;
+}
+
 @media (max-width: 560px) {
-  .checkout-actions .btn {
+  .checkout-actions .btn,
+  .inline-field .btn {
     flex-basis: 100%;
   }
 
@@ -1044,89 +1230,5 @@ watch(() => course.value?.userReviewId, () => {
     align-items: flex-start;
     flex-direction: column;
   }
-
-  .coupon-row {
-    width: 100%;
-
-    input,
-    .btn {
-      width: 100%;
-    }
-  }
 }
-
-.gift-purchase {
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-  width: 100%;
-  padding-top: 4px;
-}
-
-.gift-purchase__toggle {
-  align-self: flex-start;
-  border: 0;
-  padding: 0;
-  background: transparent;
-  color: $color-cyan;
-  font: inherit;
-  font-size: 0.9rem;
-  font-weight: 600;
-  cursor: pointer;
-
-  &:hover,
-  &:focus-visible {
-    color: #67e8f9;
-    text-decoration: underline;
-  }
-}
-
-.gift-purchase form {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-  max-width: 560px;
-
-  label {
-    color: $color-muted;
-    font-size: 0.85rem;
-    font-weight: 600;
-  }
-}
-
-.gift-purchase__fields {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-
-  input {
-    flex: 1 1 220px;
-    min-height: 46px;
-    min-width: 0;
-    padding: 10px 12px;
-    border: 1px solid rgba(255, 255, 255, 0.12);
-    border-radius: 14px;
-    background: rgba(255, 255, 255, 0.04);
-    color: $color-ink;
-    font: inherit;
-    font-size: 1rem;
-    outline: none;
-
-    &:focus {
-      border-color: rgba(34, 211, 238, 0.58);
-      box-shadow: 0 0 0 3px rgba(34, 211, 238, 0.14);
-    }
-  }
-
-  .btn {
-    flex: 0 1 auto;
-  }
-}
-
-@media (max-width: 560px) {
-  .gift-purchase__fields .btn {
-    width: 100%;
-  }
-}
-
 </style>

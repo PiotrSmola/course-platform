@@ -7,7 +7,8 @@
 
     <p v-if="!modules.length" class="empty">Brak modułów. Dodaj pierwszy moduł, a następnie lekcje z adresem URL wideo (placeholder).</p>
 
-    <div v-for="(module, mIndex) in modules" :key="module.id" class="module-block glass-card">
+    <div v-for="(module, mIndex) in modules" :key="module.id" class="module-block glass">
+      <span class="module-no">{{ String(mIndex + 1).padStart(2, '0') }}</span>
       <div class="module-row">
         <div class="form-group">
           <label :for="`module-title-${module.id}`">Tytuł modułu</label>
@@ -30,7 +31,7 @@
         </div>
         <div class="form-group form-group--action">
           <span class="label-spacer" aria-hidden="true">&nbsp;</span>
-          <button type="button" class="btn btn-ghost danger" @click="removeModule(module.id)">Usuń moduł</button>
+          <button type="button" class="btn danger" @click="removeModule(module.id)">Usuń moduł</button>
         </div>
       </div>
 
@@ -58,7 +59,7 @@
             />
             <button
               type="button"
-              class="file-upload-btn"
+              class="btn btn-ghost file-upload-btn"
               @click="videoInputRefs[lesson.id]?.click()"
             >
               <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -98,7 +99,7 @@
           </div>
           <div class="form-group form-group--action">
             <span class="label-spacer" aria-hidden="true">&nbsp;</span>
-            <button type="button" class="btn btn-ghost danger icon-btn" title="Usuń lekcję" @click="removeLesson(module.id, lesson.id)">×</button>
+            <button type="button" class="btn danger icon-btn" title="Usuń lekcję" @click="removeLesson(module.id, lesson.id)">×</button>
           </div>
           <LessonQuizEditor
             v-if="!lesson.id.startsWith('temp-')"
@@ -237,23 +238,30 @@ function onVideoInputChange(moduleId: string, lessonId: string, event: Event) {
 </script>
 
 <style lang="scss" scoped>
-@use "@/assets/styles/abstracts/variables" as *;
-@use "@/assets/styles/abstracts/mixins" as *;
-
 .structure-editor {
-  margin-top: 48px;
+  margin-top: 56px;
   margin-inline: auto;
   max-width: 960px;
 }
 
 .structure-head {
   display: flex;
-  align-items: center;
+  align-items: flex-end;
   justify-content: space-between;
-  margin-bottom: 20px;
+  gap: 16px;
+  margin-bottom: 24px;
+  padding-bottom: 18px;
+  border-bottom: 1px solid $color-hairline;
 
   h3 {
-    font-size: 1.2rem;
+    margin: 0;
+    font-size: clamp(1.6rem, 2.6vw, 2.2rem);
+    font-weight: 600;
+  }
+
+  .btn {
+    padding: 10px 20px;
+    font-size: 0.86rem;
   }
 }
 
@@ -263,8 +271,25 @@ function onVideoInputChange(moduleId: string, lessonId: string, event: Event) {
 }
 
 .module-block {
-  padding: 24px;
-  margin-bottom: 16px;
+  --lg-r: #{$radius-card};
+  --lg-blur: 12px;
+  --lg-tint: rgba(13, 15, 19, 0.28);
+  padding: 22px 24px 24px;
+  margin-bottom: 20px;
+
+  @media (max-width: 560px) {
+    padding: 18px 14px;
+  }
+}
+
+.module-no {
+  display: block;
+  margin-bottom: 14px;
+  font-family: $font-display;
+  font-size: 1.7rem;
+  font-weight: 600;
+  line-height: 1;
+  color: $color-accent;
 }
 
 .form-group {
@@ -274,32 +299,31 @@ function onVideoInputChange(moduleId: string, lessonId: string, event: Event) {
   min-width: 0;
 
   label {
-    font-size: 0.88rem;
-    font-weight: 600;
+    @include mono-label;
+    font-size: 0.62rem;
     color: $color-muted;
   }
 
   input {
-    height: 48px;
-    padding: 0 18px;
-    border-radius: 16px;
+    width: 100%;
+    height: 46px;
+    padding: 0 16px;
     border: none;
-    background: rgba(255, 255, 255, 0.04);
-    box-shadow: inset 0 1px 1px rgba(255, 255, 255, 0.3), inset 0 0 0 1px rgba(255, 255, 255, 0.1);
+    border-radius: $radius-md;
+    background: rgba(13, 15, 19, 0.45);
+    box-shadow: inset 0 0 0 1px $color-hairline;
     color: $color-ink;
     font: inherit;
-    font-size: 0.94rem;
-    outline: none;
-    transition: background 0.3s, box-shadow 0.3s;
-    width: 100%;
+    font-size: 0.92rem;
+    transition: box-shadow 0.2s;
 
     &::placeholder {
       color: $color-faint;
     }
 
     &:focus {
-      background: rgba(255, 255, 255, 0.07);
-      box-shadow: inset 0 1px 1px rgba(255, 255, 255, 0.35), inset 0 0 0 1px rgba(167, 139, 250, 0.5), 0 0 0 4px rgba(139, 92, 246, 0.18);
+      outline: none;
+      box-shadow: inset 0 0 0 1px $color-hairline, 0 0 0 2px rgba($color-accent, 0.6);
     }
   }
 
@@ -314,10 +338,10 @@ function onVideoInputChange(moduleId: string, lessonId: string, event: Event) {
 
   .helper {
     min-height: 1.1em;
+    font-family: $font-mono;
+    font-size: 0.68rem;
+    line-height: 1.3;
     color: $color-faint;
-    font-size: 0.75rem;
-    font-weight: 500;
-    line-height: 1.2;
   }
 }
 
@@ -329,23 +353,23 @@ function onVideoInputChange(moduleId: string, lessonId: string, event: Event) {
 }
 
 .file-name {
+  font-family: $font-mono;
+  font-size: 0.72rem;
   color: $color-muted;
-  font-size: 0.8rem;
-  font-weight: 500;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
 }
 
 .file-hint {
-  color: $color-faint;
-  font-size: 0.8rem;
-  font-weight: 500;
+  @include mono-label;
+  font-size: 0.6rem;
+  color: $color-accent;
 }
 
 .label-spacer {
   display: block;
-  height: 1.32rem;
+  height: 1.05rem;
   visibility: hidden;
 }
 
@@ -354,7 +378,7 @@ function onVideoInputChange(moduleId: string, lessonId: string, event: Event) {
   grid-template-columns: 1fr 110px auto;
   gap: 16px;
   align-items: end;
-  margin-bottom: 20px;
+  margin-bottom: 22px;
 
   @media (max-width: 720px) {
     grid-template-columns: 1fr;
@@ -362,17 +386,15 @@ function onVideoInputChange(moduleId: string, lessonId: string, event: Event) {
 }
 
 .lessons {
-  padding-top: 8px;
-  border-top: 1px solid rgba(255, 255, 255, 0.06);
+  padding-top: 18px;
+  border-top: 1px solid $color-hairline;
 }
 
 .lessons-label {
-  font-size: 0.82rem;
-  font-weight: 600;
-  letter-spacing: 0.04em;
-  text-transform: uppercase;
+  @include mono-label;
+  margin-bottom: 16px;
+  font-size: 0.62rem;
   color: $color-faint;
-  margin-bottom: 12px;
 }
 
 .lesson-row {
@@ -380,7 +402,9 @@ function onVideoInputChange(moduleId: string, lessonId: string, event: Event) {
   grid-template-columns: 1fr 1.2fr 110px 110px auto;
   gap: 16px;
   align-items: start;
-  margin-bottom: 28px;
+  margin-bottom: 22px;
+  padding-bottom: 22px;
+  border-bottom: 1px dashed $color-hairline;
 
   .form-group--action {
     align-self: start;
@@ -395,19 +419,28 @@ function onVideoInputChange(moduleId: string, lessonId: string, event: Event) {
   }
 }
 
-.add-lesson {
-  margin-top: 4px;
+.btn {
+  padding: 10px 18px;
+  font-size: 0.84rem;
 }
 
-.danger {
-  color: #f87171;
+.add-lesson {
+  margin-top: 2px;
+}
+
+.btn.danger {
+  --lg-tint: #{rgba($color-danger, 0.22)};
+
+  &:hover {
+    --lg-tint: #{rgba($color-danger, 0.32)};
+  }
 }
 
 .icon-btn {
-  min-width: 48px;
-  height: 48px;
+  min-width: 46px;
+  height: 46px;
   padding: 0;
-  font-size: 1.25rem;
+  font-size: 1.2rem;
   line-height: 1;
 }
 
@@ -424,48 +457,12 @@ function onVideoInputChange(moduleId: string, lessonId: string, event: Event) {
 }
 
 .file-upload-btn {
-  @include liquid-glass;
-  --lg-r: 14px;
-  --lg-blur: 0px;
-  --lg-tint: rgba(255, 255, 255, 0.04);
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: 10px;
-  height: 48px;
-  padding: 0 20px;
-  border: none;
-  font: inherit;
-  font-size: 0.9rem;
-  font-weight: 600;
-  color: $color-ink;
-  cursor: pointer;
-  background: none;
-  box-shadow:
-    0 10px 30px rgba(3, 6, 24, 0.35),
-    0 2px 8px rgba(3, 6, 24, 0.22),
-    0 18px 30px -22px rgba(170, 200, 255, 0.35),
-    inset 0 1px 1px rgba(255, 255, 255, 0.3),
-    inset 0 0 0 1px rgba(255, 255, 255, 0.1);
-  transition: --lg-tint 0.35s, box-shadow 0.35s, transform 0.2s;
-
-  &:hover {
-    --lg-tint: rgba(245, 158, 11, 0.08);
-    transform: translateY(-2px);
-    box-shadow:
-      0 10px 30px rgba(3, 6, 24, 0.4),
-      0 2px 8px rgba(3, 6, 24, 0.25),
-      0 18px 30px -22px rgba(245, 158, 11, 0.4),
-      inset 0 1px 1px rgba(255, 255, 255, 0.35),
-      inset 0 0 0 1px rgba(245, 158, 11, 0.3);
-  }
-
-  &:focus-visible {
-    outline: none;
-  }
+  align-self: flex-start;
+  height: 46px;
+  padding: 0 18px;
 
   svg {
-    color: $color-gold;
+    color: $color-accent;
     flex-shrink: 0;
   }
 }

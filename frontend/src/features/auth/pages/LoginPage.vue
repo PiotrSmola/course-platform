@@ -23,39 +23,43 @@ const route = useRoute()
 
 .login-page {
   h2 {
-    font-size: 1.25rem;
-    margin-bottom: 24px;
-    text-align: center;
+    font-size: 2.4rem;
+    line-height: 1.05;
+    margin-bottom: 26px;
   }
 
   .auth-forgot {
-    text-align: center;
-    margin-top: 16px;
-    font-size: 0.88rem;
+    margin-top: 14px;
+    text-align: right;
+    font-size: 0.84rem;
 
     a {
       color: $color-muted;
-      font-weight: 500;
+      transition: color 0.2s;
 
       &:hover {
-        color: $color-cyan;
-        text-decoration: underline;
+        color: $color-ink;
       }
     }
   }
 
   .auth-switch {
-    text-align: center;
-    margin-top: 24px;
+    margin-top: 28px;
+    padding-top: 20px;
+    border-top: 1px dashed $color-hairline;
     font-size: 0.9rem;
     color: $color-muted;
 
     a {
-      color: $color-cyan;
-      font-weight: 600;
+      color: $color-ink;
+      font-weight: 500;
+      text-decoration: underline;
+      text-decoration-color: rgba($color-accent, 0.6);
+      text-underline-offset: 4px;
+      transition: text-decoration-color 0.2s;
 
       &:hover {
-        text-decoration: underline;
+        text-decoration-color: $color-accent;
       }
     }
   }

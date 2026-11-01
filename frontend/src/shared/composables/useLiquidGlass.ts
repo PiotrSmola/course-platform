@@ -7,7 +7,6 @@ const LENS_TARGETS = [
   '.glass',
   '.glass-card',
   '.btn',
-  '.eyebrow',
   '.plan-cta',
   '.sort-trigger',
   '.sort-menu',
@@ -18,18 +17,19 @@ const LENS_TARGETS = [
   '.select-trigger',
   '.select-menu',
   '.mega-dropdown',
-  '.search-trigger',
   '.search-dropdown',
   '.status-banner',
   '.Toastify__toast'
 ]
 const LENS_SELECTOR = LENS_TARGETS.map((target) => `${target}:not(.no-warp)`).join(', ')
+const LIGHT_SELECTOR = LENS_TARGETS.join(', ')
 const REBUILD_DEBOUNCE_MS = 150
+const CHROMA_SPREAD = 0.09
 
 interface LensRecord {
   filter: SVGFilterElement
   image: SVGFEImageElement
-  bend: SVGFEDisplacementMapElement
+  bends: SVGFEDisplacementMapElement[]
   w: number
   h: number
 }
@@ -62,17 +62,14 @@ function makeLensMap(w: number, h: number): string {
       let r = 128
       let g = 128
       if (nx >= -1 && nx <= 1 && ny >= -1 && ny <= 1) {
-        const ax = Math.abs(nx)
-        const ay = Math.abs(ny)
-        const d = Math.pow(ax ** 3 + ay ** 3, 1 / 3)
-        const t = smoothstep(0.42, 1.12, d)
-        const wave = Math.sin(t * Math.PI * 0.5) ** 2
-        if (wave > 0) {
-          const gx = nx * ax
-          const gy = ny * ay
+        const d = Math.pow(nx ** 4 + ny ** 4, 0.25)
+        const t = smoothstep(0.62, 1, Math.min(d, 1))
+        if (t > 0) {
+          const gx = nx ** 3
+          const gy = ny ** 3
           const len = Math.hypot(gx, gy) || 1
-          r -= (gx / len) * wave * 110
-          g -= (gy / len) * wave * 110
+          r -= (gx / len) * t * 127
+          g -= (gy / len) * t * 127
         }
       }
       px[i++] = r
@@ -93,14 +90,69 @@ function fe<T extends SVGElement>(name: string, attrs: Record<string, string | n
   return el
 }
 
+const CHANNELS = [
+  { key: 'r', matrix: '1 0 0 0 0  0 0 0 0 0  0 0 0 0 0  0 0 0 1 0', spread: 1 + CHROMA_SPREAD },
+  { key: 'g', matrix: '0 0 0 0 0  0 1 0 0 0  0 0 0 0 0  0 0 0 1 0', spread: 1 },
+  { key: 'b', matrix: '0 0 0 0 0  0 0 0 0 0  0 0 1 0 0  0 0 0 1 0', spread: 1 - CHROMA_SPREAD }
+]
+
 export function useLiquidGlass() {
   let defs: SVGSVGElement | null = null
   let resizeObserver: ResizeObserver | null = null
   let mutationObserver: MutationObserver | null = null
   let rebuildTimer: number | undefined
+  let lightFrame = 0
+  let litElement: HTMLElement | null = null
   let lensCounter = 0
   const registry = new Map<HTMLElement, LensRecord>()
   const rebuildQueue = new Set<HTMLElement>()
+
+  const createFilter = (id: string): LensRecord => {
+    const filter = fe<SVGFilterElement>('filter', {
+      id,
+      x: '-5%',
+      y: '-5%',
+      width: '110%',
+      height: '110%',
+      'color-interpolation-filters': 'sRGB'
+    })
+    const image = fe<SVGFEImageElement>('feImage', {
+      x: 0,
+      y: 0,
+      result: 'map',
+      preserveAspectRatio: 'none'
+    })
+    const smooth = fe<SVGFEGaussianBlurElement>('feGaussianBlur', {
+      in: 'map',
+      stdDeviation: 1,
+      result: 'smap'
+    })
+    filter.append(image, smooth)
+
+    const bends: SVGFEDisplacementMapElement[] = []
+    for (const channel of CHANNELS) {
+      const bend = fe<SVGFEDisplacementMapElement>('feDisplacementMap', {
+        in: 'SourceGraphic',
+        in2: 'smap',
+        xChannelSelector: 'R',
+        yChannelSelector: 'G',
+        result: `bent-${channel.key}`
+      })
+      const isolate = fe<SVGFEColorMatrixElement>('feColorMatrix', {
+        in: `bent-${channel.key}`,
+        type: 'matrix',
+        values: channel.matrix,
+        result: `only-${channel.key}`
+      })
+      bends.push(bend)
+      filter.append(bend, isolate)
+    }
+    filter.append(
+      fe('feBlend', { in: 'only-r', in2: 'only-g', mode: 'screen', result: 'rg' }),
+      fe('feBlend', { in: 'rg', in2: 'only-b', mode: 'screen' })
+    )
+    return { filter, image, bends, w: 0, h: 0 }
+  }
 
   const buildLens = (el: HTMLElement) => {
     if (!defs || !el.isConnected) return
@@ -112,34 +164,8 @@ export function useLiquidGlass() {
 
     if (!rec) {
       const id = `lens-${lensCounter++}`
-      const filter = fe<SVGFilterElement>('filter', {
-        id,
-        x: '-5%',
-        y: '-5%',
-        width: '110%',
-        height: '110%',
-        'color-interpolation-filters': 'sRGB'
-      })
-      const image = fe<SVGFEImageElement>('feImage', {
-        x: 0,
-        y: 0,
-        result: 'map',
-        preserveAspectRatio: 'none'
-      })
-      const smooth = fe<SVGFEGaussianBlurElement>('feGaussianBlur', {
-        in: 'map',
-        stdDeviation: 2.4,
-        result: 'smap'
-      })
-      const bend = fe<SVGFEDisplacementMapElement>('feDisplacementMap', {
-        in: 'SourceGraphic',
-        in2: 'smap',
-        xChannelSelector: 'R',
-        yChannelSelector: 'G'
-      })
-      filter.append(image, smooth, bend)
-      defs.appendChild(filter)
-      rec = { filter, image, bend, w: 0, h: 0 }
+      rec = createFilter(id)
+      defs.appendChild(rec.filter)
       registry.set(el, rec)
       el.style.setProperty('--lens', `url(#${id})`)
     }
@@ -151,7 +177,10 @@ export function useLiquidGlass() {
     const url = makeLensMap(w, h)
     rec.image.setAttribute('href', url)
     rec.image.setAttributeNS(XLINK_NS, 'xlink:href', url)
-    rec.bend.setAttribute('scale', String(Math.min(26, Math.min(w, h) * 0.28)))
+    const scale = Math.min(36, Math.min(w, h) * 0.35)
+    rec.bends.forEach((bend, index) => {
+      bend.setAttribute('scale', String(scale * CHANNELS[index].spread))
+    })
   }
 
   const scheduleRebuild = () => {
@@ -187,16 +216,30 @@ export function useLiquidGlass() {
     }
   }
 
+  const releaseLight = () => {
+    if (!litElement) return
+    litElement.style.removeProperty('--mx')
+    litElement.style.removeProperty('--my')
+    litElement = null
+  }
+
+  const onPointerMove = (event: PointerEvent) => {
+    if (event.pointerType !== 'mouse') return
+    cancelAnimationFrame(lightFrame)
+    lightFrame = requestAnimationFrame(() => {
+      const target = (event.target as Element | null)?.closest?.<HTMLElement>(LIGHT_SELECTOR) ?? null
+      if (target !== litElement) releaseLight()
+      if (!target) return
+      const rect = target.getBoundingClientRect()
+      target.style.setProperty('--mx', `${((event.clientX - rect.left) / rect.width) * 100}%`)
+      target.style.setProperty('--my', `${((event.clientY - rect.top) / rect.height) * 100}%`)
+      litElement = target
+    })
+  }
 
   onMounted(() => {
     defs = fe<SVGSVGElement>('svg', { width: 0, height: 0, 'aria-hidden': 'true', focusable: 'false' })
     defs.classList.add('lg-defs')
-    defs.innerHTML = `
-      <filter id="liquid-lens" x="-35%" y="-35%" width="170%" height="170%" color-interpolation-filters="sRGB">
-        <feTurbulence type="fractalNoise" baseFrequency="0.004 0.008" numOctaves="2" seed="14" result="noise"/>
-        <feGaussianBlur in="noise" stdDeviation="4" result="soft"/>
-        <feDisplacementMap in="SourceGraphic" in2="soft" scale="70" xChannelSelector="R" yChannelSelector="G"/>
-      </filter>`
     document.body.appendChild(defs)
 
     resizeObserver = new ResizeObserver((entries) => {
@@ -217,12 +260,17 @@ export function useLiquidGlass() {
 
     scanAdded(document.body)
     mutationObserver.observe(document.body, { childList: true, subtree: true })
+    document.addEventListener('pointermove', onPointerMove, { passive: true })
+    document.addEventListener('pointerleave', releaseLight)
   })
 
   onUnmounted(() => {
     mutationObserver?.disconnect()
     resizeObserver?.disconnect()
     window.clearTimeout(rebuildTimer)
+    cancelAnimationFrame(lightFrame)
+    document.removeEventListener('pointermove', onPointerMove)
+    document.removeEventListener('pointerleave', releaseLight)
     registry.clear()
     defs?.remove()
     defs = null

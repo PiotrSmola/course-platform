@@ -1,25 +1,14 @@
 <template>
   <footer class="site-footer">
     <div class="container">
-      <div class="footer-grid">
-        <div class="footer-about">
-          <router-link class="logo" :to="{ name: 'Home' }">
-            <svg class="logo-mark" viewBox="0 0 64 64" aria-hidden="true">
-              <path d="M12 12h40v4H12zm0 8h28v4H12zm0 8h36v4H12zm0 12h24v4H12zm0 8h32v4H12z" fill="url(#logo-g)"/>
-              <circle cx="50" cy="20" r="8" fill="url(#logo-g)" opacity="0.4"/>
-              <defs>
-                <linearGradient id="logo-g" x1="0" y1="0" x2="1" y2="1">
-                  <stop offset="0" stop-color="#f59e0b"/>
-                  <stop offset="1" stop-color="#ec4899"/>
-                </linearGradient>
-              </defs>
-            </svg>
-            <span>CoursePlatform</span>
-          </router-link>
-          <p>Nowoczesna platforma e-learningowa. Ucz się w dowolnym miejscu i czasie, zdobywaj certyfikaty i rozwijaj karierę.</p>
-          <FooterSocialLinks />
-        </div>
+      <div class="footer-masthead">
+        <router-link class="footer-wordmark" :to="{ name: 'Home' }" aria-label="CoursePlatform — strona główna">
+          Course<em>Platform</em>
+        </router-link>
+        <p>Nowoczesna platforma e-learningowa. Ucz się w dowolnym miejscu i czasie, zdobywaj certyfikaty i rozwijaj karierę.</p>
+      </div>
 
+      <div class="footer-grid">
         <nav class="footer-col" aria-label="Platforma">
           <h4>Platforma</h4>
           <ul>
@@ -40,6 +29,11 @@
             <li><router-link :to="{ name: 'Contact' }">Kontakt</router-link></li>
           </ul>
         </nav>
+
+        <div class="footer-col">
+          <h4>Obserwuj</h4>
+          <FooterSocialLinks />
+        </div>
 
         <div class="footer-col footer-news">
           <h4>Newsletter</h4>
@@ -73,18 +67,50 @@ const year = new Date().getFullYear()
 
 .site-footer {
   position: relative;
-  background: rgba(10, 14, 23, 0.18);
-  -webkit-backdrop-filter: blur(8px) saturate(180%);
-  backdrop-filter: blur(8px) saturate(180%);
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.16);
-  padding: 64px 0 28px;
+  margin-top: 40px;
+  padding: 72px 0 28px;
+  background: rgba($color-bg, 0.6);
+  border-top: 1px solid $color-hairline;
+}
+
+.footer-masthead {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 360px);
+  align-items: end;
+  gap: 24px 48px;
+  padding-bottom: 40px;
+  border-bottom: 1px solid $color-hairline;
+
+  p {
+    font-size: 0.94rem;
+    line-height: 1.6;
+    color: $color-muted;
+  }
+
+  @media (max-width: 860px) {
+    grid-template-columns: 1fr;
+  }
+}
+
+.footer-wordmark {
+  font-family: $font-display;
+  font-size: clamp(2.8rem, 8vw, 6.4rem);
+  font-weight: 600;
+  line-height: 0.95;
+  letter-spacing: -0.015em;
+  color: $color-ink;
+  text-decoration: none;
+
+  em {
+    @include highlight;
+  }
 }
 
 .footer-grid {
   display: grid;
-  grid-template-columns: 2.1fr 1fr 1fr 1.7fr;
+  grid-template-columns: 1fr 1fr 1fr 1.6fr;
   gap: 40px;
-  padding-bottom: 44px;
+  padding: 40px 0 48px;
 
   @media (max-width: 880px) {
     grid-template-columns: 1fr 1fr;
@@ -92,62 +118,22 @@ const year = new Date().getFullYear()
 
   @media (max-width: 560px) {
     grid-template-columns: 1fr;
-    gap: 32px;
-  }
-}
-
-.footer-about {
-  .logo {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    font-size: 1.25rem;
-    font-weight: 700;
-
-    .logo-mark {
-      width: 28px;
-      height: 28px;
-    }
-  }
-
-  p {
-    margin: 16px 0 22px;
-    font-size: 0.92rem;
-    color: $color-muted;
-    max-width: 300px;
-  }
-}
-
-.socials {
-  display: flex;
-  gap: 10px;
-
-  a {
-    width: 40px;
-    height: 40px;
-    display: grid;
-    place-items: center;
-    font-size: 0.82rem;
-    font-weight: 700;
-    color: $color-muted;
-    box-shadow: 0 6px 16px rgba(3, 6, 24, 0.3);
-    transition: color 0.25s, transform 0.2s;
-
-    &:hover {
-      color: $color-ink;
-      transform: translateY(-3px);
-    }
+    gap: 0;
+    padding-top: 8px;
   }
 }
 
 .footer-col {
   h4 {
-    font-size: 0.82rem;
-    font-weight: 700;
-    letter-spacing: 0.1em;
-    text-transform: uppercase;
-    color: $color-faint;
+    @include mono-label;
+    display: flex;
+    align-items: center;
+    gap: 10px;
     margin-bottom: 18px;
+    padding-bottom: 12px;
+    border-bottom: 1px dashed $color-hairline;
+    font-size: 0.66rem;
+    color: $color-faint;
   }
 
   ul {
@@ -156,13 +142,26 @@ const year = new Date().getFullYear()
     gap: 11px;
   }
 
+  li:empty {
+    display: none;
+  }
+
   a {
     font-size: 0.93rem;
     color: $color-muted;
+    text-decoration: none;
     transition: color 0.25s;
 
     &:hover {
       color: $color-ink;
+    }
+  }
+
+  @media (max-width: 560px) {
+    padding: 24px 0;
+
+    & + & {
+      border-top: 1px solid $color-hairline;
     }
   }
 }
@@ -170,64 +169,26 @@ const year = new Date().getFullYear()
 .footer-news {
   > p {
     font-size: 0.92rem;
+    line-height: 1.55;
     color: $color-muted;
     margin-bottom: 16px;
   }
 }
 
-.newsletter-form {
-  display: flex;
-  gap: 10px;
-
-  @media (max-width: 560px) {
-    flex-direction: column;
-  }
-
-  input {
-    flex: 1;
-    min-width: 0;
-    height: 48px;
-    padding: 0 18px;
-    border-radius: 999px;
-    border: none;
-    background: rgba(255, 255, 255, 0.04);
-    box-shadow: inset 0 1px 1px rgba(255, 255, 255, 0.3), inset 0 0 0 1px rgba(255, 255, 255, 0.1);
-    color: $color-ink;
-    font: inherit;
-    font-size: 0.92rem;
-    outline: none;
-    transition: background 0.3s, box-shadow 0.3s;
-
-    &::placeholder {
-      color: $color-faint;
-    }
-
-    &:focus {
-      background: rgba(255, 255, 255, 0.07);
-      box-shadow: inset 0 1px 1px rgba(255, 255, 255, 0.35), inset 0 0 0 1px rgba(245, 158, 11, 0.5), 0 0 0 4px rgba(245, 158, 11, 0.18);
-    }
-  }
-
-  .btn {
-    padding: 0 22px;
-    height: 48px;
-    font-size: 0.9rem;
-  }
-}
-
 .footer-bottom {
-  box-shadow: inset 0 1px 0 $color-hairline;
-  padding-top: 26px;
   display: flex;
   flex-wrap: wrap;
   justify-content: space-between;
   gap: 10px;
-  font-size: 0.84rem;
+  padding-top: 22px;
+  border-top: 1px solid $color-hairline;
+  font-family: $font-mono;
+  font-size: 0.7rem;
+  letter-spacing: 0.04em;
   color: $color-faint;
 
   @media (max-width: 560px) {
-    justify-content: center;
-    text-align: center;
+    flex-direction: column;
   }
 }
 </style>

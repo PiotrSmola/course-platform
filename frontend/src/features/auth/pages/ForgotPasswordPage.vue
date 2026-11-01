@@ -18,31 +18,35 @@ import ForgotPasswordForm from '@/features/auth/components/ForgotPasswordForm.vu
 
 .forgot-password-page {
   h2 {
-    font-size: 1.25rem;
+    font-size: 2.4rem;
+    line-height: 1.05;
     margin-bottom: 12px;
-    text-align: center;
   }
 
   .hint {
-    text-align: center;
-    font-size: 0.9rem;
+    font-size: 0.92rem;
     color: $color-muted;
-    margin-bottom: 24px;
-    line-height: 1.5;
+    margin-bottom: 26px;
+    line-height: 1.55;
   }
 
   .auth-switch {
-    text-align: center;
-    margin-top: 24px;
+    margin-top: 28px;
+    padding-top: 20px;
+    border-top: 1px dashed $color-hairline;
     font-size: 0.9rem;
     color: $color-muted;
 
     a {
-      color: $color-cyan;
-      font-weight: 600;
+      color: $color-ink;
+      font-weight: 500;
+      text-decoration: underline;
+      text-decoration-color: rgba($color-accent, 0.6);
+      text-underline-offset: 4px;
+      transition: text-decoration-color 0.2s;
 
       &:hover {
-        text-decoration: underline;
+        text-decoration-color: $color-accent;
       }
     }
   }

@@ -3,22 +3,22 @@
     <section class="gift-redeem-card glass-card">
       <template v-if="!authStore.isAuthenticated">
         <span class="eyebrow">Prezent</span>
-        <h1>Zrealizuj kod prezentowy</h1>
-        <p>Zaloguj sie lub utworz konto, aby przypisac kurs do swojej biblioteki.</p>
+        <h1>Zrealizuj kod <em>prezentowy</em></h1>
+        <p>Zaloguj się lub utwórz konto, aby przypisać kurs do swojej biblioteki.</p>
         <div class="gift-redeem-actions">
           <router-link class="btn btn-primary" :to="{ name: 'Login', query: { redirect: route.fullPath } }">
-            Zaloguj sie
+            Zaloguj się
           </router-link>
           <router-link class="btn btn-ghost" :to="{ name: 'Register', query: { redirect: route.fullPath } }">
-            Utworz konto
+            Utwórz konto
           </router-link>
         </div>
       </template>
 
       <template v-else>
         <span class="eyebrow">Prezent</span>
-        <h1>Zrealizuj kod prezentowy</h1>
-        <p>Wpisz kod z wiadomosci e-mail. Kurs pojawi sie od razu w Twoich kursach.</p>
+        <h1>Zrealizuj kod <em>prezentowy</em></h1>
+        <p>Wpisz kod z wiadomości e-mail. Kurs pojawi się od razu w Twoich kursach.</p>
         <form class="gift-redeem-form" @submit.prevent="redeem">
           <label for="gift-code">Kod prezentowy</label>
           <input
@@ -64,6 +64,7 @@ async function redeem() {
 
 <style lang="scss" scoped>
 @use "@/assets/styles/abstracts/variables" as *;
+@use "@/assets/styles/abstracts/mixins" as *;
 
 .gift-redeem-page {
   display: grid;
@@ -73,17 +74,18 @@ async function redeem() {
 }
 
 .gift-redeem-card {
-  --lg-r: 28px;
-  --lg-blur: 2px;
-  width: min(520px, 100%);
-  padding: 42px 36px;
-  text-align: center;
+  --lg-blur: 10px;
+  width: min(540px, 100%);
+  padding: 30px 32px 32px;
+
+  &:hover {
+    transform: none;
+  }
 
   h1 {
-    margin: 14px 0 10px;
-    font-family: $font-display;
-    font-size: clamp(1.55rem, 5vw, 2rem);
-    letter-spacing: -0.03em;
+    margin: 18px 0 10px;
+    font-size: clamp(1.8rem, 5vw, 2.3rem);
+    font-weight: 600;
   }
 
   > p {
@@ -92,13 +94,12 @@ async function redeem() {
   }
 
   @media (max-width: 520px) {
-    padding: 34px 22px;
+    padding: 26px 22px;
   }
 }
 
 .gift-redeem-actions {
   display: flex;
-  justify-content: center;
   flex-wrap: wrap;
   gap: 10px;
   margin-top: 28px;
@@ -108,32 +109,41 @@ async function redeem() {
   display: flex;
   flex-direction: column;
   gap: 10px;
-  margin-top: 28px;
-  text-align: left;
+  margin-top: 24px;
+  padding-top: 20px;
+  border-top: 1px dashed $color-hairline;
 
   label {
-    color: $color-muted;
-    font-size: 0.86rem;
-    font-weight: 600;
+    @include mono-label;
+    font-size: 0.62rem;
+    color: $color-faint;
   }
 
   input {
     width: 100%;
     min-width: 0;
     height: 50px;
-    border: 1px solid rgba(255, 255, 255, 0.14);
-    border-radius: 14px;
+    border: none;
+    border-radius: $radius-md;
     padding: 0 16px;
-    background: rgba(255, 255, 255, 0.05);
+    background: rgba(13, 15, 19, 0.45);
+    box-shadow: inset 0 0 0 1px $color-hairline;
     color: $color-ink;
-    font: inherit;
-    font-weight: 700;
-    letter-spacing: 0.04em;
+    font-family: $font-mono;
+    font-size: 0.95rem;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
     outline: 0;
+    transition: box-shadow 0.2s;
+
+    &::placeholder {
+      color: $color-faint;
+    }
 
     &:focus {
-      border-color: rgba(34, 211, 238, 0.58);
-      box-shadow: 0 0 0 4px rgba(34, 211, 238, 0.14);
+      box-shadow:
+        inset 0 0 0 1px $color-hairline,
+        0 0 0 2px rgba($color-accent, 0.6);
     }
   }
 

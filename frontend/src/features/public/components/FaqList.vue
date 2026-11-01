@@ -1,10 +1,11 @@
 <template>
   <div class="faq-list">
-    <details v-for="item in visibleItems" :key="item.question" class="faq-item glass-card">
+    <details v-for="(item, index) in visibleItems" :key="item.question" class="faq-item">
       <summary>
-        <span>{{ item.question }}</span>
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
-          <path d="m6 9 6 6 6-6" />
+        <span class="faq-num">{{ String(index + 1).padStart(2, '0') }}</span>
+        <span class="faq-question">{{ item.question }}</span>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true">
+          <path d="M12 5v14M5 12h14" />
         </svg>
       </summary>
       <div class="faq-answer">
@@ -63,59 +64,67 @@ const visibleItems = computed(() => props.compact ? items.slice(0, 4) : items)
 
 <style lang="scss" scoped>
 @use "@/assets/styles/abstracts/variables" as *;
+@use "@/assets/styles/abstracts/mixins" as *;
 
 .faq-list {
-  display: grid;
-  gap: 12px;
+  border-top: 1px solid $color-ink;
 }
 
 .faq-item {
-  --lg-r: 18px;
-  --lg-blur: 2px;
-  overflow: hidden;
-
-  summary,
-  .faq-answer {
-    position: relative;
-    z-index: 1;
-  }
+  border-bottom: 1px solid $color-hairline;
 
   summary {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 18px;
-    padding: 20px 22px;
+    display: grid;
+    grid-template-columns: 48px minmax(0, 1fr) auto;
+    align-items: baseline;
+    gap: 12px;
+    padding: 20px 4px;
     color: $color-ink;
     cursor: pointer;
-    font-family: $font-display;
-    font-size: 1rem;
-    font-weight: 600;
     list-style: none;
+    transition: color 0.2s;
 
     &::-webkit-details-marker {
       display: none;
     }
 
+    &:hover {
+      color: $color-accent;
+    }
+
     svg {
-      width: 19px;
-      height: 19px;
-      flex-shrink: 0;
-      color: $color-gold;
-      transition: transform 160ms ease;
+      width: 18px;
+      height: 18px;
+      align-self: center;
+      color: $color-muted;
+      transition: transform 0.3s $ease-out, color 0.2s;
     }
   }
 
   &[open] summary svg {
-    transform: rotate(180deg);
+    transform: rotate(45deg);
+    color: $color-accent;
   }
 }
 
+.faq-num {
+  font-family: $font-mono;
+  font-size: 0.72rem;
+  color: $color-faint;
+}
+
+.faq-question {
+  font-family: $font-display;
+  font-size: 1.15rem;
+  font-weight: 500;
+  line-height: 1.3;
+}
+
 .faq-answer {
-  padding: 0 22px 21px;
+  padding: 0 40px 22px 64px;
 
   p {
-    max-width: 900px;
+    max-width: 68ch;
     color: $color-muted;
     line-height: 1.65;
   }
@@ -123,12 +132,16 @@ const visibleItems = computed(() => props.compact ? items.slice(0, 4) : items)
 
 @media (max-width: 560px) {
   .faq-item summary {
-    padding: 18px;
-    font-size: 0.94rem;
+    grid-template-columns: 34px minmax(0, 1fr) auto;
+    padding: 18px 0;
+  }
+
+  .faq-question {
+    font-size: 1rem;
   }
 
   .faq-answer {
-    padding: 0 18px 18px;
+    padding: 0 0 18px 46px;
   }
 }
 </style>

@@ -3,7 +3,7 @@
     <div class="container">
       <div class="section-head">
         <span class="eyebrow">Moje kursy</span>
-        <h2>Twoja nauka</h2>
+        <h2>Twoja <em>nauka</em></h2>
       </div>
 
       <div v-if="!authStore.token" class="state-wrap">
@@ -35,29 +35,38 @@
       </div>
       <div v-else class="courses-grid">
         <article v-for="e in enrollments" :key="e.id" class="course-card glass-card">
-          <CourseThumbnail class="course-thumb" :url="e.courseThumbnailUrl" />
+          <div class="course-thumb-wrap">
+            <CourseThumbnail
+              class="course-thumb"
+              :url="e.courseThumbnailUrl"
+              :title="e.courseTitle"
+              :seed="e.courseId"
+            />
+            <span v-if="isComplete(e)" class="badge-done">Ukończony</span>
+          </div>
           <div class="course-info">
-            <div class="card-meta">
+            <p class="card-meta">
               <span class="level">{{ levelLabel(e.courseLevel) }}</span>
-              <span v-if="e.isTrial" class="badge-trial">Trial</span>
-              <span v-if="isComplete(e)" class="badge-done">Ukończony</span>
-            </div>
-            <h3>{{ e.courseTitle }}</h3>
-            <div class="progress-bar" role="progressbar" :aria-valuenow="Math.round(e.progressPercentage)" aria-valuemin="0" aria-valuemax="100">
-              <div class="progress-fill" :style="{ width: e.progressPercentage + '%' }"></div>
-            </div>
-            <div class="progress-meta">
               <span>{{ e.completedLessons }} / {{ e.totalLessons }} lekcji</span>
-              <span class="progress-pct">{{ Math.round(e.progressPercentage) }}%</span>
+              <span v-if="e.isTrial" class="badge-trial">Trial</span>
+            </p>
+            <h3>{{ e.courseTitle }}</h3>
+            <div class="card-footer">
+              <div class="progress-row">
+                <div class="progress-bar" role="progressbar" :aria-valuenow="Math.round(e.progressPercentage)" aria-valuemin="0" aria-valuemax="100">
+                  <div class="progress-fill" :style="{ width: e.progressPercentage + '%' }"></div>
+                </div>
+                <span class="progress-pct">{{ Math.round(e.progressPercentage) }}%</span>
+              </div>
+              <router-link
+                v-if="e.continueLessonId"
+                class="btn btn-ghost btn-pill continue-btn"
+                :to="{ name: 'Learning', params: { courseId: e.courseId, lessonId: e.continueLessonId } }"
+              >
+                {{ continueLabel(e) }}
+              </router-link>
+              <button v-else class="btn btn-ghost btn-pill continue-btn" disabled>Brak lekcji</button>
             </div>
-            <router-link
-              v-if="e.continueLessonId"
-              class="btn btn-primary continue-btn"
-              :to="{ name: 'Learning', params: { courseId: e.courseId, lessonId: e.continueLessonId } }"
-            >
-              {{ continueLabel(e) }}
-            </router-link>
-            <button v-else class="btn btn-primary continue-btn" disabled>Brak lekcji</button>
           </div>
         </article>
       </div>
@@ -101,110 +110,137 @@ function levelLabel(level: number) {
 </script>
 
 <style lang="scss" scoped>
-@use "@/assets/styles/abstracts/variables" as *;
-
 .my-courses {
-  padding: calc($header-height + 40px) 0 80px;
+  padding: 24px 0 80px;
 }
 
 .state-wrap {
   margin-top: 24px;
 }
 
-.skeletons {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
-  gap: 24px;
-}
-
+.skeletons,
 .courses-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(min(320px, 100%), 1fr));
   gap: 24px;
 }
 
 .course-card {
-  padding: 0;
+  --lg-blur: 10px;
   overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+.course-thumb-wrap {
+  position: relative;
+  margin: 12px 12px 0;
 }
 
 .course-thumb {
-  height: 180px;
-  display: block;
+  position: relative;
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  border-radius: 14px 14px 14px 4px;
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.08);
+}
+
+.badge-done {
+  @include tag;
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  color: $color-on-accent;
+  background: $color-accent;
+  box-shadow: none;
 }
 
 .course-info {
-  padding: 24px;
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  padding: 16px 20px 20px;
 
   h3 {
-    font-size: 1.15rem;
-    margin-bottom: 16px;
+    margin-bottom: 18px;
+    font-family: $font-display;
+    font-size: 1.08rem;
+    font-weight: 600;
+    line-height: 1.25;
+    letter-spacing: -0.005em;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
   }
 }
 
 .card-meta {
+  @include mono-label;
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
   gap: 10px;
   margin-bottom: 10px;
-}
+  font-size: 0.64rem;
+  color: $color-faint;
 
-.level {
-  font-size: 0.78rem;
-  font-weight: 600;
-  color: $color-muted;
-  text-transform: uppercase;
-  letter-spacing: 0.04em;
-}
-
-.badge-done {
-  font-size: 0.75rem;
-  font-weight: 700;
-  padding: 4px 10px;
-  border-radius: 999px;
-  background: rgba(74, 222, 128, 0.15);
-  color: #4ade80;
+  > span:not(.badge-trial) + span:not(.badge-trial)::before {
+    content: "/";
+    margin-right: 10px;
+    color: $color-hairline;
+  }
 }
 
 .badge-trial {
-  font-size: 0.75rem;
-  font-weight: 700;
-  padding: 4px 10px;
-  border-radius: 999px;
-  background: rgba(245, 158, 11, 0.15);
-  color: #fbbf24;
+  @include tag;
+  margin-left: auto;
+  color: $color-coral;
+  box-shadow: inset 0 0 0 1px rgba($color-coral, 0.4);
+}
+
+.progress-row {
+  flex: 1;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 12px;
+  min-width: 0;
 }
 
 .progress-bar {
-  height: 8px;
-  border-radius: 999px;
-  background: rgba(255, 255, 255, 0.1);
+  height: 4px;
+  border-radius: 2px;
+  background: rgba($color-ink, 0.1);
   overflow: hidden;
-  margin-bottom: 10px;
 }
 
 .progress-fill {
   height: 100%;
-  border-radius: inherit;
-  background: linear-gradient(90deg, #a78bfa, #22d3ee);
-  transition: width 0.5s ease;
-}
-
-.progress-meta {
-  display: flex;
-  justify-content: space-between;
-  font-size: 0.85rem;
-  color: $color-muted;
-  margin-bottom: 20px;
+  border-radius: 2px;
+  background: $color-accent;
+  transition: width 0.5s $ease-out;
 }
 
 .progress-pct {
-  font-weight: 700;
-  color: $color-cyan;
+  font-family: $font-mono;
+  font-size: 0.76rem;
+  font-variant-numeric: tabular-nums;
+  color: $color-ink;
+}
+
+.card-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 18px;
+  margin-top: auto;
+  padding-top: 16px;
+  border-top: 1px dashed $color-hairline;
 }
 
 .continue-btn {
-  padding: 10px 20px;
-  font-size: 0.9rem;
+  padding: 10px 18px;
+  font-size: 0.86rem;
 }
 </style>

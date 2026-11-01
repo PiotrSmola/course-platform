@@ -2,12 +2,20 @@
   <div class="browse-page">
     <div class="browse-hero">
       <div class="container">
-        <h1 class="browse-title">Wszystkie kursy</h1>
-        <p class="browse-subtitle">Odkryj {{ totalCount }} kursów i rozpocznij naukę już dziś</p>
-        <div class="subscription-banner glass-card">
-          <div>
+        <header class="browse-head">
+          <div class="browse-head__main">
+            <span class="eyebrow">Katalog</span>
+            <h1 class="browse-title">Wszystkie <em>kursy</em></h1>
+          </div>
+          <div class="browse-head__aside">
+            <p class="browse-count"><span>{{ String(totalCount).padStart(2, '0') }}</span> kursów w katalogu</p>
+            <p class="browse-subtitle">Odkryj kursy i rozpocznij naukę już dziś.</p>
+          </div>
+        </header>
+        <div class="subscription-banner glass">
+          <div class="subscription-banner__text">
             <span class="subscription-banner__eyebrow">All-access</span>
-            <h2>Ucz się bez limitu za {{ monthlyPriceLabel }} / mies.</h2>
+            <h2>Ucz się bez limitu za <em>{{ monthlyPriceLabel }}</em> / mies.</h2>
             <p>Jedna subskrypcja odblokowuje wszystkie opublikowane kursy i pozwala zarządzać planem w Stripe Billing Portal.</p>
           </div>
           <div class="subscription-banner__actions">
@@ -322,7 +330,7 @@
             :class="{ active: page === state.pageNumber }"
             @click="setPage(page)"
           >
-            {{ page }}
+            {{ String(page).padStart(2, '0') }}
           </button>
 
           <button
@@ -501,111 +509,153 @@ function openBillingPortal() {
 <style lang="scss" scoped>
 @use "@/assets/styles/abstracts/variables" as *;
 @use "@/assets/styles/abstracts/mixins" as *;
-@use "sass:color";
-
-@property --lg-tint {
-  syntax: "<color>";
-  inherits: true;
-  initial-value: rgba(255, 255, 255, 0.04);
-}
 
 .browse-page {
-  padding-top: $header-height;
   min-height: 100vh;
 }
 
 .browse-hero {
-  padding: 40px 0 32px;
+  padding: 32px 0 28px;
+}
+
+.browse-head {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 360px);
+  column-gap: 48px;
+  align-items: end;
+  padding-bottom: 28px;
+  margin-bottom: 28px;
   border-bottom: 1px solid $color-hairline;
+
+  @media (max-width: 860px) {
+    grid-template-columns: 1fr;
+    row-gap: 18px;
+  }
 }
 
 .browse-title {
-  font-family: $font-display;
-  font-size: $font-size-xl;
-  font-weight: 600;
-  letter-spacing: -0.02em;
+  font-size: $font-size-2xl;
+  margin-top: 18px;
+}
+
+.browse-count {
+  @include mono-label;
+  color: $color-muted;
   margin-bottom: 8px;
+
+  span {
+    color: $color-accent;
+  }
 }
 
 .browse-subtitle {
   color: $color-muted;
   font-size: 0.95rem;
-  margin-bottom: 20px;
 }
 
 .subscription-banner {
-  --lg-r: 24px;
-  --lg-blur: 0px;
+  --lg-r: 18px;
+  --lg-blur: 10px;
+  --lg-tint: rgba(13, 15, 19, 0.3);
   display: flex;
+  align-items: center;
   justify-content: space-between;
   gap: 24px;
-  padding: 22px 24px;
-  margin-bottom: 24px;
+  padding: 14px 14px 14px 22px;
+  margin-bottom: 20px;
 
   @media (max-width: 780px) {
     flex-direction: column;
     align-items: flex-start;
+    padding: 18px;
+  }
+}
+
+.subscription-banner__text {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  column-gap: 18px;
+  row-gap: 2px;
+  align-items: baseline;
+  min-width: 0;
+
+  @media (max-width: 780px) {
+    grid-template-columns: 1fr;
+    row-gap: 8px;
   }
 }
 
 .subscription-banner__eyebrow {
-  display: inline-flex;
-  margin-bottom: 10px;
-  font-size: 0.76rem;
-  font-weight: 700;
-  letter-spacing: 0.1em;
-  text-transform: uppercase;
-  color: $color-gold;
+  @include tag;
+  grid-row: span 2;
+  align-self: center;
+  color: $color-on-accent;
+  background: $color-accent;
+  box-shadow: none;
+
+  @media (max-width: 780px) {
+    grid-row: auto;
+    justify-self: start;
+  }
 }
 
 .subscription-banner h2 {
-  font-size: 1.3rem;
-  margin-bottom: 8px;
+  font-size: 1.15rem;
+  font-weight: 500;
+  line-height: 1.25;
 }
 
 .subscription-banner p {
-  color: $color-muted;
+  color: $color-faint;
+  font-size: 0.82rem;
   max-width: 720px;
 }
 
 .subscription-banner__actions {
   display: flex;
-  flex-direction: column;
-  align-items: flex-end;
-  justify-content: center;
-  gap: 10px;
+  align-items: center;
+  gap: 12px;
+  flex-shrink: 0;
+
+  .btn {
+    padding: 11px 22px;
+    font-size: 0.88rem;
+  }
 
   @media (max-width: 780px) {
-    align-items: flex-start;
+    width: 100%;
+    flex-direction: column;
+    align-items: stretch;
   }
 }
 
 .subscription-banner__badge {
-  font-size: 0.85rem;
-  font-weight: 600;
-  color: #86efac;
+  @include tag;
+  color: $color-success;
+  box-shadow: inset 0 0 0 1px rgba($color-success, 0.4);
 }
 
 .browse-toolbar {
   display: flex;
-  gap: 16px;
+  gap: 12px;
   flex-wrap: wrap;
 }
 
 .search-box {
-  @include liquid-glass;
   --lg-r: 999px;
-  --lg-blur: 0px;
+  --lg-blur: 10px;
+  --lg-tint: rgba(13, 15, 19, 0.3);
   flex: 1;
   min-width: 260px;
   display: flex;
   align-items: center;
-  padding: 4px 4px 4px 18px;
+  padding: 4px 4px 4px 20px;
   gap: 8px;
 }
 
 .search-input {
   flex: 1;
+  min-width: 0;
   background: none;
   border: none;
   font: inherit;
@@ -620,36 +670,25 @@ function openBillingPortal() {
 
 .search-btn {
   @include liquid-glass;
+  @include glass-press;
   --lg-r: 999px;
-  --lg-blur: 0px;
-  --lg-tint: rgba(245, 158, 11, 0.85);
+  --lg-blur: 2px;
+  --lg-tint: #{rgba($color-accent, 0.88)};
   width: 40px;
   height: 40px;
   display: flex;
   align-items: center;
   justify-content: center;
   border: none;
-  color: #1a1208;
+  background: none;
+  color: $color-on-accent;
   cursor: pointer;
   flex-shrink: 0;
-  transition: transform 0.2s, box-shadow 0.2s;
-
-  &:hover {
-    --lg-tint: rgba(245, 158, 11, 1);
-    transform: scale(1.05);
-    box-shadow:
-      0 10px 24px rgba(245, 158, 11, 0.35),
-      0 2px 8px rgba(3, 6, 24, 0.25);
-  }
 }
 
 .sort-box {
   position: relative;
-}
-
-.sort-trigger:focus-visible,
-.sort-option:focus-visible {
-  outline: none;
+  width: min(100%, 280px);
 }
 
 .sort-trigger::before {
@@ -659,61 +698,44 @@ function openBillingPortal() {
 
 .sort-trigger {
   @include liquid-glass;
-  --lg-r: 14px;
-  --lg-blur: 0px;
-  --lg-tint: rgba(255, 255, 255, 0.04);
+  --lg-r: #{$radius-md};
+  --lg-blur: 10px;
+  --lg-tint: rgba(13, 15, 19, 0.3);
   appearance: none;
+  width: 100%;
   background: none;
   border: none;
   font: inherit;
   font-size: 0.9rem;
   color: $color-ink;
-  padding: 13px 16px;
+  padding: 0 16px;
+  height: 48px;
   cursor: pointer;
-  outline: none;
-  min-width: 240px;
   display: inline-flex;
   align-items: center;
-  gap: 10px;
+  gap: 12px;
   text-align: left;
-  box-shadow:
-    0 10px 30px rgba(3, 6, 24, 0.35),
-    0 2px 8px rgba(3, 6, 24, 0.22),
-    0 18px 30px -22px rgba(170, 200, 255, 0.35),
-    inset 0 1px 1px rgba(255, 255, 255, 0.3),
-    inset 0 0 0 1px rgba(255, 255, 255, 0.1);
-  transition: --lg-tint 0.35s, box-shadow 0.35s, transform 0.2s;
+  transition: --lg-tint 0.3s;
 
-  &:hover {
-    --lg-tint: rgba(245, 158, 11, 0.08);
-    box-shadow:
-      0 10px 30px rgba(3, 6, 24, 0.4),
-      0 2px 8px rgba(3, 6, 24, 0.25),
-      0 18px 30px -22px rgba(245, 158, 11, 0.4),
-      inset 0 1px 1px rgba(255, 255, 255, 0.35),
-      inset 0 0 0 1px rgba(245, 158, 11, 0.3);
-  }
-
+  &:hover,
   &.open {
-    --lg-tint: rgba(245, 158, 11, 0.1);
+    --lg-tint: rgba(255, 255, 255, 0.07);
   }
 
   .sort-label {
+    @include mono-label;
+    font-size: 0.62rem;
     color: $color-faint;
-    font-size: 0.78rem;
-    font-weight: 500;
-    text-transform: uppercase;
-    letter-spacing: 0.06em;
   }
 
   .sort-value {
     flex: 1;
     color: $color-ink;
-    font-weight: 600;
+    font-weight: 500;
   }
 
   .sort-arrow {
-    color: $color-gold;
+    color: $color-muted;
     transition: transform 0.25s;
     flex-shrink: 0;
 
@@ -721,61 +743,36 @@ function openBillingPortal() {
       transform: rotate(180deg);
     }
   }
-
-  &.open .sort-arrow {
-    color: $color-ink;
-  }
 }
 
 .sort-menu {
   @include liquid-glass;
   --lg-r: 16px;
-  --lg-blur: 2px;
-  --lg-tint: rgba(17, 24, 39, 0.55);
+  --lg-blur: 18px;
+  --lg-tint: #{rgba($color-bg, 0.72)};
   position: absolute;
   top: calc(100% + 8px);
   right: 0;
-  min-width: 260px;
+  width: 100%;
   margin: 0;
-  padding: 8px;
+  padding: 6px;
   list-style: none;
   z-index: 30;
-  box-shadow:
-    0 24px 60px rgba(3, 6, 24, 0.55),
-    0 4px 14px rgba(3, 6, 24, 0.35),
-    inset 0 1px 1px rgba(255, 255, 255, 0.18),
-    inset 0 0 0 1px rgba(255, 255, 255, 0.1);
-  transition: --lg-tint 0.35s, box-shadow 0.35s;
-}
-
-.sort-menu::before {
-  content: "";
-  position: absolute;
-  inset: 0;
-  border-radius: inherit;
-  pointer-events: none;
-  background:
-    radial-gradient(180px 100px at 18% 0%, rgba(255, 255, 255, 0.07), transparent 65%),
-    radial-gradient(120px 80px at 100% 100%, rgba(245, 158, 11, 0.05), transparent 70%);
 }
 
 .sort-blob {
   position: absolute;
   top: 0;
   left: 0;
-  border-radius: 12px;
-  background: linear-gradient(135deg, rgba(245, 158, 11, 0.16), rgba(245, 158, 11, 0.08));
-  box-shadow:
-    inset 1.5px 1.5px 2px -1px rgba(255, 255, 255, 0.35),
-    inset -1.5px -1.5px 2px -1px rgba(255, 255, 255, 0.08),
-    inset 0 -8px 16px -10px rgba(245, 158, 11, 0.25);
+  border-radius: 10px;
+  background: rgba($color-ink, 0.08);
   opacity: 0;
   pointer-events: none;
   transition:
-    left 0.45s cubic-bezier(0.3, 1.55, 0.35, 1),
-    width 0.45s cubic-bezier(0.3, 1.55, 0.35, 1),
-    top 0.45s cubic-bezier(0.3, 1.55, 0.35, 1),
-    height 0.45s cubic-bezier(0.3, 1.55, 0.35, 1),
+    left 0.45s $ease-jelly,
+    width 0.45s $ease-jelly,
+    top 0.45s $ease-jelly,
+    height 0.45s $ease-jelly,
     opacity 0.2s;
 }
 
@@ -786,89 +783,106 @@ function openBillingPortal() {
   align-items: center;
   justify-content: space-between;
   gap: 12px;
-  padding: 12px 14px;
+  padding: 11px 12px;
   font-size: 0.9rem;
-  color: $color-ink;
+  color: $color-muted;
   cursor: pointer;
   transition: color 0.18s;
 
+  &:hover {
+    color: $color-ink;
+  }
+
   svg {
-    color: $color-gold;
+    color: $color-accent;
     flex-shrink: 0;
   }
 
   &.active {
     color: $color-ink;
-    font-weight: 600;
   }
+}
+
+.sort-trigger:focus-visible,
+.sort-option:focus-visible {
+  outline: 2px solid $color-accent;
+  outline-offset: 2px;
 }
 
 .browse-body {
   display: grid;
-  grid-template-columns: 260px 1fr;
-  gap: 32px;
-  padding-top: 32px;
-  padding-bottom: 80px;
+  grid-template-columns: 290px minmax(0, 1fr);
+  gap: 36px;
+  padding-top: 12px;
+  padding-bottom: 96px;
 
   @media (max-width: 860px) {
-    grid-template-columns: 1fr;
+    grid-template-columns: minmax(0, 1fr);
   }
 }
 
 .browse-sidebar {
+  min-width: 0;
+
   @media (max-width: 860px) {
     order: -1;
   }
 }
 
 .filter-group {
-  --lg-r: 20px;
-  --lg-blur: 0px;
-  padding: 24px;
+  --lg-blur: 10px;
+  padding: 22px 22px 24px;
   position: sticky;
   top: calc($header-height + 24px);
+
+  &:hover {
+    transform: none;
+  }
 }
 
 .filter-header {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  margin-bottom: 20px;
+  padding-bottom: 14px;
+  margin-bottom: 18px;
+  border-bottom: 1px solid $color-hairline;
 
   h3 {
     font-family: $font-display;
-    font-size: 1.05rem;
-    font-weight: 600;
+    font-size: 1.2rem;
+    font-weight: 500;
   }
 }
 
 .filter-reset {
+  @include mono-label;
   background: none;
   border: none;
-  font: inherit;
-  font-size: 0.82rem;
-  color: $color-gold;
+  font-size: 0.62rem;
+  color: $color-accent;
   cursor: pointer;
-  padding: 0;
-  text-decoration: underline;
-
-  &:hover {
-    color: color.adjust($color-gold, $lightness: 10%);
-  }
+  padding: 0 0 2px;
+  border-bottom: 1px dashed rgba($color-accent, 0.5);
 }
 
 .filter-section {
-  margin-bottom: 24px;
+  padding-bottom: 18px;
+  margin-bottom: 18px;
+  border-bottom: 1px dashed $color-hairline;
 
   &:last-child {
+    padding-bottom: 0;
     margin-bottom: 0;
+    border-bottom: none;
   }
 
   h4 {
-    font-size: 0.82rem;
-    font-weight: 600;
-    text-transform: uppercase;
-    letter-spacing: 0.06em;
+    @include mono-label;
+    font-family: $font-mono;
+    font-size: 0.62rem;
+    font-weight: 500;
+    letter-spacing: 0.14em;
     color: $color-faint;
     margin-bottom: 12px;
   }
@@ -877,36 +891,32 @@ function openBillingPortal() {
 .filter-options {
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: 9px;
 }
 
 .filter-chips {
   display: flex;
   flex-wrap: wrap;
-  gap: 8px;
+  gap: 6px;
 }
 
 .filter-chip {
+  @include tag;
   appearance: none;
-  background: rgba(255, 255, 255, 0.04);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  border-radius: 999px;
-  padding: 6px 14px;
-  font: inherit;
-  font-size: 0.82rem;
-  color: $color-muted;
+  border: none;
+  padding: 6px 9px;
   cursor: pointer;
-  transition: background 0.2s, color 0.2s, border-color 0.2s;
+  transition: color 0.2s, background 0.2s, box-shadow 0.2s;
 
   &:hover {
-    background: rgba(255, 255, 255, 0.08);
     color: $color-ink;
+    box-shadow: inset 0 0 0 1px rgba($color-ink, 0.3);
   }
 
   &.active {
-    background: rgba(245, 158, 11, 0.15);
-    border-color: rgba(245, 158, 11, 0.4);
-    color: #fbbf24;
+    color: $color-accent;
+    background: rgba($color-accent, 0.1);
+    box-shadow: inset 0 0 0 1px rgba($color-accent, 0.6);
   }
 }
 
@@ -923,27 +933,26 @@ function openBillingPortal() {
     color: $color-ink;
   }
 
+  &:has(input:checked) {
+    color: $color-ink;
+  }
+
   input[type="radio"] {
     appearance: none;
-    width: 16px;
-    height: 16px;
-    border: 2px solid $color-faint;
+    width: 14px;
+    height: 14px;
+    margin: 0;
     border-radius: 50%;
+    box-shadow: inset 0 0 0 1px rgba($color-ink, 0.35);
     flex-shrink: 0;
     cursor: pointer;
-    position: relative;
-    transition: border-color 0.2s;
+    transition: box-shadow 0.2s, background 0.2s;
 
     &:checked {
-      border-color: $color-gold;
-
-      &::after {
-        content: "";
-        position: absolute;
-        inset: 3px;
-        border-radius: 50%;
-        background: $color-gold;
-      }
+      background: $color-accent;
+      box-shadow:
+        inset 0 0 0 1px $color-accent,
+        inset 0 0 0 4px rgba(13, 15, 19, 0.9);
     }
   }
 }
@@ -967,19 +976,28 @@ function openBillingPortal() {
 .browse-empty {
   display: flex;
   flex-direction: column;
-  align-items: center;
-  justify-content: center;
+  align-items: flex-start;
   gap: 16px;
-  padding: 80px 20px;
-  text-align: center;
+  padding: 48px 0;
   color: $color-muted;
+  border-top: 1px solid $color-hairline;
+}
+
+.browse-loading {
+  flex-direction: row;
+  align-items: center;
+
+  p {
+    @include mono-label;
+    color: $color-faint;
+  }
 }
 
 .spinner {
-  width: 40px;
-  height: 40px;
-  border: 3px solid rgba(255, 255, 255, 0.1);
-  border-top-color: $color-gold;
+  width: 22px;
+  height: 22px;
+  border: 2px solid rgba($color-ink, 0.1);
+  border-top-color: $color-accent;
   border-radius: 50%;
   animation: spin 0.8s linear infinite;
 }
@@ -994,90 +1012,42 @@ function openBillingPortal() {
   display: flex;
   justify-content: center;
   align-items: center;
-  gap: 8px;
-  margin-top: 48px;
+  gap: 4px;
+  margin-top: 56px;
+  padding-top: 24px;
+  border-top: 1px solid $color-hairline;
 }
 
 .page-btn {
-  @include liquid-glass;
-  --lg-r: 10px;
-  --lg-blur: 0px;
   min-width: 40px;
   height: 40px;
   display: flex;
   align-items: center;
   justify-content: center;
   border: none;
-  font: inherit;
-  font-size: 0.9rem;
-  font-weight: 600;
-  color: $color-ink;
+  border-radius: $radius-xs;
+  background: none;
+  font-family: $font-mono;
+  font-size: 0.82rem;
+  letter-spacing: 0.06em;
+  color: $color-muted;
   cursor: pointer;
-  padding: 0 12px;
-  transition: transform 0.15s, box-shadow 0.2s;
+  padding: 0 10px;
+  transition: color 0.2s, background 0.2s;
 
   &:hover:not(:disabled) {
-    transform: translateY(-2px);
-    box-shadow: 0 8px 20px rgba(3, 6, 24, 0.4);
+    color: $color-ink;
+    background: rgba($color-ink, 0.06);
   }
 
   &:disabled {
-    opacity: 0.4;
+    color: $color-faint;
     cursor: not-allowed;
   }
 
   &.active {
-    --lg-tint: rgba(245, 158, 11, 0.18);
-    box-shadow: 0 0 0 1px rgba(245, 158, 11, 0.4);
-  }
-}
-.subscription-banner {
-  --lg-blur: 12px;
-  gap: 18px;
-  padding: 18px 20px;
-
-  h2 {
-    font-size: 1.12rem;
-  }
-
-  p {
-    font-size: 0.9rem;
-  }
-}
-
-.search-box {
-  --lg-blur: 12px;
-}
-
-.sort-box {
-  width: min(100%, 280px);
-}
-
-.sort-trigger {
-  width: 100%;
-  min-width: 0;
-  --lg-blur: 12px;
-}
-
-.sort-menu {
-  width: 100%;
-  min-width: 0;
-  --lg-blur: 12px;
-}
-
-.browse-body {
-  grid-template-columns: 330px minmax(0, 1fr);
-  gap: 36px;
-}
-
-.filter-group {
-  --lg-blur: 12px;
-  padding: 26px;
-}
-
-@media (max-width: 860px) {
-  .browse-body {
-    grid-template-columns: 1fr;
+    color: $color-on-accent;
+    background: $color-accent;
   }
 }
 
@@ -1091,11 +1061,5 @@ function openBillingPortal() {
     width: 100%;
     min-width: 0;
   }
-
-  .subscription-banner__actions {
-    width: 100%;
-    align-items: stretch;
-  }
 }
-
 </style>

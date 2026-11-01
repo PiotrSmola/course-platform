@@ -6,35 +6,36 @@
         <h2>{{ heading }}</h2>
       </div>
 
-      <div class="tabs">
-        <button type="button" class="glass no-warp" :class="{ active: tab === 'courses' }" @click="tab = 'courses'">
-          Kursy
-        </button>
-        <button type="button" class="glass no-warp" :class="{ active: tab === 'analytics' }" @click="tab = 'analytics'">
-          Analytics
-        </button>
-        <button type="button" class="glass no-warp" :class="{ active: tab === 'qa' }" @click="tab = 'qa'">
-          Q&A
-        </button>
+      <div class="toolbar">
+        <div class="tabs-scroll">
+          <div class="tabs glass">
+            <button type="button" :class="{ active: tab === 'courses' }" @click="tab = 'courses'">
+              Kursy
+            </button>
+            <button type="button" :class="{ active: tab === 'analytics' }" @click="tab = 'analytics'">
+              Analytics
+            </button>
+            <button type="button" :class="{ active: tab === 'qa' }" @click="tab = 'qa'">
+              Q&A
+            </button>
+          </div>
+        </div>
+        <router-link v-if="tab === 'courses'" class="btn btn-primary new-course-btn" :to="{ name: 'NewCourse' }">
+          + Nowy kurs
+        </router-link>
       </div>
 
       <template v-if="tab === 'courses'">
-        <div class="actions">
-          <router-link class="btn btn-primary" :to="{ name: 'NewCourse' }">
-            + Nowy kurs
-          </router-link>
-        </div>
-
         <section v-if="!dashboardLoading && dashboard" class="stats-grid">
-          <div class="stat-card glass-card">
+          <div class="stat-card">
             <span class="stat-value">{{ dashboard.totalStudents }}</span>
             <span class="stat-label">Studentów</span>
           </div>
-          <div class="stat-card glass-card">
+          <div class="stat-card">
             <span class="stat-value">{{ formatCurrency(dashboard.totalRevenue) }}</span>
             <span class="stat-label">Przychód</span>
           </div>
-          <div class="stat-card glass-card">
+          <div class="stat-card">
             <span class="stat-value">{{ dashboard.averageCompletionRate }}%</span>
             <span class="stat-label">Średni postęp</span>
           </div>
@@ -46,20 +47,34 @@
         </div>
         <div v-else class="courses-grid">
           <article v-for="course in courses" :key="course.id" class="course-card glass-card">
-            <CourseThumbnail class="course-thumb" :url="course.thumbnailUrl" />
+            <div class="course-thumb-wrap">
+              <CourseThumbnail class="course-thumb" :url="course.thumbnailUrl" :title="course.title" :seed="course.id" />
+            </div>
             <div class="course-info">
-              <h3>{{ course.title }}</h3>
-              <div class="course-stats">
-                <span>{{ course.enrollmentCount }} studentów</span>
-                <span>{{ course.moduleCount }} mod. · {{ course.lessonCount }} lek.</span>
+              <p class="course-kicker">
+                <span>{{ course.moduleCount }} mod.</span>
+                <span>{{ course.lessonCount }} lek.</span>
                 <span class="status" :class="statusClass(course.status)">{{ statusLabel(course.status) }}</span>
-                <span v-if="courseStats(course.id)">{{ formatCurrency(courseStats(course.id)!.revenue) }}</span>
-                <span v-if="courseStats(course.id)">{{ courseStats(course.id)!.completionRate }}% ukończono</span>
-              </div>
-              <router-link class="btn btn-ghost" :to="{ name: 'EditCourse', params: { id: course.id } }">
-                Edytuj
-              </router-link>
+              </p>
+              <h3>{{ course.title }}</h3>
+              <dl class="course-stats">
+                <div>
+                  <dt>Studenci</dt>
+                  <dd>{{ course.enrollmentCount }}</dd>
+                </div>
+                <div v-if="courseStats(course.id)">
+                  <dt>Przychód</dt>
+                  <dd>{{ formatCurrency(courseStats(course.id)!.revenue) }}</dd>
+                </div>
+                <div v-if="courseStats(course.id)">
+                  <dt>Ukończono</dt>
+                  <dd>{{ courseStats(course.id)!.completionRate }}%</dd>
+                </div>
+              </dl>
               <div class="course-actions">
+                <router-link class="btn btn-ghost btn-sm" :to="{ name: 'EditCourse', params: { id: course.id } }">
+                  Edytuj
+                </router-link>
                 <button
                   v-if="course.status === CourseStatus.Draft || course.status === CourseStatus.Hidden"
                   class="btn btn-ghost btn-sm"
@@ -77,7 +92,7 @@
                   Ukryj
                 </button>
                 <button
-                  class="btn btn-ghost btn-sm btn-danger"
+                  class="btn btn-sm btn-danger"
                   :disabled="deleteCourseMutation.isPending.value"
                   @click="confirmDelete(course.id, course.title)"
                 >
@@ -167,126 +182,238 @@ function confirmDelete(courseId: string, title: string) {
 </script>
 
 <style lang="scss" scoped>
-@use "@/assets/styles/abstracts/variables" as *;
-
 .instructor-dashboard {
-  padding: calc($header-height + 40px) 0 80px;
+  padding: 24px 0 80px;
+}
+
+.toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 36px;
+
+  @media (max-width: 560px) {
+    flex-direction: column;
+    align-items: stretch;
+  }
+}
+
+.tabs-scroll {
+  min-width: 0;
+  margin: -8px -8px -14px;
+  padding: 8px 8px 14px;
+  overflow-x: auto;
+  scrollbar-width: none;
+
+  &::-webkit-scrollbar {
+    display: none;
+  }
 }
 
 .tabs {
-  display: flex;
-  gap: 10px;
-  margin-bottom: 24px;
+  --lg-r: 999px;
+  --lg-blur: 12px;
+  --lg-tint: rgba(13, 15, 19, 0.3);
+  display: inline-flex;
+  gap: 2px;
+  padding: 5px;
 
   button {
-    --lg-r: 999px;
-    --lg-blur: 0px;
-    padding: 10px 20px;
+    padding: 9px 20px;
     border: none;
-    background: none;
+    border-radius: 999px;
+    background: transparent;
     color: $color-muted;
     cursor: pointer;
     font: inherit;
+    font-size: 0.88rem;
     font-weight: 500;
-    transition: color 0.25s, transform 0.2s;
+    white-space: nowrap;
+    transition: background 0.25s, color 0.25s;
 
     &:hover {
       color: $color-ink;
-      transform: translateY(-1px);
     }
 
     &.active {
-      --lg-tint: rgba(139, 92, 246, 0.14);
       color: $color-ink;
-      font-weight: 600;
-
-      &::after {
-        box-shadow:
-          inset 2px 2px 1px -1px rgba(255, 255, 255, 0.6),
-          inset -2px -2px 1px -1px rgba(255, 255, 255, 0.22),
-          inset 0 0 0 1px rgba(167, 139, 250, 0.4),
-          inset 0 -10px 18px -12px rgba(139, 92, 246, 0.5);
-      }
+      background: rgba($color-ink, 0.12);
+      box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.12);
     }
   }
 }
 
-.panel {
-  padding: 24px;
+.new-course-btn {
+  flex-shrink: 0;
+  padding: 11px 22px;
+  font-size: 0.88rem;
 }
 
-.actions {
-  margin-bottom: 40px;
+.panel.glass-card {
+  --lg-blur: 12px;
+  padding: 24px;
+
+  &:hover {
+    transform: none;
+  }
+
+  @media (max-width: 560px) {
+    padding: 18px 14px;
+  }
 }
 
 .stats-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
-  gap: 20px;
-  margin-bottom: 40px;
+  display: flex;
+  flex-wrap: wrap;
+  overflow: hidden;
+  margin-bottom: 44px;
+  border-top: 1px solid $color-hairline;
+  border-bottom: 1px solid $color-hairline;
 }
 
 .stat-card {
-  padding: 24px;
+  flex: 1 1 200px;
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: 12px;
+  margin: -1px 0 0 -1px;
+  padding: 26px 24px 22px;
+  border-top: 1px solid $color-hairline;
+  border-left: 1px solid $color-hairline;
 }
 
 .stat-value {
-  font-size: 2rem;
-  font-weight: 700;
+  font-family: $font-display;
+  font-size: clamp(2rem, 3.4vw, 2.8rem);
+  font-weight: 600;
+  line-height: 1;
+  letter-spacing: -0.015em;
+  font-variant-numeric: lining-nums;
   color: $color-ink;
+  white-space: nowrap;
 }
 
 .stat-label {
-  font-size: 0.9rem;
-  color: $color-muted;
+  @include mono-label;
+  font-size: 0.64rem;
+  color: $color-faint;
 }
 
 .courses-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(min(300px, 100%), 1fr));
   gap: 24px;
 }
 
 .course-card {
-  padding: 0;
+  --lg-blur: 10px;
   overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+.course-thumb-wrap {
+  position: relative;
+  margin: 12px 12px 0;
 }
 
 .course-thumb {
-  height: 160px;
-  background: linear-gradient(160deg, rgba(139, 92, 246, 0.2), rgba(34, 211, 238, 0.1));
-  background-size: cover;
-  background-position: center;
+  position: relative;
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  border-radius: 14px 14px 14px 4px;
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.08);
+}
+
+.status {
+  @include tag;
+  margin-left: auto;
+
+  &.published {
+    color: $color-on-accent;
+    background: $color-accent;
+    box-shadow: none;
+  }
+
+  &.hidden {
+    color: $color-coral;
+    box-shadow: inset 0 0 0 1px rgba($color-coral, 0.45);
+  }
 }
 
 .course-info {
-  padding: 24px;
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  padding: 16px 20px 20px;
 
   h3 {
-    font-size: 1.15rem;
-    margin-bottom: 12px;
+    margin-bottom: 16px;
+    font-family: $font-display;
+    font-size: 1.08rem;
+    font-weight: 600;
+    line-height: 1.25;
+    letter-spacing: -0.005em;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+}
+
+.course-kicker {
+  @include mono-label;
+  display: flex;
+  gap: 10px;
+  margin-bottom: 10px;
+  font-size: 0.64rem;
+  color: $color-faint;
+
+  align-items: center;
+
+  span:not(.status) + span:not(.status)::before {
+    content: "/";
+    margin-right: 10px;
+    color: $color-hairline;
   }
 }
 
 .course-stats {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-  margin-bottom: 16px;
-  font-size: 0.85rem;
-  color: $color-muted;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  margin: 0 0 18px;
+  border-top: 1px solid $color-hairline;
 
-  .status {
-    padding: 4px 10px;
-    border-radius: 999px;
+  > div {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    padding: 12px 10px 0 0;
+    min-width: 0;
+
+    & + div {
+      padding-left: 12px;
+      border-left: 1px solid $color-hairline;
+    }
+  }
+
+  dt {
+    @include mono-label;
+    font-size: 0.6rem;
+    color: $color-faint;
+  }
+
+  dd {
+    margin: 0;
+    font-family: $font-display;
+    font-size: 1.1rem;
     font-weight: 600;
-
-    &.published { background: rgba(74, 222, 128, 0.15); color: #4ade80; }
-    &.draft { background: rgba(251, 191, 36, 0.15); color: #fbbf24; }
-    &.hidden { background: rgba(248, 113, 113, 0.15); color: #f87171; }
+    line-height: 1.1;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    color: $color-ink;
   }
 }
 
@@ -294,20 +421,22 @@ function confirmDelete(courseId: string, title: string) {
   display: flex;
   flex-wrap: wrap;
   gap: 8px;
-  margin-top: 12px;
+  margin-top: auto;
+  padding-top: 16px;
+  border-top: 1px dashed $color-hairline;
 }
 
 .btn-sm {
   padding: 8px 16px;
-  font-size: 0.85rem;
-  height: auto;
+  font-size: 0.82rem;
 }
 
 .btn-danger {
-  color: #f87171;
+  --lg-tint: #{rgba($color-danger, 0.22)};
+  margin-left: auto;
 
   &:hover {
-    --lg-tint: rgba(248, 113, 113, 0.12);
+    --lg-tint: #{rgba($color-danger, 0.32)};
   }
 }
 
@@ -318,7 +447,7 @@ function confirmDelete(courseId: string, title: string) {
   color: $color-muted;
 }
 
-.empty {
-  border-radius: 20px;
+.loading {
+  @include mono-label;
 }
 </style>

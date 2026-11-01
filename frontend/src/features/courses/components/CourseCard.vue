@@ -1,17 +1,24 @@
 <template>
   <article class="product-card glass-card" ref="cardRef">
     <div class="p-visual">
-      <div class="p-image" :style="thumbnailStyle"></div>
+      <CourseThumbnail
+        class="p-image"
+        :url="course.thumbnailUrl"
+        :title="course.title"
+        :label="course.technologyNames?.[0] ?? course.categoryNames?.[0]"
+        :seed="course.id"
+      />
     </div>
     <div class="p-info">
-      <span class="p-brand">{{ course.instructorName }}</span>
+      <p class="p-specs">
+        <span>{{ course.moduleCount }} modułów</span>
+        <span>{{ course.lessonCount }} lekcji</span>
+      </p>
       <h3 class="p-name">{{ course.title }}</h3>
-      <p class="p-specs">{{ course.moduleCount }} modułów · {{ course.lessonCount }} lekcji</p>
+      <span class="p-brand">{{ course.instructorName }}</span>
       <div class="p-row">
-        <p class="p-price">
-          <strong>{{ course.price }} zł</strong>
-        </p>
-        <router-link class="btn btn-primary add-btn" :to="{ name: 'CourseDetails', params: { id: course.id } }">
+        <p class="p-price">{{ course.price }} zł</p>
+        <router-link class="btn btn-ghost btn-pill add-btn" :to="{ name: 'CourseDetails', params: { id: course.id } }">
           Zobacz
         </router-link>
       </div>
@@ -20,21 +27,17 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, computed } from 'vue'
+import { ref, onMounted } from 'vue'
 import type { CourseListDto } from '@/features/courses/types/course.types'
+import CourseThumbnail from '@/shared/components/media/CourseThumbnail.vue'
 
 interface Props {
   course: CourseListDto
 }
 
-const props = defineProps<Props>()
+defineProps<Props>()
 
 const cardRef = ref<HTMLElement>()
-
-const thumbnailStyle = computed(() => {
-  const url = props.course.thumbnailUrl
-  return url ? { backgroundImage: `url(${url})` } : {}
-})
 
 onMounted(() => {
   if (!cardRef.value) return
@@ -58,80 +61,79 @@ onMounted(() => {
 @use "@/assets/styles/abstracts/mixins" as *;
 
 .product-card {
-  --lg-r: 28px;
-  --lg-blur: 0px;
-  position: relative;
-  padding: 26px 24px 24px;
-  transition: transform 0.35s, box-shadow 0.35s;
-
-  &:hover {
-    --lg-tint: rgba(255, 255, 255, 0.06);
-    transform: translateY(-8px);
-    box-shadow: 0 28px 64px rgba(3, 6, 24, 0.55), 0 4px 12px rgba(3, 6, 24, 0.3);
-  }
-
-  &.visible {
-    transform: none;
-  }
+  --lg-blur: 10px;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  overflow: hidden;
 }
 
 .p-visual {
-  display: flex;
-  justify-content: center;
-  padding: 14px 0 22px;
+  margin: 12px 12px 0;
 }
 
 .p-image {
-  width: 100%;
-  height: 160px;
-  border-radius: 20px;
-  background-size: cover;
-  background-position: center;
-  box-shadow:
-    0 18px 40px rgba(3, 6, 24, 0.5),
-    inset 0 1px 1px rgba(255, 255, 255, 0.45),
-    inset 0 0 0 1px rgba(255, 255, 255, 0.18);
   position: relative;
-  transition: transform 0.4s;
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  border-radius: 14px 14px 14px 4px;
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.08);
 }
 
-.product-card:hover .p-image {
-  transform: translateY(-6px);
-}
-
-.p-brand {
-  font-size: 0.78rem;
-  font-weight: 600;
-  letter-spacing: 0.1em;
-  text-transform: uppercase;
-  color: $color-faint;
-}
-
-.p-name {
-  font-size: 1.25rem;
-  margin: 4px 0 6px;
-  letter-spacing: -0.01em;
+.p-info {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  padding: 16px 20px 20px;
 }
 
 .p-specs {
-  font-size: 0.88rem;
+  @include mono-label;
+  display: flex;
+  gap: 10px;
+  margin-bottom: 10px;
+  font-size: 0.64rem;
+  color: $color-faint;
+
+  span + span::before {
+    content: "/";
+    margin-right: 10px;
+    color: $color-hairline;
+  }
+}
+
+.p-name {
+  font-size: 1.22rem;
+  font-weight: 500;
+  line-height: 1.18;
+  margin-bottom: 6px;
+}
+
+.p-brand {
+  font-size: 0.84rem;
   color: $color-muted;
-  margin-bottom: 18px;
+  margin-bottom: 16px;
 }
 
 .p-row {
   display: flex;
-  align-items: center;
+  align-items: flex-end;
   justify-content: space-between;
   gap: 12px;
+  margin-top: auto;
+  padding-top: 16px;
+  border-top: 1px dashed $color-hairline;
 }
 
-.p-price strong {
-  font-size: 1.22rem;
+.p-price {
+  font-family: $font-display;
+  font-weight: 600;
+  font-size: 1.45rem;
+  line-height: 1;
 }
 
 .add-btn {
-  padding: 11px 18px;
-  font-size: 0.88rem;
+  padding: 10px 18px;
+  font-size: 0.86rem;
 }
 </style>

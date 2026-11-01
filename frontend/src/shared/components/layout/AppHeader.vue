@@ -2,17 +2,7 @@
   <header class="site-header" :class="{ scrolled: isScrolled }">
     <div class="header-inner glass">
       <router-link class="logo" :to="{ name: 'Home' }" aria-label="CoursePlatform — strona główna">
-        <svg class="logo-mark" viewBox="0 0 64 64" aria-hidden="true">
-          <defs>
-            <linearGradient id="logo-g" x1="0" y1="0" x2="1" y2="1">
-              <stop offset="0" stop-color="#f59e0b"/>
-              <stop offset="1" stop-color="#ec4899"/>
-            </linearGradient>
-          </defs>
-          <path d="M12 12h40v4H12zm0 8h28v4H12zm0 8h36v4H12zm0 12h24v4H12zm0 8h32v4H12z" fill="url(#logo-g)"/>
-          <circle cx="50" cy="20" r="8" fill="url(#logo-g)" opacity="0.4"/>
-        </svg>
-        <span>CoursePlatform</span>
+        <span class="logo-word">Course<em>Platform</em></span>
       </router-link>
 
       <nav
@@ -31,6 +21,7 @@
             <div v-show="catalogOpen" class="mega-dropdown" @pointerenter="onCatalogEnter" @pointerleave="closeCatalog">
               <div class="mega-dropdown-inner">
                 <div class="mega-sections">
+                  <span class="mega-label">Przeglądaj</span>
                   <span ref="megaSectionBlobEl" class="mega-section-blob" aria-hidden="true"></span>
                   <router-link
                     class="mega-section"
@@ -54,6 +45,7 @@
                   </router-link>
                 </div>
                 <div class="mega-items">
+                  <span class="mega-label">{{ activeSection === 'technologies' ? 'Technologie' : 'Kategorie' }}</span>
                   <span ref="megaBlobEl" class="mega-blob" aria-hidden="true"></span>
                   <div class="mega-items-grid">
                     <router-link
@@ -77,6 +69,12 @@
           </li>
           <li>
             <router-link :to="{ name: 'Business' }" :class="{ 'force-active': isBusinessRoute }" @pointerenter="moveBlob($event)">Dla firm</router-link>
+          </li>
+          <li>
+            <router-link :to="{ name: 'Pricing' }" @pointerenter="moveBlob($event)">Cennik</router-link>
+          </li>
+          <li>
+            <router-link :to="{ name: 'Help' }" @pointerenter="moveBlob($event)">Pomoc</router-link>
           </li>
           <li v-if="authStore.isInstructor">
             <router-link :to="{ name: 'InstructorDashboard' }" @pointerenter="moveBlob($event)">Panel instruktora</router-link>
@@ -158,14 +156,14 @@
           </router-link>
         </template>
         <template v-if="!authStore.isAuthenticated">
-          <router-link class="btn btn-ghost" :to="{ name: 'Login' }">Zaloguj</router-link>
-          <router-link class="btn btn-primary" :to="{ name: 'Register' }">Rejestracja</router-link>
+          <router-link class="btn btn-ghost btn-pill" :to="{ name: 'Login' }">Zaloguj</router-link>
+          <router-link class="btn btn-primary btn-pill" :to="{ name: 'Register' }">Rejestracja</router-link>
         </template>
         <template v-else>
           <router-link class="avatar-btn" :to="{ name: 'Profile' }" aria-label="Konto">
             <span>{{ authStore.user?.firstName.charAt(0) }}</span>
           </router-link>
-          <button class="btn btn-ghost" @click="logout">Wyloguj</button>
+          <button class="btn btn-ghost btn-pill" @click="logout">Wyloguj</button>
         </template>
       </div>
       <button
@@ -292,7 +290,7 @@ function formatMatchedBy(matchedBy: string[]): string {
 }
 
 function toggleSearch() {
-  if (window.matchMedia('(max-width: 880px)').matches) {
+  if (window.matchMedia('(max-width: 1120px)').matches) {
     mobileMenuOpen.value = false
     mobileSearchOpen.value = true
     return
@@ -404,6 +402,7 @@ onMounted(async () => {
   onScroll()
   await nextTick()
   syncBlobToActive()
+  document.fonts?.ready.then(syncBlobToActive)
 })
 
 watch(() => route.path, async () => {
@@ -434,36 +433,48 @@ onUnmounted(() => {
 
   .header-inner {
     --lg-r: 999px;
-    --lg-blur: 1.5px;
+    --lg-blur: 1px;
+    --lg-sat: 160%;
+    --lg-tint: rgba(13, 15, 19, 0.08);
+    --lg-glow: 0.08;
     width: min($container-max, 100% - 32px);
     margin-inline: auto;
-    height: $header-height;
-    padding: 0 12px 0 20px;
+    height: 74px;
+    padding: 0 12px 0 32px;
     display: flex;
     align-items: center;
     gap: 12px;
+    transition: box-shadow 0.35s;
   }
 
   &.scrolled .header-inner {
-    --lg-tint: rgba(10, 14, 34, 0.32);
-    box-shadow: 0 18px 50px rgba(3, 6, 24, 0.55), 0 2px 8px rgba(3, 6, 24, 0.3);
+    --lg-tint: rgba(13, 15, 19, 0.2);
+    box-shadow:
+      0 18px 44px -12px rgba(0, 0, 0, 0.6),
+      0 2px 8px rgba(0, 0, 0, 0.25);
   }
 }
 
 .logo {
   display: flex;
-  align-items: center;
-  gap: 10px;
-  font-size: 1.3rem;
-  font-weight: 700;
-  font-family: $font-display;
-  letter-spacing: -0.02em;
+  align-items: baseline;
+  flex-shrink: 0;
+  color: $color-ink;
+  text-decoration: none;
   white-space: nowrap;
+  text-shadow: 0 1px 8px rgba(0, 0, 0, 0.45);
+}
 
-  .logo-mark {
-    width: 30px;
-    height: 30px;
-    filter: drop-shadow(0 4px 12px rgba(245, 158, 11, 0.55));
+.logo-word {
+  font-family: $font-display;
+  font-size: 1.5rem;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  line-height: 1;
+
+  em {
+    font-style: normal;
+    color: $color-muted;
   }
 }
 
@@ -487,11 +498,13 @@ onUnmounted(() => {
     position: relative;
     z-index: 2;
     display: block;
-    padding: 9px 14px;
+    padding: 10px 18px;
     border-radius: 999px;
-    font-size: 0.88rem;
+    font-family: $font-family;
+    font-size: 1rem;
     font-weight: 500;
-    color: $color-muted;
+    color: rgba($color-ink, 0.82);
+    text-shadow: 0 1px 8px rgba(0, 0, 0, 0.45);
     transition: color 0.25s;
     white-space: nowrap;
 
@@ -508,19 +521,16 @@ onUnmounted(() => {
 .nav-blob {
   position: absolute;
   top: 50%;
-  height: 36px;
+  height: 42px;
   transform: translateY(-50%);
   border-radius: 999px;
-  background: rgba(255, 255, 255, 0.08);
-  box-shadow:
-    inset 1.5px 1.5px 1px -1px rgba(255, 255, 255, 0.6),
-    inset -1.5px -1.5px 1px -1px rgba(255, 255, 255, 0.25),
-    inset 0 0 0 1px rgba(255, 255, 255, 0.06);
+  background: rgba($color-ink, 0.1);
+  box-shadow: inset 0 0 0 1px rgba($color-ink, 0.1);
   opacity: 0;
   pointer-events: none;
   transition:
-    left 0.45s cubic-bezier(0.3, 1.55, 0.35, 1),
-    width 0.45s cubic-bezier(0.3, 1.55, 0.35, 1),
+    left 0.45s $ease-jelly,
+    width 0.45s $ease-jelly,
     opacity 0.2s;
 }
 
@@ -531,48 +541,36 @@ onUnmounted(() => {
 }
 
 .avatar-btn {
-  width: 36px;
-  height: 36px;
+  display: grid;
+  place-items: center;
+  width: 46px;
+  height: 46px;
   border-radius: 50%;
   border: none;
-  background: $color-grad;
-  color: #0a0e17;
-  font-weight: 700;
-  font-size: 0.9rem;
+  background: rgba($color-ink, 0.1);
+  box-shadow: inset 0 0 0 1px $color-hairline;
+  color: $color-ink;
+  font-family: $font-display;
+  font-size: 1.12rem;
+  font-weight: 600;
+  line-height: 1;
+  text-decoration: none;
   cursor: pointer;
-  box-shadow: 0 4px 12px rgba(245, 158, 11, 0.35);
-  transition: transform 0.2s;
+  transition: background 0.2s, box-shadow 0.2s;
 
   &:hover {
-    transform: scale(1.05);
+    background: rgba($color-ink, 0.16);
+    box-shadow: inset 0 0 0 1px rgba($color-ink, 0.22);
   }
 }
 
 .btn {
-  padding: 9px 18px;
-  font-size: 0.85rem;
+  padding: 12px 24px;
+  font-size: 0.97rem;
 }
 
 .mobile-panel-link {
   display: none;
-}
-
-@media (max-width: 880px) {
-  .mobile-panel-link {
-    display: inline-flex;
-    padding: 9px 12px;
-    font-size: 0.8rem;
-  }
-}
-
-@media (max-width: 880px) {
-  .main-nav {
-    display: none;
-  }
-
-  .logo span {
-    display: none;
-  }
 }
 
 .dropdown-root {
@@ -583,9 +581,9 @@ onUnmounted(() => {
   position: relative;
   z-index: 2;
   display: block;
-  padding: 9px 14px;
+  padding: 10px 18px;
   border-radius: 999px;
-  font-size: 0.88rem;
+  font-size: 1rem;
   font-weight: 500;
   color: $color-muted;
   transition: color 0.25s;
@@ -599,23 +597,30 @@ onUnmounted(() => {
   }
 }
 
+.mega-label {
+  @include mono-label;
+  display: block;
+  font-size: 0.62rem;
+  color: $color-faint;
+}
+
 .mega-dropdown {
   @include liquid-glass;
-  --lg-r: 20px;
-  --lg-blur: 2px;
-  --lg-tint: rgba(17, 24, 39, 0.55);
+  --lg-r: #{$radius-card};
+  --lg-blur: 14px;
+  --lg-sat: 140%;
+  --lg-tint: rgba(13, 15, 19, 0.62);
+  --lg-glow: 0.05;
   position: absolute;
-  top: calc(100% + 8px);
+  top: calc(100% + 14px);
   left: 50%;
   transform: translateX(-50%);
-  min-width: 560px;
+  min-width: 580px;
   padding: 8px;
   z-index: 50;
   box-shadow:
-    0 24px 60px rgba(3, 6, 24, 0.55),
-    0 4px 14px rgba(3, 6, 24, 0.35),
-    inset 0 1px 1px rgba(255, 255, 255, 0.18),
-    inset 0 0 0 1px rgba(255, 255, 255, 0.1);
+    0 28px 60px -16px rgba(0, 0, 0, 0.65),
+    0 4px 14px rgba(0, 0, 0, 0.3);
 }
 
 .mega-dropdown-inner {
@@ -625,77 +630,86 @@ onUnmounted(() => {
 }
 
 .mega-sections {
-  width: 160px;
-  flex-shrink: 0;
-  border-right: 1px solid rgba(255, 255, 255, 0.08);
-  padding: 8px 0;
   position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  width: 176px;
+  flex-shrink: 0;
+  padding: 14px 8px;
+  border-right: 1px solid $color-hairline;
+
+  .mega-label {
+    padding: 0 10px 10px;
+  }
 }
 
 .mega-section {
   position: relative;
   z-index: 1;
-  display: block;
-  padding: 10px 16px;
-  font-size: 0.9rem;
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  padding: 10px 12px;
+  border-radius: 10px;
+  font-family: $font-display;
+  font-size: 1.08rem;
   font-weight: 500;
   color: $color-muted;
   cursor: pointer;
   transition: color 0.2s;
-  border-radius: 10px;
-  margin: 0 6px;
   text-decoration: none;
 
   &:hover,
   &.active {
     color: $color-ink;
   }
-
-  &.active {
-    font-weight: 600;
-  }
 }
 
-.mega-section-blob {
+.mega-section-blob,
+.mega-blob {
   position: absolute;
   top: 0;
   left: 0;
-  border-radius: 12px;
-  background: linear-gradient(135deg, rgba(245, 158, 11, 0.16), rgba(245, 158, 11, 0.08));
-  box-shadow:
-    inset 1.5px 1.5px 2px -1px rgba(255, 255, 255, 0.35),
-    inset -1.5px -1.5px 2px -1px rgba(255, 255, 255, 0.08),
-    inset 0 -8px 16px -10px rgba(245, 158, 11, 0.25);
+  border-radius: 10px;
+  background: rgba($color-ink, 0.08);
+  box-shadow: inset 0 0 0 1px rgba($color-ink, 0.08);
   opacity: 0;
   pointer-events: none;
   transition:
-    left 0.45s cubic-bezier(0.3, 1.55, 0.35, 1),
-    width 0.45s cubic-bezier(0.3, 1.55, 0.35, 1),
-    top 0.45s cubic-bezier(0.3, 1.55, 0.35, 1),
-    height 0.45s cubic-bezier(0.3, 1.55, 0.35, 1),
+    left 0.45s $ease-jelly,
+    width 0.45s $ease-jelly,
+    top 0.45s $ease-jelly,
+    height 0.45s $ease-jelly,
     opacity 0.2s;
 }
 
 .mega-items {
   flex: 1;
-  padding: 16px 20px;
+  padding: 14px 16px 16px;
   min-height: 200px;
   position: relative;
+
+  > .mega-label {
+    padding: 0 12px 10px;
+    margin-bottom: 6px;
+    border-bottom: 1px dashed $color-hairline;
+  }
 }
 
 .mega-items-grid {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
-  gap: 8px 16px;
+  gap: 2px 12px;
 }
 
 .mega-item {
   position: relative;
   z-index: 1;
   display: block;
-  padding: 8px 12px;
+  padding: 9px 12px;
   border-radius: 10px;
-  font-size: 0.85rem;
+  font-size: 0.95rem;
   font-weight: 500;
   color: $color-muted;
   transition: color 0.2s;
@@ -707,26 +721,6 @@ onUnmounted(() => {
   }
 }
 
-.mega-blob {
-  position: absolute;
-  top: 0;
-  left: 0;
-  border-radius: 12px;
-  background: linear-gradient(135deg, rgba(245, 158, 11, 0.16), rgba(245, 158, 11, 0.08));
-  box-shadow:
-    inset 1.5px 1.5px 2px -1px rgba(255, 255, 255, 0.35),
-    inset -1.5px -1.5px 2px -1px rgba(255, 255, 255, 0.08),
-    inset 0 -8px 16px -10px rgba(245, 158, 11, 0.25);
-  opacity: 0;
-  pointer-events: none;
-  transition:
-    left 0.45s cubic-bezier(0.3, 1.55, 0.35, 1),
-    width 0.45s cubic-bezier(0.3, 1.55, 0.35, 1),
-    top 0.45s cubic-bezier(0.3, 1.55, 0.35, 1),
-    height 0.45s cubic-bezier(0.3, 1.55, 0.35, 1),
-    opacity 0.2s;
-}
-
 .search-root {
   position: relative;
   display: flex;
@@ -734,55 +728,45 @@ onUnmounted(() => {
 }
 
 .search-trigger {
-  @include liquid-glass;
-  --lg-r: 999px;
-  --lg-blur: 0px;
-  --lg-tint: rgba(255, 255, 255, 0.04);
-  width: 38px;
-  height: 38px;
+  width: 46px;
+  height: 46px;
   display: flex;
   align-items: center;
   justify-content: center;
   appearance: none;
-  background: none;
+  padding: 0;
   border: none;
+  border-radius: 50%;
+  background: rgba($color-ink, 0.05);
+  box-shadow: inset 0 0 0 1px $color-hairline;
   color: $color-muted;
   cursor: pointer;
-  transition: --lg-tint 0.35s, color 0.25s, box-shadow 0.35s;
+  transition: background 0.25s, color 0.25s, box-shadow 0.25s;
 
-  &:hover {
-    --lg-tint: rgba(245, 158, 11, 0.08);
-    color: $color-ink;
-    box-shadow:
-      0 10px 30px rgba(3, 6, 24, 0.4),
-      0 2px 8px rgba(3, 6, 24, 0.25),
-      0 18px 30px -22px rgba(245, 158, 11, 0.4),
-      inset 0 1px 1px rgba(255, 255, 255, 0.35),
-      inset 0 0 0 1px rgba(245, 158, 11, 0.3);
-  }
-
+  &:hover,
   &.open {
-    --lg-tint: rgba(245, 158, 11, 0.12);
+    background: rgba($color-ink, 0.1);
+    box-shadow: inset 0 0 0 1px rgba($color-ink, 0.2);
     color: $color-ink;
   }
 }
 
 .search-dropdown {
   @include liquid-glass;
-  --lg-r: 20px;
-  --lg-blur: 2px;
-  --lg-tint: rgba(17, 24, 39, 0.55);
+  --lg-r: #{$radius-card};
+  --lg-blur: 14px;
+  --lg-sat: 140%;
+  --lg-tint: rgba(13, 15, 19, 0.62);
+  --lg-glow: 0.05;
   position: absolute;
-  top: calc(100% + 8px);
+  top: calc(100% + 20px);
   right: 0;
-  width: 400px;
-  padding: 8px;
+  width: 420px;
+  padding: 10px;
   z-index: 50;
   box-shadow:
-    0 24px 60px rgba(3, 6, 24, 0.55),
-    0 4px 14px rgba(3, 6, 24, 0.35),
-    inset 0 1px 1px rgba(255, 255, 255, 0.18),
-    inset 0 0 0 1px rgba(255, 255, 255, 0.1);
+    0 28px 60px -16px rgba(0, 0, 0, 0.65),
+    0 4px 14px rgba(0, 0, 0, 0.3);
 
   @media (max-width: 520px) {
     width: 320px;
@@ -792,7 +776,6 @@ onUnmounted(() => {
 
 .search-dropdown-inner {
   border-radius: 14px;
-  overflow: hidden;
   display: flex;
   flex-direction: column;
   gap: 8px;
@@ -806,31 +789,30 @@ onUnmounted(() => {
 
 .search-input {
   width: 100%;
-  height: 44px;
+  height: 46px;
   padding: 0 44px 0 16px;
-  border-radius: 12px;
+  border-radius: $radius-md;
   border: none;
-  background: rgba(255, 255, 255, 0.04);
-  box-shadow: inset 0 1px 1px rgba(255, 255, 255, 0.3), inset 0 0 0 1px rgba(255, 255, 255, 0.1);
+  background: rgba(13, 15, 19, 0.45);
+  box-shadow: inset 0 0 0 1px $color-hairline;
   color: $color-ink;
   font: inherit;
   font-size: 0.94rem;
   outline: none;
-  transition: background 0.3s, box-shadow 0.3s;
+  transition: box-shadow 0.2s;
 
   &::placeholder {
     color: $color-faint;
   }
 
   &:focus {
-    background: rgba(255, 255, 255, 0.07);
-    box-shadow: inset 0 1px 1px rgba(255, 255, 255, 0.35), inset 0 0 0 1px rgba(167, 139, 250, 0.5), 0 0 0 4px rgba(139, 92, 246, 0.18);
+    box-shadow: inset 0 0 0 1px $color-hairline, 0 0 0 2px rgba($color-accent, 0.6);
   }
 }
 
 .search-input-icon {
   position: absolute;
-  right: 14px;
+  right: 15px;
   color: $color-faint;
   pointer-events: none;
 }
@@ -842,8 +824,7 @@ onUnmounted(() => {
 
 .search-placeholder,
 .search-empty {
-  padding: 16px;
-  text-align: center;
+  padding: 14px 16px 16px;
   font-size: 0.85rem;
   color: $color-muted;
 }
@@ -851,18 +832,17 @@ onUnmounted(() => {
 .search-loading {
   display: flex;
   align-items: center;
-  justify-content: center;
   gap: 10px;
-  padding: 16px;
+  padding: 14px 16px 16px;
   font-size: 0.85rem;
   color: $color-muted;
 }
 
 .spinner-sm {
-  width: 18px;
-  height: 18px;
-  border: 2px solid rgba(255, 255, 255, 0.1);
-  border-top-color: $color-gold;
+  width: 16px;
+  height: 16px;
+  border: 2px solid rgba($color-ink, 0.12);
+  border-top-color: $color-accent;
   border-radius: 50%;
   animation: spin 0.8s linear infinite;
 }
@@ -874,7 +854,6 @@ onUnmounted(() => {
 .search-results-list {
   display: flex;
   flex-direction: column;
-  gap: 2px;
 }
 
 .search-result-item {
@@ -883,84 +862,107 @@ onUnmounted(() => {
   align-items: center;
   justify-content: space-between;
   gap: 12px;
-  padding: 10px 12px;
+  padding: 11px 12px;
   border-radius: 10px;
   text-decoration: none;
   transition: background 0.2s;
 
+  & + & {
+    box-shadow: 0 -1px 0 $color-hairline;
+  }
+
   &:hover {
-    background: rgba(255, 255, 255, 0.06);
+    background: rgba($color-ink, 0.06);
   }
 }
 
 .search-result-info {
   display: flex;
   flex-direction: column;
-  gap: 2px;
+  gap: 3px;
   min-width: 0;
 }
 
 .search-result-title {
-  font-size: 0.9rem;
-  font-weight: 600;
+  font-family: $font-display;
+  font-size: 0.95rem;
+  font-weight: 500;
+  line-height: 1.25;
   color: $color-ink;
 }
 
 .search-result-meta {
-  font-size: 0.78rem;
-  color: $color-muted;
+  font-family: $font-mono;
+  font-size: 0.7rem;
+  color: $color-faint;
 }
 
 .search-result-matched-by {
+  @include tag;
   flex-shrink: 0;
-  font-size: 0.7rem;
-  font-weight: 500;
-  color: $color-gold;
-  text-transform: uppercase;
-  letter-spacing: 0.03em;
-}
-
-.avatar-btn {
-  display: grid;
-  place-items: center;
-  line-height: 1;
 }
 
 .menu-toggle {
   display: none;
-  width: 42px;
-  height: 42px;
+  width: 40px;
+  height: 40px;
   flex-shrink: 0;
   place-content: center;
   gap: 5px;
   padding: 0;
-  border: 1px solid rgba(255, 255, 255, 0.12);
+  border: none;
   border-radius: 50%;
-  background: rgba(255, 255, 255, 0.06);
+  background: rgba($color-ink, 0.05);
+  box-shadow: inset 0 0 0 1px $color-hairline;
   color: $color-ink;
   cursor: pointer;
 
   span {
     display: block;
-    width: 18px;
-    height: 2px;
+    width: 16px;
+    height: 1.5px;
     margin-inline: auto;
-    border-radius: 999px;
+    border-radius: 2px;
     background: currentColor;
   }
 }
 
-@media (max-width: 880px) {
+@media (max-width: 1320px) {
+  .site-header .header-inner {
+    padding-left: 22px;
+    gap: 8px;
+  }
+
+  .main-nav a,
+  .nav-link {
+    padding: 10px 12px;
+    font-size: 0.94rem;
+  }
+
+  .btn {
+    padding: 11px 18px;
+  }
+}
+
+@media (max-width: 1120px) {
+  .site-header {
+    top: 10px;
+  }
+
   .site-header .header-inner {
     width: min($container-max, 100% - 24px);
     height: 64px;
-    padding: 0 10px 0 16px;
-    gap: 10px;
+    padding: 0 10px 0 22px;
+    gap: 8px;
   }
 
   .main-nav,
   .nav-actions {
     display: none;
+  }
+
+  .logo {
+    margin-right: auto;
   }
 
   .menu-toggle {
@@ -970,10 +972,6 @@ onUnmounted(() => {
   .search-dropdown {
     display: none !important;
   }
-
-  .logo span {
-    display: none;
-  }
 }
 
 @media (max-width: 420px) {
@@ -981,10 +979,8 @@ onUnmounted(() => {
     width: calc(100% - 16px);
   }
 
-  .search-trigger,
-  .menu-toggle {
-    width: 40px;
-    height: 40px;
+  .logo-word {
+    font-size: 1.12rem;
   }
 }
 </style>

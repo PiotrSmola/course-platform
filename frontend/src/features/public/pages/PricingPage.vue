@@ -2,9 +2,11 @@
   <div class="pricing-page">
     <section class="pricing-hero">
       <div class="container">
-        <span class="eyebrow">Cennik</span>
-        <h1>Wybierz dostęp, który pasuje do Twojego sposobu nauki</h1>
-        <p>Kup pojedynczy kurs, ucz się bez limitu z All-access lub wyposaż w wiedzę cały zespół.</p>
+        <header class="section-head pricing-head">
+          <span class="eyebrow">Cennik</span>
+          <h1>Wybierz dostęp, który pasuje do Twojego <em>sposobu nauki</em></h1>
+          <p>Kup pojedynczy kurs, ucz się bez limitu z All-access lub wyposaż w wiedzę cały zespół.</p>
+        </header>
       </div>
     </section>
 
@@ -12,7 +14,10 @@
       <div class="container">
         <div class="pricing-grid">
           <article class="pricing-card glass-card">
-            <span class="pricing-card__eyebrow">Pojedynczy kurs</span>
+            <div class="pricing-card__top">
+              <span class="pricing-card__num">01</span>
+              <span class="pricing-card__eyebrow">Pojedynczy kurs</span>
+            </div>
             <h2>Kupujesz tylko to, czego potrzebujesz</h2>
             <p>Jednorazowa płatność daje stały dostęp do kupionego kursu z Twojego konta.</p>
             <ul>
@@ -24,7 +29,11 @@
           </article>
 
           <article class="pricing-card pricing-card--featured glass-card">
-            <span class="pricing-card__eyebrow">All-access</span>
+            <div class="pricing-card__top">
+              <span class="pricing-card__num">02</span>
+              <span class="pricing-card__eyebrow">All-access</span>
+              <span class="pricing-card__flag">Polecany</span>
+            </div>
             <h2>Cała biblioteka w jednej subskrypcji</h2>
             <p class="price"><strong>{{ monthlyPrice }} zł</strong><span>/ mies.</span></p>
             <p>Ucz się w dowolnym tempie i korzystaj ze wszystkich opublikowanych kursów.</p>
@@ -48,7 +57,10 @@
           </article>
 
           <article class="pricing-card glass-card">
-            <span class="pricing-card__eyebrow">Dla firm</span>
+            <div class="pricing-card__top">
+              <span class="pricing-card__num">03</span>
+              <span class="pricing-card__eyebrow">Dla firm</span>
+            </div>
             <h2>Rozwój całego zespołu</h2>
             <p>Plany dla firm ułatwiają zakup dostępu dla wielu osób i dają wgląd w postępy nauki.</p>
             <ul>
@@ -77,35 +89,23 @@ const monthlyPrice = computed(() => subscriptionOfferQuery.data.value?.monthlyPr
 
 <style lang="scss" scoped>
 @use "@/assets/styles/abstracts/variables" as *;
+@use "@/assets/styles/abstracts/mixins" as *;
 
 .pricing-hero {
-  padding: 44px 0 38px;
-  text-align: center;
-  border-bottom: 1px solid $color-hairline;
-
-  .eyebrow {
-    margin-bottom: 18px;
-  }
+  padding: 32px 0 0;
 
   h1 {
-    max-width: 800px;
-    margin: 0 auto 14px;
-    font-family: $font-display;
-    font-size: $font-size-xl;
-    line-height: 1.08;
-    letter-spacing: -0.03em;
-  }
-
-  p {
-    max-width: 660px;
-    margin: 0 auto;
-    color: $color-muted;
-    line-height: 1.65;
+    font-size: clamp(2.4rem, 4.6vw, 3.8rem);
+    margin-top: 18px;
   }
 }
 
+.pricing-head {
+  margin-bottom: 48px;
+}
+
 .pricing-content {
-  padding: 56px 0 96px;
+  padding: 0 0 96px;
 }
 
 .pricing-grid {
@@ -116,23 +116,21 @@ const monthlyPrice = computed(() => subscriptionOfferQuery.data.value?.monthlyPr
 
   @media (max-width: 920px) {
     grid-template-columns: 1fr;
-    max-width: 520px;
-    margin: 0 auto;
+    max-width: 560px;
   }
 }
 
 .pricing-card {
-  --lg-r: 24px;
-  --lg-blur: 2px;
+  --lg-blur: 10px;
   display: flex;
   flex-direction: column;
-  padding: 30px 28px;
+  padding: 24px 26px 26px;
 
   h2 {
-    margin: 14px 0 12px;
-    font-family: $font-display;
-    font-size: 1.28rem;
-    line-height: 1.25;
+    margin: 0 0 14px;
+    font-size: 1.45rem;
+    font-weight: 600;
+    line-height: 1.2;
   }
 
   > p:not(.price) {
@@ -142,21 +140,25 @@ const monthlyPrice = computed(() => subscriptionOfferQuery.data.value?.monthlyPr
 
   ul {
     display: grid;
-    gap: 11px;
-    margin: 26px 0 30px;
-    color: $color-muted;
+    margin: 24px 0 30px;
+    padding: 0;
+    list-style: none;
     font-size: 0.92rem;
+    color: $color-ink;
+    border-top: 1px dashed $color-hairline;
   }
 
   li {
     display: flex;
-    gap: 9px;
-    align-items: flex-start;
+    gap: 12px;
+    align-items: baseline;
+    padding: 11px 0;
+    border-bottom: 1px dashed $color-hairline;
 
     &::before {
-      content: '✓';
-      color: $color-gold;
-      font-weight: 800;
+      content: "—";
+      font-family: $font-mono;
+      color: $color-accent;
     }
   }
 
@@ -166,32 +168,70 @@ const monthlyPrice = computed(() => subscriptionOfferQuery.data.value?.monthlyPr
   }
 }
 
-.pricing-card--featured {
-  --lg-tint: rgba(245, 158, 11, 0.1);
-  box-shadow: 0 20px 52px rgba(245, 158, 11, 0.16), 0 10px 30px rgba(3, 6, 24, 0.35);
+.pricing-card__top {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding-bottom: 14px;
+  margin-bottom: 20px;
+  border-bottom: 1px solid $color-hairline;
+}
+
+.pricing-card__num {
+  font-family: $font-mono;
+  font-size: 0.72rem;
+  color: $color-faint;
 }
 
 .pricing-card__eyebrow {
-  color: $color-gold;
-  font-size: 0.76rem;
-  font-weight: 700;
-  letter-spacing: 0.11em;
-  text-transform: uppercase;
+  @include mono-label;
+  color: $color-ink;
+}
+
+.pricing-card__flag {
+  @include tag;
+  margin-left: auto;
+  color: $color-on-accent;
+  background: $color-accent;
+  box-shadow: none;
+}
+
+.pricing-card--featured {
+  --lg-tint: rgba(13, 15, 19, 0.4);
+  box-shadow:
+    0 0 0 1px rgba($color-accent, 0.45),
+    0 28px 60px -24px rgba($color-accent, 0.28),
+    0 12px 32px -8px rgba(0, 0, 0, 0.45);
+
+  &:hover {
+    box-shadow:
+      0 0 0 1px rgba($color-accent, 0.6),
+      0 32px 64px -24px rgba($color-accent, 0.32),
+      0 12px 32px -8px rgba(0, 0, 0, 0.5);
+  }
+
+  .pricing-card__eyebrow {
+    color: $color-accent;
+  }
 }
 
 .price {
   display: flex;
   align-items: baseline;
-  gap: 7px;
-  margin: 0 0 12px;
+  gap: 10px;
+  margin: 4px 0 14px;
 
   strong {
     font-family: $font-display;
-    font-size: 2.2rem;
-    letter-spacing: -0.04em;
+    font-size: 3.4rem;
+    font-weight: 600;
+    line-height: 1;
+    letter-spacing: -0.015em;
   }
 
   span {
+    font-family: $font-mono;
+    font-size: 0.8rem;
     color: $color-faint;
   }
 }

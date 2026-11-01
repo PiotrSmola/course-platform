@@ -6,8 +6,8 @@
     </div>
 
     <form v-if="!result" class="quiz-form" @submit.prevent="onSubmit">
-      <fieldset v-for="question in quiz.questions" :key="question.id" class="question">
-        <legend>{{ question.prompt }}</legend>
+      <fieldset v-for="(question, qIndex) in quiz.questions" :key="question.id" class="question">
+        <legend><span class="q-no">{{ String(qIndex + 1).padStart(2, '0') }}</span>{{ question.prompt }}</legend>
         <label v-for="option in question.options" :key="option.id" class="option">
           <input
             v-model="selections[question.id]"
@@ -105,78 +105,165 @@ function formatDate(value: string) {
 </script>
 
 <style lang="scss" scoped>
-@use "@/assets/styles/abstracts/variables" as *;
-
 .lesson-quiz {
-  --lg-r: 28px;
-  --lg-blur: 0px;
+  --lg-r: #{$radius-card};
+  --lg-blur: 12px;
+  --lg-tint: rgba(13, 15, 19, 0.28);
   padding: 28px;
   display: flex;
   flex-direction: column;
-  gap: 20px;
+  gap: 22px;
 
   h2,
   h3 {
     margin: 0;
   }
+}
+
+.quiz-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+  padding-bottom: 18px;
+  border-bottom: 1px solid $color-hairline;
+
+  h2 {
+    font-size: 1.35rem;
+    font-weight: 600;
+  }
 
   p {
-    margin: 4px 0 0;
-    color: $color-muted;
+    @include tag;
+    margin: 0;
   }
 }
 
 .quiz-form {
   display: flex;
   flex-direction: column;
-  gap: 18px;
+  gap: 22px;
 }
 
 .question {
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  border-radius: 16px;
-  padding: 16px;
+  margin: 0;
+  padding: 0;
+  border: none;
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: 8px;
 
   legend {
-    padding: 0 6px;
+    display: flex;
+    gap: 12px;
+    align-items: baseline;
+    padding: 0;
+    margin-bottom: 10px;
     font-weight: 600;
+    line-height: 1.4;
   }
+}
+
+.q-no {
+  font-family: $font-display;
+  font-size: 1.05rem;
+  font-weight: 600;
+  color: $color-accent;
 }
 
 .option {
   display: flex;
-  gap: 10px;
-  align-items: flex-start;
+  gap: 12px;
+  align-items: center;
+  padding: 11px 14px;
+  border-radius: $radius-sm;
+  box-shadow: inset 0 0 0 1px $color-hairline;
+  color: $color-muted;
   cursor: pointer;
+  transition: background 0.2s, box-shadow 0.2s, color 0.2s;
+
+  input {
+    accent-color: $color-accent;
+  }
+
+  &:hover {
+    color: $color-ink;
+    background: rgba($color-ink, 0.04);
+  }
+
+  &:has(input:checked) {
+    color: $color-ink;
+    background: rgba($color-accent, 0.08);
+    box-shadow: inset 0 0 0 1px rgba($color-accent, 0.45);
+  }
 }
 
 .result {
-  border-radius: 16px;
-  padding: 20px;
   display: flex;
-  flex-direction: column;
-  gap: 10px;
-
-  &.passed {
-    background: rgba(34, 197, 94, 0.12);
-  }
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 20px;
+  padding: 4px 0 4px 18px;
+  box-shadow: inset 2px 0 0 $color-accent;
 
   &.failed {
-    background: rgba(248, 113, 113, 0.12);
+    box-shadow: inset 2px 0 0 $color-danger;
+  }
+
+  h3 {
+    @include mono-label;
+    color: $color-accent;
+  }
+
+  &.failed h3 {
+    color: $color-danger;
+  }
+
+  p {
+    margin: 0;
+    font-family: $font-display;
+    font-size: 1.6rem;
+    font-weight: 600;
+    line-height: 1;
+  }
+
+  .btn {
+    margin-left: auto;
   }
 }
 
-.attempts ul {
-  margin: 8px 0 0;
-  padding-left: 18px;
-  color: $color-muted;
+.attempts {
+  padding-top: 18px;
+  border-top: 1px dashed $color-hairline;
+
+  h3 {
+    @include mono-label;
+    color: $color-faint;
+  }
+
+  ul {
+    list-style: none;
+    margin: 10px 0 0;
+    padding: 0;
+    font-family: $font-mono;
+    font-size: 0.76rem;
+    color: $color-muted;
+
+    li {
+      padding: 6px 0;
+      border-bottom: 1px solid $color-hairline;
+
+      &:last-child {
+        border-bottom: none;
+      }
+    }
+  }
 }
 
 .btn {
   width: fit-content;
-  padding: 12px 18px;
+  padding: 11px 20px;
+  font-size: 0.88rem;
 }
 </style>

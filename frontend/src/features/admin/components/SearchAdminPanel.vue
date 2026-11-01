@@ -1,6 +1,6 @@
 <template>
   <div class="search-admin">
-    <div class="status-banner" :class="bannerClass">
+    <div class="status-banner glass" :class="bannerClass">
       <div class="banner-icon" aria-hidden="true">
         <span v-if="isRunning" class="spinner"></span>
         <span v-else-if="job?.status === ReindexStatus.Succeeded">✓</span>
@@ -235,9 +235,6 @@ function formatDuration(startMs: number, endMs: number): string {
 </script>
 
 <style lang="scss" scoped>
-@use "@/assets/styles/abstracts/variables" as *;
-@use "@/assets/styles/abstracts/mixins" as *;
-
 .search-admin {
   display: flex;
   flex-direction: column;
@@ -245,106 +242,55 @@ function formatDuration(startMs: number, endMs: number): string {
 }
 
 .status-banner {
-  @include liquid-glass;
-  --lg-r: 18px;
-  --lg-blur: 0px;
+  --banner: #{$color-muted};
+  --lg-r: #{$radius-lg};
+  --lg-blur: 12px;
+  --lg-tint: rgba(13, 15, 19, 0.3);
   display: flex;
   align-items: center;
-  gap: 14px;
-  padding: 14px 18px;
+  gap: 16px;
+  padding: 16px 20px;
 
   strong {
-    margin-right: 8px;
-    color: $color-ink;
+    @include mono-label;
+    margin-right: 10px;
+    color: var(--banner);
   }
 
   .banner-text {
     color: $color-muted;
-    font-size: 0.92rem;
-    line-height: 1.4;
+    font-size: 0.9rem;
+    line-height: 1.45;
   }
 
   .banner-icon {
-    width: 32px;
-    height: 32px;
-    border-radius: 50%;
+    width: 30px;
+    height: 30px;
+    border-radius: $radius-xs;
     display: grid;
     place-items: center;
-    background: rgba(255, 255, 255, 0.06);
-    box-shadow:
-      inset 0 1px 1px rgba(255, 255, 255, 0.3),
-      inset 0 0 0 1px rgba(255, 255, 255, 0.08);
-    font-weight: 700;
-    color: $color-ink;
+    box-shadow: inset 0 0 0 1px currentColor;
+    font-family: $font-mono;
+    font-size: 0.8rem;
+    font-weight: 500;
+    color: var(--banner);
     flex-shrink: 0;
   }
 
   &.banner-running {
-    --lg-tint: rgba(34, 211, 238, 0.1);
-
-    &::after {
-      box-shadow:
-        inset 2px 2px 1px -1px rgba(255, 255, 255, 0.55),
-        inset -2px -2px 1px -1px rgba(255, 255, 255, 0.2),
-        inset 0 0 0 1px rgba(34, 211, 238, 0.35),
-        inset 0 -12px 24px -14px rgba(34, 211, 238, 0.45);
-    }
-
-    .banner-icon {
-      background: rgba(34, 211, 238, 0.2);
-      color: $color-cyan;
-    }
+    --banner: #{$color-sky};
   }
 
   &.banner-success {
-    --lg-tint: rgba(34, 197, 94, 0.1);
-
-    &::after {
-      box-shadow:
-        inset 2px 2px 1px -1px rgba(255, 255, 255, 0.55),
-        inset -2px -2px 1px -1px rgba(255, 255, 255, 0.2),
-        inset 0 0 0 1px rgba(34, 197, 94, 0.35),
-        inset 0 -12px 24px -14px rgba(34, 197, 94, 0.45);
-    }
-
-    .banner-icon {
-      background: rgba(34, 197, 94, 0.2);
-      color: #4ade80;
-    }
+    --banner: #{$color-accent};
   }
 
   &.banner-error {
-    --lg-tint: rgba(244, 63, 94, 0.1);
-
-    &::after {
-      box-shadow:
-        inset 2px 2px 1px -1px rgba(255, 255, 255, 0.55),
-        inset -2px -2px 1px -1px rgba(255, 255, 255, 0.2),
-        inset 0 0 0 1px rgba(244, 63, 94, 0.35),
-        inset 0 -12px 24px -14px rgba(244, 63, 94, 0.45);
-    }
-
-    .banner-icon {
-      background: rgba(244, 63, 94, 0.2);
-      color: $color-rose;
-    }
+    --banner: #{$color-danger};
   }
 
   &.banner-warning {
-    --lg-tint: rgba(245, 158, 11, 0.1);
-
-    &::after {
-      box-shadow:
-        inset 2px 2px 1px -1px rgba(255, 255, 255, 0.55),
-        inset -2px -2px 1px -1px rgba(255, 255, 255, 0.2),
-        inset 0 0 0 1px rgba(245, 158, 11, 0.35),
-        inset 0 -12px 24px -14px rgba(245, 158, 11, 0.45);
-    }
-
-    .banner-icon {
-      background: rgba(245, 158, 11, 0.2);
-      color: $color-gold;
-    }
+    --banner: #{$color-coral};
   }
 }
 
@@ -354,7 +300,7 @@ function formatDuration(startMs: number, endMs: number): string {
   grid-template-areas:
     "stats progress"
     "logs logs";
-  gap: 16px;
+  gap: 18px;
 }
 
 @media (max-width: 880px) {
@@ -368,11 +314,16 @@ function formatDuration(startMs: number, endMs: number): string {
 }
 
 .card {
-  padding: 18px;
+  --lg-blur: 12px;
+  padding: 22px 24px;
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: 14px;
   min-width: 0;
+
+  &:hover {
+    transform: none;
+  }
 
   &:nth-child(1) { grid-area: stats; }
   &:nth-child(2) { grid-area: progress; }
@@ -384,42 +335,51 @@ function formatDuration(startMs: number, endMs: number): string {
   align-items: center;
   justify-content: space-between;
   gap: 10px;
+  padding-bottom: 14px;
+  border-bottom: 1px solid $color-hairline;
 
   h3 {
     margin: 0;
-    font-size: 1rem;
-    color: $color-ink;
+    font-size: 1.15rem;
     font-weight: 600;
+    color: $color-ink;
+  }
+
+  .muted {
+    font-family: $font-mono;
+    font-size: 0.76rem;
   }
 }
 
 .kv {
   display: grid;
   grid-template-columns: 1fr;
-  gap: 8px;
   margin: 0;
 
   > div {
     display: grid;
-    grid-template-columns: 1fr auto;
-    gap: 12px;
-    padding: 7px 10px;
-    border-radius: 10px;
-    box-shadow: inset 0 -1px 0 rgba(255, 255, 255, 0.05);
-    font-size: 0.88rem;
-    transition: background 0.2s;
+    grid-template-columns: auto minmax(0, 1fr);
+    align-items: baseline;
+    gap: 16px;
+    padding: 10px 0;
+    border-bottom: 1px solid $color-hairline;
 
-    &:hover { background: rgba(255, 255, 255, 0.04); }
-    &:last-child { box-shadow: none; }
+    &:last-child {
+      border-bottom: none;
+    }
   }
 
   dt {
-    color: $color-muted;
+    @include mono-label;
     margin: 0;
+    font-size: 0.62rem;
+    color: $color-faint;
   }
 
   dd {
     margin: 0;
+    font-family: $font-mono;
+    font-size: 0.8rem;
     color: $color-ink;
     font-variant-numeric: tabular-nums;
     text-align: right;
@@ -430,73 +390,59 @@ function formatDuration(startMs: number, endMs: number): string {
 .progress-wrap {
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: 12px;
 }
 
 .progress-track {
   position: relative;
-  height: 10px;
-  background: rgba(255, 255, 255, 0.06);
-  box-shadow:
-    inset 0 1px 2px rgba(3, 6, 24, 0.4),
-    inset 0 0 0 1px rgba(255, 255, 255, 0.08);
-  border-radius: $radius-full;
+  height: 6px;
+  border-radius: 2px;
+  background: rgba($color-ink, 0.1);
   overflow: hidden;
 }
 
 .progress-bar {
   height: 100%;
-  background: $color-grad;
-  background-size: 200% 100%;
+  border-radius: 2px;
+  background: $color-accent;
   transition: width 0.3s ease;
-  animation: shift 4s linear infinite;
-  border-radius: $radius-full;
-  box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.35),
-    0 0 12px rgba(245, 158, 11, 0.4);
-}
-
-@keyframes shift {
-  from { background-position: 0% 0; }
-  to { background-position: 200% 0; }
 }
 
 .progress-meta {
   display: flex;
   justify-content: space-between;
-  font-size: 0.85rem;
+  gap: 12px;
+  font-family: $font-mono;
+  font-size: 0.76rem;
   color: $color-muted;
 
   .failed {
-    color: $color-rose;
+    color: $color-coral;
   }
 }
 
 .timing {
   display: flex;
   justify-content: space-between;
-  font-size: 0.8rem;
+  gap: 12px;
+  flex-wrap: wrap;
+  font-family: $font-mono;
+  font-size: 0.7rem;
   color: $color-faint;
 }
 
 .logs {
   max-height: 320px;
   overflow-y: auto;
-  background: rgba(6, 10, 26, 0.35);
-  box-shadow:
-    inset 0 2px 6px rgba(3, 6, 24, 0.45),
-    inset 0 0 0 1px rgba(255, 255, 255, 0.07),
-    inset 0 -12px 24px -16px rgba(255, 255, 255, 0.14);
-  border-radius: 14px;
+  background: rgba(13, 15, 19, 0.45);
+  box-shadow: inset 0 0 0 1px $color-hairline;
+  border-radius: $radius-md;
   padding: 12px 14px;
-  font-family: ui-monospace, "SFMono-Regular", "Menlo", monospace;
-  font-size: 0.78rem;
+  font-family: $font-mono;
+  font-size: 0.74rem;
   display: flex;
   flex-direction: column;
   gap: 4px;
-
-  &::-webkit-scrollbar { width: 8px; }
-  &::-webkit-scrollbar-thumb { background: rgba(255, 255, 255, 0.1); border-radius: 4px; }
 }
 
 .log-line {
@@ -504,7 +450,7 @@ function formatDuration(startMs: number, endMs: number): string {
   grid-template-columns: 80px 70px 1fr;
   gap: 8px;
   align-items: baseline;
-  line-height: 1.4;
+  line-height: 1.5;
 
   .log-time {
     color: $color-faint;
@@ -512,8 +458,8 @@ function formatDuration(startMs: number, endMs: number): string {
 
   .log-level {
     text-transform: uppercase;
-    font-size: 0.7rem;
-    letter-spacing: 0.04em;
+    font-size: 0.66rem;
+    letter-spacing: 0.1em;
     color: $color-muted;
   }
 
@@ -522,10 +468,10 @@ function formatDuration(startMs: number, endMs: number): string {
     word-break: break-word;
   }
 
-  &.level-warning .log-level { color: $color-gold; }
+  &.level-warning .log-level { color: $color-coral; }
   &.level-error {
-    .log-level { color: $color-rose; }
-    .log-msg { color: #fda4af; }
+    .log-level { color: $color-danger; }
+    .log-msg { color: $color-danger; }
   }
 }
 
@@ -535,27 +481,21 @@ function formatDuration(startMs: number, endMs: number): string {
 }
 
 .empty {
+  @include mono-label;
   text-align: center;
   padding: 24px 12px;
   color: $color-faint;
 }
 
 .btn {
-  padding: 10px 20px;
-  font-size: 0.9rem;
-
-  &:disabled {
-    opacity: 0.5;
-    cursor: not-allowed;
-    animation: none;
-    transform: none;
-  }
+  padding: 9px 18px;
+  font-size: 0.84rem;
 }
 
 .spinner {
   width: 14px;
   height: 14px;
-  border: 2px solid rgba(255, 255, 255, 0.3);
+  border: 2px solid rgba($color-ink, 0.25);
   border-top-color: currentColor;
   border-radius: 50%;
   display: inline-block;
@@ -564,7 +504,6 @@ function formatDuration(startMs: number, endMs: number): string {
   &.small {
     width: 12px;
     height: 12px;
-    border-width: 2px;
     margin-right: 6px;
   }
 }

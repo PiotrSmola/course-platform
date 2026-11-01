@@ -17,21 +17,32 @@ const authStore = useAuthStore()
 </script>
 
 <style lang="scss" scoped>
+@use "@/assets/styles/abstracts/variables" as *;
+
 .sidebar {
   width: 240px;
-  padding: 2rem;
-  background: rgba(0, 0, 0, 0.3);
-  backdrop-filter: blur(10px);
+  padding: 2rem 1.5rem;
+  border-right: 1px solid $color-hairline;
 
   nav {
     display: flex;
     flex-direction: column;
-    gap: 1rem;
+    gap: 2px;
   }
 
   a {
-    color: white;
+    padding: 9px 12px;
+    border-radius: $radius-sm;
+    color: $color-muted;
+    font-size: 0.92rem;
     text-decoration: none;
+    transition: background 160ms ease, color 160ms ease;
+
+    &:hover,
+    &.router-link-active {
+      background: rgba($color-ink, 0.08);
+      color: $color-ink;
+    }
   }
 }
 </style>

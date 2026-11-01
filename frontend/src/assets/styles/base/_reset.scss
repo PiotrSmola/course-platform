@@ -23,7 +23,7 @@ body {
 }
 
 ::selection {
-  background: rgba(139, 92, 246, 0.45);
+  background: rgba($color-violet, 0.45);
 }
 
 img,
@@ -45,5 +45,5 @@ button {
 }
 
 :focus-visible {
-  outline: 2px solid $color-cyan;
+  outline: 2px solid $color-sky;
 }

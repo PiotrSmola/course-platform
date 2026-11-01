@@ -2,18 +2,20 @@
   <div class="trial-page">
     <section class="trial-hero">
       <div class="container">
-        <span class="eyebrow">Bezpłatny dostęp</span>
-        <h1>Wybierz kurs na swój trial</h1>
-        <p>
-          Poznaj sposób nauki na CoursePlatform bez opłat. W wybranym kursie odblokujemy dla Ciebie
-          dwie pierwsze lekcje.
-        </p>
+        <header class="section-head trial-head">
+          <span class="eyebrow">Bezpłatny dostęp</span>
+          <h1>Wybierz kurs na swój <em>trial</em></h1>
+          <p>
+            Poznaj sposób nauki na CoursePlatform bez opłat. W wybranym kursie odblokujemy dla Ciebie
+            dwie pierwsze lekcje.
+          </p>
+        </header>
       </div>
     </section>
 
     <section class="trial-content">
       <div class="container">
-        <div v-if="!authStore.isAuthenticated" class="trial-gate glass-card">
+        <div v-if="!authStore.isAuthenticated" class="trial-gate glass">
           <div>
             <h2>Załóż bezpłatne konto</h2>
             <p>Wybór kursu zapisujemy do Twojego konta, aby dostęp był dostępny także na innych urządzeniach.</p>
@@ -23,18 +25,18 @@
           </router-link>
         </div>
 
-        <div v-else-if="eligibleCoursesQuery.isLoading.value" class="state-card glass-card">
+        <div v-else-if="eligibleCoursesQuery.isLoading.value" class="state-card state-card--loading">
           <span class="spinner" aria-hidden="true" />
           <p>Przygotowujemy kursy dostępne w trialu…</p>
         </div>
 
-        <div v-else-if="eligibleCoursesQuery.isError.value" class="state-card glass-card">
+        <div v-else-if="eligibleCoursesQuery.isError.value" class="state-card">
           <h2>Nie udało się pobrać kursów</h2>
           <p>Odśwież stronę lub spróbuj ponownie za chwilę.</p>
           <button type="button" class="btn btn-ghost" @click="eligibleCoursesQuery.refetch()">Spróbuj ponownie</button>
         </div>
 
-        <div v-else-if="!eligibleCourses.length" class="state-card glass-card">
+        <div v-else-if="!eligibleCourses.length" class="state-card">
           <h2>Trial został już wykorzystany</h2>
           <p>Możesz wybrać kolejny kurs z katalogu albo wrócić do kursu, który został odblokowany wcześniej.</p>
           <router-link class="btn btn-primary" :to="{ name: 'Courses' }">Przejdź do katalogu</router-link>
@@ -51,9 +53,12 @@
 
           <div class="trial-grid">
             <article v-for="course in eligibleCourses" :key="course.id" class="trial-card glass-card">
-              <CourseThumbnail class="trial-card__thumbnail" :url="course.thumbnailUrl" />
+              <CourseThumbnail class="trial-card__thumbnail" :url="course.thumbnailUrl" :title="course.title" :seed="course.id" />
               <div class="trial-card__body">
-                <p class="trial-card__eyebrow">{{ course.lessonCount }} lekcji · {{ formatPrice(course.price) }}</p>
+                <p class="trial-card__eyebrow">
+                  <span>{{ course.lessonCount }} lekcji</span>
+                  <span>{{ formatPrice(course.price) }}</span>
+                </p>
                 <h3>{{ course.title }}</h3>
                 <p class="trial-card__author">{{ course.instructorName }}</p>
                 <p class="trial-card__description">{{ course.shortDescription }}</p>
@@ -107,57 +112,44 @@ async function chooseTrial(courseId: string) {
 
 <style lang="scss" scoped>
 @use "@/assets/styles/abstracts/variables" as *;
+@use "@/assets/styles/abstracts/mixins" as *;
 
 .trial-page {
   min-height: 100%;
 }
 
 .trial-hero {
-  padding: 44px 0 38px;
-  text-align: center;
-  border-bottom: 1px solid $color-hairline;
-
-  .eyebrow {
-    margin-bottom: 18px;
-  }
+  padding: 32px 0 0;
 
   h1 {
-    max-width: 680px;
-    margin: 0 auto 14px;
-    font-family: $font-display;
-    font-size: $font-size-xl;
-    line-height: 1.08;
-    letter-spacing: -0.03em;
+    font-size: clamp(2.4rem, 4.6vw, 3.8rem);
+    margin-top: 18px;
   }
+}
 
-  p {
-    max-width: 640px;
-    margin: 0 auto;
-    color: $color-muted;
-    line-height: 1.65;
-  }
+.trial-head {
+  margin-bottom: 40px;
 }
 
 .trial-content {
-  padding: 48px 0 96px;
+  padding: 0 0 96px;
 }
 
-.trial-gate,
-.state-card {
-  --lg-r: 26px;
-  --lg-blur: 2px;
+.trial-gate {
+  --lg-r: 18px;
+  --lg-blur: 10px;
+  --lg-tint: rgba(13, 15, 19, 0.3);
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 28px;
-  max-width: 820px;
-  margin: 0 auto;
-  padding: 32px;
+  max-width: 920px;
+  padding: 24px 24px 24px 28px;
 
   h2 {
-    font-family: $font-display;
-    font-size: 1.35rem;
-    margin-bottom: 8px;
+    font-size: 1.4rem;
+    font-weight: 600;
+    margin-bottom: 6px;
   }
 
   p {
@@ -168,7 +160,7 @@ async function chooseTrial(courseId: string) {
   @media (max-width: 620px) {
     flex-direction: column;
     align-items: flex-start;
-    padding: 26px 22px;
+    padding: 24px 20px;
 
     .btn {
       width: 100%;
@@ -177,17 +169,44 @@ async function chooseTrial(courseId: string) {
 }
 
 .state-card {
+  display: flex;
   flex-direction: column;
-  justify-content: center;
-  text-align: center;
-  padding: 52px 32px;
+  align-items: flex-start;
+  gap: 12px;
+  max-width: 720px;
+  padding: 32px 0;
+  border-top: 1px solid $color-hairline;
+
+  h2 {
+    font-size: 1.6rem;
+    font-weight: 600;
+  }
+
+  p {
+    color: $color-muted;
+    line-height: 1.55;
+  }
+
+  .btn {
+    margin-top: 8px;
+  }
+}
+
+.state-card--loading {
+  flex-direction: row;
+  align-items: center;
+
+  p {
+    @include mono-label;
+    color: $color-faint;
+  }
 }
 
 .spinner {
-  width: 34px;
-  height: 34px;
-  border: 3px solid rgba(255, 255, 255, 0.12);
-  border-top-color: $color-gold;
+  width: 22px;
+  height: 22px;
+  border: 2px solid rgba($color-ink, 0.1);
+  border-top-color: $color-accent;
   border-radius: 50%;
   animation: trial-spin 0.8s linear infinite;
 }
@@ -197,12 +216,12 @@ async function chooseTrial(courseId: string) {
   align-items: flex-end;
   justify-content: space-between;
   gap: 24px;
-  margin-bottom: 26px;
+  padding-bottom: 20px;
+  margin-bottom: 28px;
+  border-bottom: 1px solid $color-hairline;
 
   h2 {
-    font-family: $font-display;
-    font-size: clamp(1.45rem, 3vw, 2rem);
-    letter-spacing: -0.02em;
+    font-size: clamp(1.6rem, 3vw, 2.2rem);
     margin-bottom: 8px;
   }
 
@@ -217,20 +236,16 @@ async function chooseTrial(courseId: string) {
 }
 
 .trial-limit {
+  @include tag;
   flex-shrink: 0;
-  border-radius: 999px;
-  padding: 8px 13px;
-  color: $color-gold;
-  font-size: 0.82rem;
-  font-weight: 700;
-  background: rgba(245, 158, 11, 0.1);
-  box-shadow: inset 0 0 0 1px rgba(245, 158, 11, 0.24);
+  color: $color-accent;
+  box-shadow: inset 0 0 0 1px rgba($color-accent, 0.4);
 }
 
 .trial-grid {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 20px;
+  gap: 24px;
 
   @media (max-width: 980px) {
     grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -242,57 +257,65 @@ async function chooseTrial(courseId: string) {
 }
 
 .trial-card {
-  --lg-r: 22px;
-  --lg-blur: 1.5px;
+  --lg-blur: 10px;
   overflow: hidden;
   display: flex;
   flex-direction: column;
 }
 
 .trial-card__thumbnail {
-  width: calc(100% - 32px);
+  position: relative;
   aspect-ratio: 16 / 9;
-  margin: 16px 16px 0;
-  border-radius: 16px;
+  margin: 12px 12px 0;
+  border-radius: 14px 14px 14px 4px;
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.08);
 }
 
 .trial-card__body {
   display: flex;
   flex: 1;
   flex-direction: column;
-  padding: 18px 18px 20px;
+  padding: 16px 20px 20px;
 }
 
 .trial-card__eyebrow {
-  margin-bottom: 8px;
-  color: $color-gold;
-  font-size: 0.76rem;
-  font-weight: 700;
-  letter-spacing: 0.04em;
-  text-transform: uppercase;
+  @include mono-label;
+  display: flex;
+  gap: 10px;
+  margin-bottom: 10px;
+  font-size: 0.64rem;
+  color: $color-faint;
+
+  span + span::before {
+    content: "/";
+    margin-right: 10px;
+    color: $color-hairline;
+  }
 }
 
 .trial-card h3 {
-  font-family: $font-display;
-  font-size: 1.1rem;
-  line-height: 1.3;
+  font-size: 1.28rem;
+  font-weight: 600;
+  line-height: 1.2;
 }
 
 .trial-card__author {
-  margin-top: 5px;
-  color: $color-faint;
-  font-size: 0.85rem;
+  margin-top: 6px;
+  color: $color-muted;
+  font-size: 0.84rem;
 }
 
 .trial-card__description {
   display: -webkit-box;
   margin: 14px 0 20px;
+  padding-top: 14px;
   overflow: hidden;
   color: $color-muted;
   font-size: 0.9rem;
   line-height: 1.55;
+  border-top: 1px dashed $color-hairline;
   -webkit-box-orient: vertical;
-  -webkit-line-clamp: 3;
+  -webkit-line-clamp: 4;
 }
 
 .trial-card__action {

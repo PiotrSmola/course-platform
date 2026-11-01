@@ -1,7 +1,9 @@
 <template>
   <div class="plan-card glass-card" :class="{ featured: plan.isFeatured }">
-    <span v-if="plan.isFeatured" class="featured-badge">Najpopularniejszy</span>
-    <h3 class="plan-name">{{ plan.name }}</h3>
+    <div class="plan-top">
+      <h3 class="plan-name">{{ plan.name }}</h3>
+      <span v-if="plan.isFeatured" class="featured-badge">Najpopularniejszy</span>
+    </div>
     <p class="plan-desc">{{ plan.shortDescription }}</p>
 
     <div class="plan-price">
@@ -11,12 +13,12 @@
 
     <ul class="plan-features">
       <li v-for="feature in plan.features" :key="feature.id">
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
         <span>{{ feature.text }}</span>
       </li>
     </ul>
 
-    <a class="btn plan-cta" :href="plan.callToActionUrl">{{ plan.callToActionText }}</a>
+    <a class="btn plan-cta" :class="plan.isFeatured ? 'btn-primary' : 'btn-ghost'" :href="plan.callToActionUrl">{{ plan.callToActionText }}</a>
   </div>
 </template>
 
@@ -33,62 +35,44 @@ const priceLabel = computed(() => formatPlanPrice(props.plan))
 <style lang="scss" scoped>
 @use "@/assets/styles/abstracts/variables" as *;
 @use "@/assets/styles/abstracts/mixins" as *;
-@use "sass:color";
 
 .plan-card {
-  --lg-r: 22px;
-  --lg-blur: 0px;
-  position: relative;
-  padding: 28px 24px;
+  --lg-blur: 10px;
   display: flex;
   flex-direction: column;
-  gap: 18px;
-  transition: transform 0.3s, box-shadow 0.3s, border-color 0.3s;
+  padding: 24px 26px 26px;
 
   &.featured {
-    border-color: rgba(245, 158, 11, 0.4);
+    --lg-tint: rgba(13, 15, 19, 0.4);
     box-shadow:
-      0 24px 60px rgba(3, 6, 24, 0.55),
-      0 4px 14px rgba(3, 6, 24, 0.35),
-      0 0 0 1px rgba(245, 158, 11, 0.4),
-      inset 0 1px 1px rgba(255, 255, 255, 0.2);
-    background:
-      linear-gradient(180deg, rgba(245, 158, 11, 0.05), transparent 60%),
-      var(--lg-tint);
-    transform: translateY(-6px);
-  }
-
-  &:hover:not(.featured) {
-    transform: translateY(-4px);
-    border-color: rgba(255, 255, 255, 0.18);
-    box-shadow:
-      0 30px 70px rgba(3, 6, 24, 0.55),
-      0 6px 18px rgba(3, 6, 24, 0.4),
-      inset 0 1px 1px rgba(255, 255, 255, 0.2);
+      0 0 0 1px rgba($color-accent, 0.45),
+      0 28px 60px -24px rgba($color-accent, 0.28),
+      0 12px 32px -8px rgba(0, 0, 0, 0.45);
   }
 }
 
+.plan-top {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  padding-bottom: 14px;
+  margin-bottom: 14px;
+  border-bottom: 1px solid $color-hairline;
+}
+
 .featured-badge {
-  position: absolute;
-  top: -12px;
-  left: 50%;
-  transform: translateX(-50%);
-  padding: 5px 14px;
-  font-size: 0.72rem;
-  font-weight: 700;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
-  color: #1a1208;
-  background: $color-grad;
-  border-radius: 999px;
-  box-shadow: 0 8px 22px rgba(245, 158, 11, 0.45);
+  @include tag;
+  flex-shrink: 0;
+  color: $color-on-accent;
+  background: $color-accent;
+  box-shadow: none;
 }
 
 .plan-name {
   font-family: $font-display;
-  font-size: 1.4rem;
+  font-size: 1.5rem;
   font-weight: 600;
-  letter-spacing: -0.01em;
 }
 
 .plan-desc {
@@ -96,24 +80,28 @@ const priceLabel = computed(() => formatPlanPrice(props.plan))
   color: $color-muted;
   line-height: 1.55;
   min-height: 60px;
+  margin-bottom: 18px;
 }
 
 .plan-price {
   display: flex;
   align-items: baseline;
   gap: 6px;
-  padding: 12px 0;
-  border-top: 1px solid rgba(255, 255, 255, 0.08);
-  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  padding: 16px 0;
+  border-top: 1px dashed $color-hairline;
+  border-bottom: 1px dashed $color-hairline;
+  margin-bottom: 20px;
 
   .price-value {
     font-family: $font-display;
-    font-size: 1.6rem;
-    font-weight: 700;
+    font-size: 2.4rem;
+    font-weight: 600;
+    line-height: 1;
     color: $color-ink;
   }
 
   .price-empty {
+    font-family: $font-mono;
     color: $color-faint;
     font-size: 1.4rem;
   }
@@ -122,10 +110,10 @@ const priceLabel = computed(() => formatPlanPrice(props.plan))
 .plan-features {
   list-style: none;
   padding: 0;
-  margin: 0;
+  margin: 0 0 28px;
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: 11px;
   flex: 1;
 
   li {
@@ -136,7 +124,7 @@ const priceLabel = computed(() => formatPlanPrice(props.plan))
     color: $color-ink;
 
     svg {
-      color: $color-gold;
+      color: $color-accent;
       flex-shrink: 0;
       margin-top: 4px;
     }
@@ -144,54 +132,7 @@ const priceLabel = computed(() => formatPlanPrice(props.plan))
 }
 
 .plan-cta {
-  @include liquid-glass;
-  --lg-r: 999px;
-  --lg-blur: 0px;
-  --lg-tint: rgba(255, 255, 255, 0.06);
   width: 100%;
-  padding: 12px 18px;
-  border: none;
-  text-align: center;
-  text-decoration: none;
-  font-weight: 600;
-  font-size: 0.95rem;
-  color: $color-ink;
-  cursor: pointer;
-  box-shadow: inset 0 1px 1px rgba(255, 255, 255, 0.2), inset 0 0 0 1px rgba(255, 255, 255, 0.08);
-  transition: --lg-tint 0.3s, transform 0.2s, box-shadow 0.3s;
   margin-top: auto;
-
-  &:hover {
-    --lg-tint: rgba(245, 158, 11, 0.18);
-    color: $color-ink;
-    transform: translateY(-2px);
-    box-shadow:
-      0 10px 24px rgba(245, 158, 11, 0.3),
-      inset 0 1px 1px rgba(255, 255, 255, 0.3),
-      inset 0 0 0 1px rgba(245, 158, 11, 0.4);
-  }
 }
-
-.plan-card.featured .plan-cta {
-  --lg-tint: rgba(245, 158, 11, 0.85);
-  color: #1a1208;
-  box-shadow:
-    0 12px 28px rgba(245, 158, 11, 0.4),
-    inset 0 1px 1px rgba(255, 255, 255, 0.4),
-    inset 0 0 0 1px rgba(245, 158, 11, 0.6);
-
-  &:hover {
-    --lg-tint: rgba(245, 158, 11, 1);
-    color: #1a1208;
-    transform: translateY(-2px);
-  }
-}
-.plan-card {
-  --lg-blur: 12px;
-}
-
-.plan-cta {
-  --lg-blur: 10px;
-}
-
 </style>

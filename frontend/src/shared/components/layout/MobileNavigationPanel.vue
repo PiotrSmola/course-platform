@@ -33,6 +33,8 @@
           <router-link :class="{ active: isCatalogRoute }" :to="{ name: 'Courses' }" @click="close">Katalog</router-link>
           <router-link :class="{ active: isPathsRoute }" :to="{ name: 'PathsList' }" @click="close">Ścieżki</router-link>
           <router-link :class="{ active: isBusinessRoute }" :to="{ name: 'Business' }" @click="close">Dla firm</router-link>
+          <router-link :class="{ active: route.path === '/pricing' }" :to="{ name: 'Pricing' }" @click="close">Cennik</router-link>
+          <router-link :class="{ active: route.path === '/help' }" :to="{ name: 'Help' }" @click="close">Pomoc</router-link>
           <router-link v-if="authStore.isAuthenticated" :class="{ active: route.path === '/my-courses' }" :to="{ name: 'MyCourses' }" @click="close">Moje kursy</router-link>
           <router-link v-if="authStore.isInstructor" :class="{ active: route.path === '/instructor' }" :to="{ name: 'InstructorDashboard' }" @click="close">Panel instruktora</router-link>
           <router-link v-if="authStore.isAdmin" :class="{ active: route.path === '/admin' }" :to="{ name: 'AdminDashboard' }" @click="close">Panel administratora</router-link>
@@ -120,6 +122,7 @@ onBeforeUnmount(() => {
 
 <style lang="scss" scoped>
 @use "@/assets/styles/abstracts/variables" as *;
+@use "@/assets/styles/abstracts/mixins" as *;
 
 .mobile-panel-backdrop {
   position: fixed;
@@ -127,19 +130,20 @@ onBeforeUnmount(() => {
   z-index: 220;
   display: flex;
   justify-content: flex-end;
-  background: rgba(3, 6, 18, 0.62);
-  -webkit-backdrop-filter: blur(8px);
-  backdrop-filter: blur(8px);
+  background: rgba(6, 7, 10, 0.62);
 }
 
 .mobile-panel {
-  --lg-r: 28px 0 0 28px;
-  --lg-blur: 4px;
+  --lg-r: 22px 0 0 22px;
+  --lg-blur: 18px;
+  --lg-sat: 140%;
+  --lg-tint: rgba(13, 15, 19, 0.74);
+  --lg-glow: 0.05;
   display: flex;
   width: min(390px, calc(100vw - 36px));
   min-height: 100%;
   flex-direction: column;
-  padding: 18px;
+  padding: 18px 20px 20px;
   outline: none;
 }
 
@@ -147,13 +151,23 @@ onBeforeUnmount(() => {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 4px 4px 16px 8px;
-  color: $color-muted;
-  font-family: $font-display;
-  font-size: 0.88rem;
-  font-weight: 700;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
+  padding: 4px 0 18px;
+
+  > span {
+    @include mono-label;
+    display: inline-flex;
+    align-items: center;
+    gap: 12px;
+    color: $color-accent;
+
+    &::before {
+      content: "";
+      width: 22px;
+      height: 1px;
+      background: currentColor;
+      opacity: 0.7;
+    }
+  }
 }
 
 .mobile-panel__close {
@@ -163,13 +177,14 @@ onBeforeUnmount(() => {
   place-items: center;
   border: 0;
   border-radius: 50%;
-  background: rgba(255, 255, 255, 0.07);
+  background: rgba($color-ink, 0.06);
+  box-shadow: inset 0 0 0 1px $color-hairline;
   color: $color-ink;
   cursor: pointer;
 
   svg {
-    width: 20px;
-    height: 20px;
+    width: 18px;
+    height: 18px;
   }
 }
 
@@ -178,46 +193,66 @@ onBeforeUnmount(() => {
   align-items: center;
   gap: 11px;
   width: 100%;
-  padding: 14px;
-  border: 1px solid rgba(255, 255, 255, 0.12);
-  border-radius: 16px;
-  background: rgba(255, 255, 255, 0.05);
-  color: $color-muted;
+  min-height: 48px;
+  padding: 0 14px;
+  border: 0;
+  border-radius: $radius-md;
+  background: rgba(13, 15, 19, 0.45);
+  box-shadow: inset 0 0 0 1px $color-hairline;
+  color: $color-faint;
   font: inherit;
   font-size: 0.9rem;
   text-align: left;
   cursor: pointer;
 
   svg {
-    width: 19px;
-    height: 19px;
+    width: 18px;
+    height: 18px;
     flex-shrink: 0;
-    color: $color-gold;
+    color: $color-muted;
   }
 }
 
 .mobile-panel__nav {
   display: grid;
-  gap: 4px;
-  margin: 20px 0;
+  margin: 18px 0;
+  counter-reset: mobile-nav;
 
   a {
-    padding: 13px 14px;
-    border-radius: 14px;
+    display: flex;
+    align-items: baseline;
+    gap: 14px;
+    padding: 14px 4px;
+    border-bottom: 1px solid $color-hairline;
     color: $color-muted;
-    font-size: 1rem;
-    font-weight: 600;
+    font-family: $font-display;
+    font-size: 1.35rem;
+    font-weight: 500;
+    letter-spacing: -0.01em;
+    line-height: 1.15;
     text-decoration: none;
-    transition: background 160ms ease, color 160ms ease;
+    counter-increment: mobile-nav;
+    transition: color 160ms ease;
+
+    &::before {
+      content: counter(mobile-nav, decimal-leading-zero);
+      min-width: 22px;
+      font-family: $font-mono;
+      font-size: 0.64rem;
+      letter-spacing: 0.08em;
+      color: $color-faint;
+      transition: color 160ms ease;
+    }
 
     &:hover,
     &.active {
-      background: rgba(255, 255, 255, 0.08);
       color: $color-ink;
     }
 
     &.active {
-      box-shadow: inset 0 0 0 1px rgba(245, 158, 11, 0.18);
+      &::before {
+        color: $color-accent;
+      }
     }
   }
 }
@@ -227,7 +262,7 @@ onBeforeUnmount(() => {
   gap: 10px;
   margin-top: auto;
   padding-top: 18px;
-  border-top: 1px solid rgba(255, 255, 255, 0.1);
+  border-top: 1px solid $color-hairline;
 
   .btn {
     width: 100%;
@@ -237,50 +272,55 @@ onBeforeUnmount(() => {
 .mobile-panel__account {
   display: flex;
   align-items: center;
-  gap: 11px;
-  padding: 10px;
+  gap: 12px;
+  padding: 6px 2px 10px;
   color: $color-ink;
   text-decoration: none;
 
   > span:last-child {
     display: grid;
-    gap: 2px;
+    gap: 3px;
   }
 
   strong {
-    font-size: 0.9rem;
+    font-family: $font-display;
+    font-size: 1rem;
+    font-weight: 600;
   }
 
   small {
+    @include mono-label;
+    font-size: 0.6rem;
     color: $color-faint;
-    font-size: 0.76rem;
   }
 }
 
 .mobile-panel__avatar {
   display: grid;
-  width: 40px;
-  height: 40px;
+  width: 42px;
+  height: 42px;
   place-items: center;
   border-radius: 50%;
-  background: $color-grad;
-  color: #111827;
+  background: rgba($color-ink, 0.1);
+  box-shadow: inset 0 0 0 1px $color-hairline;
+  color: $color-ink;
   font-family: $font-display;
-  font-weight: 800;
+  font-size: 1rem;
+  font-weight: 600;
 }
 
 .mobile-panel-enter-active,
 .mobile-panel-leave-active {
-  transition: opacity 180ms ease;
+  transition: background-color 220ms ease;
 
   .mobile-panel {
-    transition: transform 180ms ease;
+    transition: transform 260ms $ease-out;
   }
 }
 
 .mobile-panel-enter-from,
 .mobile-panel-leave-to {
-  opacity: 0;
+  background-color: rgba(6, 7, 10, 0);
 
   .mobile-panel {
     transform: translateX(100%);

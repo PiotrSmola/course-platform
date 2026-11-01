@@ -97,6 +97,7 @@ onBeforeUnmount(() => {
 
 <style lang="scss" scoped>
 @use "@/assets/styles/abstracts/variables" as *;
+@use "@/assets/styles/abstracts/mixins" as *;
 
 .mobile-search {
   position: fixed;
@@ -104,59 +105,70 @@ onBeforeUnmount(() => {
   z-index: 230;
   display: flex;
   flex-direction: column;
-  padding: 20px;
+  padding: 18px 20px 20px;
   overflow-y: auto;
-  background:
-    radial-gradient(600px 400px at 100% 0%, rgba(245, 158, 11, 0.2), transparent 70%),
-    $color-bg;
+  background: $color-bg;
 }
 
 .mobile-search__top {
   display: flex;
   align-items: center;
   gap: 14px;
-  margin-bottom: 26px;
+  margin-bottom: 22px;
+  padding-bottom: 16px;
+  border-bottom: 1px solid $color-hairline;
   color: $color-ink;
   font-family: $font-display;
-  font-size: 1.05rem;
-  font-weight: 700;
+  font-size: 1.35rem;
+  font-weight: 600;
+  letter-spacing: -0.01em;
 }
 
 .mobile-search__close {
   display: grid;
-  width: 42px;
-  height: 42px;
+  width: 40px;
+  height: 40px;
   place-items: center;
-  border: 1px solid rgba(255, 255, 255, 0.12);
+  flex-shrink: 0;
+  border: 0;
   border-radius: 50%;
-  background: rgba(255, 255, 255, 0.06);
+  background: rgba($color-ink, 0.06);
+  box-shadow: inset 0 0 0 1px $color-hairline;
   color: $color-ink;
   cursor: pointer;
 
   svg {
-    width: 21px;
-    height: 21px;
+    width: 20px;
+    height: 20px;
   }
 }
 
 .mobile-search__input-wrap {
-  --lg-r: 18px;
-  --lg-blur: 2px;
+  --lg-r: 999px;
+  --lg-blur: 4px;
+  --lg-tint: rgba(13, 15, 19, 0.45);
+  --lg-glow: 0.06;
   display: flex;
   align-items: center;
   gap: 11px;
-  padding: 0 14px;
+  padding: 0 10px 0 18px;
+
+  &:focus-within {
+    box-shadow:
+      0 12px 32px -8px rgba(0, 0, 0, 0.45),
+      0 0 0 2px rgba($color-accent, 0.6);
+  }
 
   > svg {
-    width: 21px;
-    height: 21px;
+    width: 19px;
+    height: 19px;
     flex-shrink: 0;
-    color: $color-gold;
+    color: $color-muted;
   }
 
   input {
     width: 100%;
-    height: 58px;
+    height: 54px;
     min-width: 0;
     border: 0;
     outline: 0;
@@ -168,55 +180,57 @@ onBeforeUnmount(() => {
     &::placeholder {
       color: $color-faint;
     }
+
+    &:focus-visible {
+      outline: none;
+    }
   }
 }
 
 .mobile-search__clear {
   display: grid;
-  width: 30px;
-  height: 30px;
+  width: 32px;
+  height: 32px;
+  flex-shrink: 0;
   place-items: center;
   border: 0;
   border-radius: 50%;
-  background: rgba(255, 255, 255, 0.1);
+  background: rgba($color-ink, 0.1);
   color: $color-ink;
-  font-size: 1.35rem;
+  font-size: 1.25rem;
   line-height: 1;
   cursor: pointer;
 }
 
 .mobile-search__results {
   flex: 1;
-  padding: 22px 0;
+  padding: 18px 0;
 }
 
 .mobile-search__placeholder,
 .mobile-search__state {
-  margin: 28px auto;
+  margin: 18px 4px;
   color: $color-muted;
   line-height: 1.6;
-  text-align: center;
 }
 
 .mobile-search__state {
   display: flex;
-  justify-content: center;
   gap: 10px;
   align-items: center;
 }
 
 .spinner {
-  width: 19px;
-  height: 19px;
-  border: 2px solid rgba(255, 255, 255, 0.15);
-  border-top-color: $color-gold;
+  width: 17px;
+  height: 17px;
+  border: 2px solid rgba($color-ink, 0.12);
+  border-top-color: $color-accent;
   border-radius: 50%;
   animation: mobile-search-spin 0.8s linear infinite;
 }
 
 .mobile-search__list {
   display: grid;
-  gap: 8px;
 }
 
 .mobile-search__result {
@@ -224,10 +238,8 @@ onBeforeUnmount(() => {
   align-items: center;
   justify-content: space-between;
   gap: 16px;
-  padding: 16px;
-  border-radius: 16px;
-  background: rgba(255, 255, 255, 0.05);
-  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.09);
+  padding: 16px 4px;
+  border-bottom: 1px solid $color-hairline;
   color: $color-ink;
   text-decoration: none;
 
@@ -240,32 +252,34 @@ onBeforeUnmount(() => {
   strong {
     overflow: hidden;
     font-family: $font-display;
-    font-size: 0.98rem;
+    font-size: 1rem;
+    font-weight: 500;
     text-overflow: ellipsis;
     white-space: nowrap;
   }
 
   small {
-    color: $color-muted;
-    font-size: 0.8rem;
+    font-family: $font-mono;
+    font-size: 0.7rem;
+    color: $color-faint;
   }
 
   > svg {
-    width: 19px;
-    height: 19px;
+    width: 18px;
+    height: 18px;
     flex-shrink: 0;
-    color: $color-gold;
+    color: $color-faint;
   }
 }
 
 .mobile-search-enter-active,
 .mobile-search-leave-active {
-  transition: opacity 160ms ease;
+  transition: transform 260ms $ease-out;
 }
 
 .mobile-search-enter-from,
 .mobile-search-leave-to {
-  opacity: 0;
+  transform: translateX(100%);
 }
 
 @keyframes mobile-search-spin {

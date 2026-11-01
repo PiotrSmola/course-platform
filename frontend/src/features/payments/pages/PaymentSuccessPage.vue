@@ -14,7 +14,7 @@
       </template>
 
       <template v-else-if="isSubscriptionFlow && subscriptionQuery.isError.value">
-        <div class="result-icon error">✕</div>
+        <div class="result-icon error">✕ Błąd</div>
         <h1>Nie udało się potwierdzić subskrypcji</h1>
         <p>Spróbuj ponownie za chwilę. Jeśli płatność została pobrana, dostęp powinien pojawić się po odświeżeniu.</p>
         <div class="result-actions">
@@ -24,7 +24,7 @@
       </template>
 
       <template v-else-if="isSubscriptionFlow && subscriptionPollingTimeout">
-        <div class="result-icon error">✕</div>
+        <div class="result-icon error">✕ Błąd</div>
         <h1>Subskrypcja jeszcze się synchronizuje</h1>
         <p>Webhook Stripe potrzebuje więcej czasu. Odśwież stronę za chwilę lub przejdź do katalogu kursów.</p>
         <div class="result-actions">
@@ -34,7 +34,7 @@
       </template>
 
       <template v-else-if="isSubscriptionFlow && isSubscriptionCompleted">
-        <div class="result-icon success">✓</div>
+        <div class="result-icon success">✓ Gotowe</div>
         <h1>All-access aktywny</h1>
         <p>Masz już dostęp do wszystkich opublikowanych kursów w ramach miesięcznej subskrypcji.</p>
         <div class="result-actions">
@@ -44,7 +44,7 @@
       </template>
 
       <template v-else-if="isSubscriptionFlow">
-        <div class="result-icon error">✕</div>
+        <div class="result-icon error">✕ Błąd</div>
         <h1>Subskrypcja nie jest aktywna</h1>
         <p>{{ subscriptionFailureMessage }}</p>
         <div class="result-actions">
@@ -52,12 +52,12 @@
         </div>
       </template>
       <template v-else-if="isGiftFlow">
-        <div class="result-icon success">OK</div>
-        <h1>Prezent zostal kupiony</h1>
-        <p>Po potwierdzeniu platnosci kod zostanie wyslany na adres odbiorcy.</p>
+        <div class="result-icon success">✓ Gotowe</div>
+        <h1>Prezent został kupiony</h1>
+        <p>Po potwierdzeniu płatności kod zostanie wysłany na adres odbiorcy.</p>
         <div class="result-actions">
           <router-link class="btn btn-primary" :to="{ name: 'Profile' }">Moje zakupy</router-link>
-          <router-link class="btn btn-ghost" :to="{ name: 'Courses' }">Wroc do kursow</router-link>
+          <router-link class="btn btn-ghost" :to="{ name: 'Courses' }">Wróć do kursów</router-link>
         </div>
       </template>
 
@@ -69,7 +69,7 @@
       </template>
 
       <template v-else-if="statusQuery.isError.value">
-        <div class="result-icon error">✕</div>
+        <div class="result-icon error">✕ Błąd</div>
         <h1>Wystąpił błąd</h1>
         <p>Nie udało się sprawdzić statusu płatności. Spróbuj ponownie później lub skontaktuj się z nami.</p>
         <div class="result-actions">
@@ -79,7 +79,7 @@
       </template>
 
       <template v-else-if="isPollingTimeout">
-        <div class="result-icon error">✕</div>
+        <div class="result-icon error">✕ Błąd</div>
         <h1>Przekroczono czas oczekiwania</h1>
         <p>Nie udało się potwierdzić statusu płatności w czasie oczekiwania. Spróbuj ponownie lub skontaktuj się z nami.</p>
         <div class="result-actions">
@@ -89,7 +89,7 @@
       </template>
 
       <template v-else-if="isCompleted">
-        <div class="result-icon success">✓</div>
+        <div class="result-icon success">✓ Gotowe</div>
         <h1>Płatność zakończona</h1>
         <p>
           Masz już dostęp do kursu
@@ -108,7 +108,7 @@
       </template>
 
       <template v-else>
-        <div class="result-icon error">✕</div>
+        <div class="result-icon error">✕ Błąd</div>
         <h1>Płatność nie powiodła się</h1>
         <p>{{ failureMessage }}</p>
         <div class="result-actions">
@@ -191,22 +191,28 @@ watch(isSubscriptionCompleted, (completed) => {
 
 <style lang="scss" scoped>
 @use "@/assets/styles/abstracts/variables" as *;
+@use "@/assets/styles/abstracts/mixins" as *;
 
 .payment-result {
   min-height: 70vh;
   display: grid;
   place-items: center;
-  padding: calc($header-height + 40px) 20px 80px;
+  padding: 40px 20px 80px;
 }
 
 .result-card {
-  max-width: 480px;
+  --lg-blur: 10px;
+  max-width: 540px;
   width: 100%;
-  padding: 48px 40px;
-  text-align: center;
+  padding: 30px 32px 32px;
+
+  &:hover {
+    transform: none;
+  }
 
   h1 {
-    font-size: 1.6rem;
+    font-size: clamp(1.7rem, 4vw, 2.2rem);
+    font-weight: 600;
     margin-bottom: 12px;
   }
 
@@ -214,45 +220,49 @@ watch(isSubscriptionCompleted, (completed) => {
     color: $color-muted;
     margin-bottom: 28px;
     line-height: 1.6;
+
+    strong {
+      color: $color-ink;
+      font-weight: 600;
+    }
+  }
+
+  @media (max-width: 520px) {
+    padding: 26px 22px;
   }
 }
 
 .result-icon {
-  width: 64px;
-  height: 64px;
-  margin: 0 auto 24px;
-  display: grid;
-  place-items: center;
-  border-radius: 50%;
-  font-size: 1.8rem;
-  font-weight: 700;
+  @include tag;
+  margin-bottom: 22px;
+  color: $color-accent;
+  box-shadow: inset 0 0 0 1px rgba($color-accent, 0.4);
 
   &.success {
-    background: rgba(34, 197, 94, 0.18);
-    color: #4ade80;
-    box-shadow: inset 0 1px 1px rgba(255, 255, 255, 0.25), 0 0 0 1px rgba(74, 222, 128, 0.3);
+    color: $color-success;
+    box-shadow: inset 0 0 0 1px rgba($color-success, 0.4);
   }
 
   &.error {
-    background: rgba(239, 68, 68, 0.18);
-    color: #f87171;
-    box-shadow: inset 0 1px 1px rgba(255, 255, 255, 0.25), 0 0 0 1px rgba(248, 113, 113, 0.3);
+    color: $color-danger;
+    box-shadow: inset 0 0 0 1px rgba($color-danger, 0.4);
   }
 }
 
 .result-actions {
   display: flex;
-  justify-content: center;
   gap: 12px;
   flex-wrap: wrap;
+  padding-top: 20px;
+  border-top: 1px dashed $color-hairline;
 }
 
 .spinner {
-  width: 48px;
-  height: 48px;
-  margin: 0 auto 24px;
-  border: 3px solid rgba(255, 255, 255, 0.1);
-  border-top-color: $color-gold;
+  width: 22px;
+  height: 22px;
+  margin-bottom: 22px;
+  border: 2px solid rgba($color-ink, 0.1);
+  border-top-color: $color-accent;
   border-radius: 50%;
   animation: spin 0.8s linear infinite;
 }

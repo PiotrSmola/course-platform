@@ -1,14 +1,17 @@
 <template>
   <router-link class="path-card glass-card" :to="{ name: 'PathDetails', params: { slug: path.slug } }">
-    <div class="card-thumb">
-      <div class="card-thumb-fade" />
-      <span class="difficulty-badge" :data-level="path.difficultyLevel">{{ difficultyLabel }}</span>
-      <span class="hours-badge">
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
-        {{ path.estimatedHours }}h
-      </span>
+    <div class="card-plate">
+      <div class="plate-top">
+        <span>Ścieżka nauki</span>
+        <span>CoursePlatform</span>
+      </div>
+      <span class="plate-num">{{ number }}</span>
     </div>
     <div class="card-body">
+      <div class="card-tags">
+        <span class="tag difficulty-tag" :data-level="path.difficultyLevel">{{ difficultyLabel }}</span>
+        <span class="tag">{{ path.estimatedHours }} h</span>
+      </div>
       <h3 class="card-title">{{ path.title }}</h3>
       <p class="card-desc">{{ path.shortDescription }}</p>
       <div class="card-foot">
@@ -28,7 +31,7 @@
 import { computed } from 'vue'
 import type { LearningPathListItem, PathDifficultyLevel } from '@/features/learning-paths/api/learningPaths.api'
 
-const props = defineProps<{ path: LearningPathListItem }>()
+const props = defineProps<{ path: LearningPathListItem; index?: number }>()
 
 const difficultyLabels: Record<PathDifficultyLevel, string> = {
   0: 'Początkujący',
@@ -37,96 +40,100 @@ const difficultyLabels: Record<PathDifficultyLevel, string> = {
 } as Record<number, string> as Record<PathDifficultyLevel, string>
 
 const difficultyLabel = computed(() => difficultyLabels[props.path.difficultyLevel] ?? '—')
+
+const number = computed(() => (props.index === undefined ? '—' : String(props.index + 1).padStart(2, '0')))
 </script>
 
 <style lang="scss" scoped>
 @use "@/assets/styles/abstracts/variables" as *;
+@use "@/assets/styles/abstracts/mixins" as *;
 
 .path-card {
-  --lg-r: 22px;
-  --lg-blur: 0px;
+  --lg-blur: 10px;
   text-decoration: none;
   color: inherit;
   overflow: hidden;
   display: flex;
   flex-direction: column;
-  transition: transform 0.3s, box-shadow 0.3s, border-color 0.3s;
-  min-height: 360px;
-
-  &:hover {
-    transform: translateY(-6px);
-    border-color: rgba(245, 158, 11, 0.35);
-    box-shadow:
-      0 30px 70px rgba(3, 6, 24, 0.55),
-      0 6px 18px rgba(3, 6, 24, 0.4),
-      0 0 0 1px rgba(245, 158, 11, 0.3),
-      inset 0 1px 1px rgba(255, 255, 255, 0.18);
-  }
+  min-height: 380px;
 }
 
-.card-thumb {
+.card-plate {
   position: relative;
-  height: 140px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  height: 150px;
+  margin: 12px 12px 0;
+  padding: 14px 18px 10px;
+  border-radius: 14px 14px 14px 4px;
   background:
-    radial-gradient(ellipse at 30% 30%, rgba(245, 158, 11, 0.4), transparent 60%),
-    radial-gradient(ellipse at 70% 70%, rgba(139, 92, 246, 0.4), transparent 60%),
-    linear-gradient(135deg, rgba(245, 158, 11, 0.15), rgba(139, 92, 246, 0.12));
-  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+    linear-gradient(rgba(242, 239, 230, 0.05) 1px, transparent 1px) 0 0 / 100% 18px,
+    rgba(13, 15, 19, 0.62);
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.07);
 }
 
-.card-thumb-fade {
-  position: absolute;
-  inset: 0;
-  background:
-    linear-gradient(180deg, transparent 60%, rgba(10, 14, 23, 0.55) 100%);
+.plate-top {
+  @include mono-label;
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  font-size: 0.62rem;
+  color: $color-faint;
 }
 
-.difficulty-badge,
-.hours-badge {
-  position: absolute;
-  top: 12px;
-  padding: 6px 12px;
-  font-size: 0.74rem;
+.plate-num {
+  font-family: $font-display;
+  font-size: 4.4rem;
   font-weight: 600;
-  letter-spacing: 0.04em;
-  text-transform: uppercase;
-  border-radius: 999px;
-  background: rgba(10, 14, 23, 0.7);
-  box-shadow: inset 0 1px 1px rgba(255, 255, 255, 0.18), inset 0 0 0 1px rgba(255, 255, 255, 0.08);
-  backdrop-filter: blur(8px);
-}
-
-.difficulty-badge {
-  left: 12px;
-  color: $color-gold;
-
-  &[data-level="0"] { color: #4ade80; }
-  &[data-level="1"] { color: $color-gold; }
-  &[data-level="2"] { color: #f472b6; }
-}
-
-.hours-badge {
-  right: 12px;
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
+  line-height: 0.85;
+  letter-spacing: -0.015em;
   color: $color-ink;
+  transition: color 0.3s;
+}
+
+.path-card:hover .plate-num {
+  color: $color-accent;
 }
 
 .card-body {
-  padding: 20px 22px 22px;
+  padding: 18px 22px 22px;
   display: flex;
   flex-direction: column;
-  gap: 12px;
   flex: 1;
+}
+
+.card-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-bottom: 14px;
+}
+
+.difficulty-tag {
+  &[data-level="0"] {
+    color: $color-success;
+    box-shadow: inset 0 0 0 1px rgba($color-success, 0.35);
+  }
+
+  &[data-level="1"] {
+    color: $color-accent;
+    box-shadow: inset 0 0 0 1px rgba($color-accent, 0.35);
+  }
+
+  &[data-level="2"] {
+    color: $color-coral;
+    box-shadow: inset 0 0 0 1px rgba($color-coral, 0.35);
+  }
 }
 
 .card-title {
   font-family: $font-display;
-  font-size: 1.18rem;
-  font-weight: 600;
+  font-size: 1.32rem;
+  font-weight: 500;
+  line-height: 1.1;
   color: $color-ink;
-  letter-spacing: -0.01em;
+  margin-bottom: 10px;
 }
 
 .card-desc {
@@ -134,48 +141,45 @@ const difficultyLabel = computed(() => difficultyLabels[props.path.difficultyLev
   color: $color-muted;
   line-height: 1.55;
   flex: 1;
+  margin-bottom: 18px;
 }
 
 .card-foot {
   display: flex;
-  align-items: center;
+  align-items: baseline;
   justify-content: space-between;
-  padding-top: 12px;
-  border-top: 1px solid rgba(255, 255, 255, 0.06);
-  font-size: 0.85rem;
+  gap: 12px;
+  padding-top: 14px;
+  border-top: 1px dashed $color-hairline;
 }
 
 .course-count {
-  color: $color-muted;
+  @include mono-label;
+  font-size: 0.62rem;
+  color: $color-faint;
 
   strong {
-    color: $color-ink;
+    margin-right: 4px;
     font-family: $font-display;
-    font-size: 1.05rem;
-    font-weight: 700;
+    font-size: 1.7rem;
+    font-weight: 500;
+    letter-spacing: 0;
+    color: $color-ink;
   }
 }
 
 .card-cta {
+  @include mono-label;
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  font-weight: 600;
-  color: $color-gold;
-  transition: gap 0.2s;
+  font-size: 0.64rem;
+  color: $color-muted;
+  transition: gap 0.2s, color 0.2s;
 }
 
 .path-card:hover .card-cta {
   gap: 10px;
+  color: $color-accent;
 }
-.path-card {
-  --lg-blur: 12px;
-}
-
-.difficulty-badge,
-.hours-badge {
-  -webkit-backdrop-filter: blur(12px) saturate(170%);
-  backdrop-filter: blur(12px) saturate(170%);
-}
-
 </style>

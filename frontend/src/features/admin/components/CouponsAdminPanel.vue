@@ -37,14 +37,14 @@
         </thead>
         <tbody>
           <tr v-for="coupon in coupons" :key="coupon.id">
-            <td>{{ coupon.code }}</td>
+            <td class="code">{{ coupon.code }}</td>
             <td>{{ discountLabel(coupon.discountType) }}</td>
-            <td>{{ coupon.value }}</td>
-            <td>
+            <td class="num">{{ coupon.value }}</td>
+            <td class="num">
               {{ coupon.redeemedCount }}
               <span v-if="coupon.maxRedemptions != null">/ {{ coupon.maxRedemptions }}</span>
             </td>
-            <td>{{ coupon.isActive ? 'Aktywny' : 'Nieaktywny' }}</td>
+            <td><span class="chip" :class="{ 'is-active': coupon.isActive }">{{ coupon.isActive ? 'Aktywny' : 'Nieaktywny' }}</span></td>
             <td class="actions-cell">
               <button
                 type="button"
@@ -55,7 +55,7 @@
               </button>
               <button
                 type="button"
-                class="btn btn-ghost danger"
+                class="btn danger"
                 @click="remove(coupon.id)"
               >
                 Usuń
@@ -143,21 +143,30 @@ function remove(couponId: string) {
 </script>
 
 <style lang="scss" scoped>
-@use "@/assets/styles/abstracts/variables" as *;
-
 .coupons-panel {
   display: flex;
   flex-direction: column;
-  gap: 24px;
+  gap: 28px;
+  padding-top: 12px;
 }
 
 .create-form {
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  align-items: flex-start;
+  gap: 16px;
+  padding-bottom: 24px;
+  border-bottom: 1px solid $color-hairline;
 
   h3 {
     margin: 0;
+    font-size: 1.3rem;
+    font-weight: 600;
+  }
+
+  .btn {
+    padding: 10px 20px;
+    font-size: 0.86rem;
   }
 }
 
@@ -165,21 +174,49 @@ function remove(couponId: string) {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
   gap: 10px;
+  width: 100%;
 
-  input,
+  input:not([type='checkbox']),
   select {
-    border-radius: 12px;
-    border: 1px solid rgba(255, 255, 255, 0.12);
-    background: rgba(255, 255, 255, 0.04);
-    color: inherit;
-    padding: 10px 12px;
+    height: 44px;
+    padding: 0 14px;
+    border: none;
+    border-radius: $radius-md;
+    background: rgba(13, 15, 19, 0.45);
+    box-shadow: inset 0 0 0 1px $color-hairline;
+    color: $color-ink;
+    font: inherit;
+    font-size: 0.9rem;
+    transition: box-shadow 0.2s;
+
+    &::placeholder {
+      color: $color-faint;
+    }
+
+    &:focus {
+      outline: none;
+      box-shadow: inset 0 0 0 1px $color-hairline, 0 0 0 2px rgba($color-accent, 0.6);
+    }
+  }
+
+  input[type='datetime-local'] {
+    font-family: $font-mono;
+    font-size: 0.8rem;
+    color-scheme: dark;
   }
 }
 
 .checkbox {
+  @include mono-label;
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 10px;
+  font-size: 0.66rem;
+  color: $color-muted;
+
+  input {
+    accent-color: $color-accent;
+  }
 }
 
 .table-scroll {
@@ -189,25 +226,86 @@ function remove(couponId: string) {
 .data-table {
   width: 100%;
   border-collapse: collapse;
+  font-size: 0.9rem;
 
   th,
   td {
     text-align: left;
-    padding: 12px 10px;
-    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+    padding: 13px 14px;
+    border-bottom: 1px solid $color-hairline;
+    vertical-align: middle;
+
+    &:first-child {
+      padding-left: 4px;
+    }
+  }
+
+  th {
+    @include mono-label;
+    padding-top: 14px;
+    padding-bottom: 12px;
+    font-size: 0.62rem;
+    color: $color-faint;
+    white-space: nowrap;
+  }
+
+  tbody tr:last-child td {
+    border-bottom: none;
+  }
+
+  tbody tr {
+    transition: background 0.2s;
+
+    &:hover {
+      background: rgba($color-ink, 0.03);
+    }
+  }
+}
+
+.code {
+  font-family: $font-mono;
+  font-size: 0.82rem;
+  letter-spacing: 0.04em;
+  color: $color-ink;
+}
+
+.num {
+  font-family: $font-mono;
+  font-size: 0.82rem;
+  font-variant-numeric: tabular-nums;
+  color: $color-muted;
+}
+
+.chip {
+  @include tag;
+
+  &.is-active {
+    color: $color-accent;
+    box-shadow: inset 0 0 0 1px rgba($color-accent, 0.35);
   }
 }
 
 .actions-cell {
   display: flex;
   gap: 8px;
+
+  .btn {
+    padding: 7px 14px;
+    font-size: 0.8rem;
+    white-space: nowrap;
+  }
 }
 
-.danger {
-  color: #f87171;
+.btn.danger {
+  --lg-tint: #{rgba($color-danger, 0.22)};
+
+  &:hover {
+    --lg-tint: #{rgba($color-danger, 0.32)};
+  }
 }
 
 .loading {
+  @include mono-label;
   color: $color-muted;
 }
 </style>

@@ -1,9 +1,9 @@
 <template>
   <div class="social-links" aria-label="CoursePlatform w mediach społecznościowych">
-    <a href="https://www.facebook.com/" target="_blank" rel="noreferrer">Facebook</a>
-    <a href="https://www.instagram.com/" target="_blank" rel="noreferrer">Instagram</a>
-    <a href="https://x.com/" target="_blank" rel="noreferrer">X</a>
-    <a href="https://www.youtube.com/" target="_blank" rel="noreferrer">YouTube</a>
+    <a href="https://www.facebook.com/" target="_blank" rel="noreferrer"><span>Facebook</span><span class="arrow" aria-hidden="true">↗</span></a>
+    <a href="https://www.instagram.com/" target="_blank" rel="noreferrer"><span>Instagram</span><span class="arrow" aria-hidden="true">↗</span></a>
+    <a href="https://x.com/" target="_blank" rel="noreferrer"><span>X</span><span class="arrow" aria-hidden="true">↗</span></a>
+    <a href="https://www.youtube.com/" target="_blank" rel="noreferrer"><span>YouTube</span><span class="arrow" aria-hidden="true">↗</span></a>
   </div>
 </template>
 
@@ -12,29 +12,35 @@
 
 .social-links {
   display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
+  flex-direction: column;
+  gap: 11px;
 }
 
 a {
   display: inline-flex;
-  min-height: 36px;
-  align-items: center;
-  justify-content: center;
-  padding: 0 12px;
-  border-radius: 999px;
-  background: rgba(255, 255, 255, 0.05);
-  box-shadow: inset 0 1px 1px rgba(255, 255, 255, 0.26), inset 0 0 0 1px rgba(255, 255, 255, 0.1);
+  align-items: baseline;
+  gap: 8px;
+  width: fit-content;
   color: $color-muted;
-  font-size: 0.78rem;
-  font-weight: 700;
+  font-size: 0.93rem;
   text-decoration: none;
-  transition: color 160ms ease, background 160ms ease, transform 160ms ease;
+  transition: color 160ms ease;
 
   &:hover {
-    transform: translateY(-2px);
-    background: rgba(255, 255, 255, 0.1);
     color: $color-ink;
+
+    .arrow {
+      color: $color-accent;
+      transform: translate(2px, -2px);
+    }
   }
+}
+
+.arrow {
+  display: inline-block;
+  font-family: $font-mono;
+  font-size: 0.78rem;
+  color: $color-faint;
+  transition: color 160ms ease, transform 200ms $ease-out;
 }
 </style>

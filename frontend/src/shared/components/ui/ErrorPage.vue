@@ -1,16 +1,21 @@
 <template>
   <div class="error-page">
-    <div class="error-page__inner glass-card">
+    <div class="error-page__inner">
+      <span class="eyebrow">Kod błędu</span>
       <span class="error-page__code">{{ code }}</span>
-      <h1>{{ title }}</h1>
-      <p>{{ description }}</p>
-      <div class="error-page__actions">
-        <RouterLink v-if="primaryLabel && primaryTo" class="btn btn-primary" :to="primaryRoute">
-          {{ primaryLabel }}
-        </RouterLink>
-        <RouterLink v-if="secondaryLabel && secondaryTo" class="btn btn-ghost" :to="secondaryRoute">
-          {{ secondaryLabel }}
-        </RouterLink>
+      <div class="error-page__body">
+        <h1>{{ title }}</h1>
+        <div>
+          <p>{{ description }}</p>
+          <div class="error-page__actions">
+            <RouterLink v-if="primaryLabel && primaryTo" class="btn btn-primary" :to="primaryRoute">
+              {{ primaryLabel }}
+            </RouterLink>
+            <RouterLink v-if="secondaryLabel && secondaryTo" class="btn btn-ghost" :to="secondaryRoute">
+              {{ secondaryLabel }}
+            </RouterLink>
+          </div>
+        </div>
       </div>
     </div>
   </div>
@@ -42,51 +47,67 @@ const secondaryRoute = computed(() => resolveRoute(props.secondaryTo))
 
 <style lang="scss" scoped>
 @use "@/assets/styles/abstracts/variables" as *;
+@use "@/assets/styles/abstracts/mixins" as *;
 
 .error-page {
   display: flex;
   align-items: center;
-  justify-content: center;
   min-height: 70vh;
-  padding: 40px 24px;
+  padding: 40px 0 72px;
 }
 
 .error-page__inner {
+  @include container;
   display: flex;
   flex-direction: column;
-  align-items: center;
-  text-align: center;
-  gap: 16px;
-  padding: 56px 48px;
-  max-width: 520px;
-  width: 100%;
+  align-items: flex-start;
 }
 
 .error-page__code {
-  font-size: clamp(4rem, 12vw, 6rem);
-  font-weight: 800;
-  line-height: 1;
-  color: $color-faint;
-  letter-spacing: -0.04em;
+  display: block;
+  margin: 18px 0 0 -0.02em;
+  font-family: $font-display;
+  font-size: clamp(7rem, 24vw, 17rem);
+  font-weight: 600;
+  font-variant-numeric: lining-nums;
+  line-height: 0.85;
+  letter-spacing: -0.015em;
+  color: $color-ink;
+}
+
+.error-page__body {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 440px);
+  gap: 20px 56px;
+  align-items: start;
+  width: 100%;
+  margin-top: 36px;
+  padding-top: 28px;
+  border-top: 1px solid $color-hairline;
+
+  @media (max-width: 860px) {
+    grid-template-columns: 1fr;
+  }
 }
 
 h1 {
-  font-size: 1.5rem;
-  font-weight: 700;
+  @include highlight;
+  font-size: clamp(2rem, 4vw, 3rem);
+  font-weight: 600;
+  line-height: 1.08;
+  letter-spacing: -0.01em;
 }
 
 p {
   color: $color-muted;
   font-size: 0.98rem;
   line-height: 1.65;
-  max-width: 380px;
 }
 
 .error-page__actions {
   display: flex;
   flex-wrap: wrap;
   gap: 12px;
-  justify-content: center;
-  margin-top: 8px;
+  margin-top: 22px;
 }
 </style>

@@ -1,11 +1,12 @@
 <template>
   <div class="path-page">
-    <div v-if="isLoading" class="path-loading">
+    <div v-if="isLoading" class="path-loading container">
       <div class="spinner" />
       <p>Ładowanie ścieżki...</p>
     </div>
 
-    <div v-else-if="isError || !path" class="path-error">
+    <div v-else-if="isError || !path" class="path-error container">
+      <span class="eyebrow">Ścieżki nauki</span>
       <h2>Nie znaleziono ścieżki</h2>
       <p>Sprawdź poprawność adresu lub wróć do listy ścieżek.</p>
       <router-link class="btn btn-primary" :to="{ name: 'PathsList' }">Wszystkie ścieżki</router-link>
@@ -20,18 +21,25 @@
           </router-link>
           <div class="path-hero-grid">
             <div class="path-hero-text">
-              <div class="path-meta">
-                <span class="difficulty-badge" :data-level="path.difficultyLevel">{{ difficultyLabel }}</span>
-                <span class="hours-badge">
-                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
-                  {{ path.estimatedHours }}h nauki
-                </span>
-                <span class="course-count-badge">
-                  {{ path.courses.length }} {{ path.courses.length === 1 ? 'kurs' : 'kursów' }}
-                </span>
-              </div>
+              <span class="eyebrow">Ścieżka nauki</span>
               <h1 class="path-title">{{ path.title }}</h1>
               <p class="path-short">{{ path.shortDescription }}</p>
+            </div>
+            <div class="path-hero-aside">
+              <dl class="path-meta">
+                <div class="meta-item">
+                  <dt>Poziom</dt>
+                  <dd class="difficulty" :data-level="path.difficultyLevel">{{ difficultyLabel }}</dd>
+                </div>
+                <div class="meta-item">
+                  <dt>Czas nauki</dt>
+                  <dd><span class="meta-num">{{ path.estimatedHours }}</span> h</dd>
+                </div>
+                <div class="meta-item">
+                  <dt>Kursy</dt>
+                  <dd><span class="meta-num">{{ path.courses.length }}</span> {{ path.courses.length === 1 ? 'kurs' : 'kursów' }}</dd>
+                </div>
+              </dl>
               <p class="path-desc">{{ path.description }}</p>
             </div>
           </div>
@@ -39,35 +47,38 @@
       </div>
 
       <div class="container path-body">
-        <h2 class="section-title">Plan nauki</h2>
+        <header class="plan-head">
+          <span class="eyebrow">Spis treści</span>
+          <h2 class="section-title">Plan <em>nauki</em></h2>
+        </header>
 
         <ol class="path-courses">
-          <li v-for="course in path.courses" :key="course.id" class="path-course glass-card">
+          <li v-for="course in path.courses" :key="course.id" class="path-course">
             <div class="course-step">
-              <span class="step-number">{{ course.order }}</span>
-              <span v-if="course.isOptional" class="step-optional">Opcjonalny</span>
-            </div>
-            <div class="course-thumb" :data-level="course.courseLevel">
-              <span>{{ levelLabel(course.courseLevel) }}</span>
+              <span class="step-number">{{ String(course.order).padStart(2, '0') }}</span>
             </div>
             <div class="course-info">
+              <div class="course-tags">
+                <span class="tag level-tag" :data-level="course.courseLevel">{{ levelLabel(course.courseLevel) }}</span>
+                <span v-if="course.isOptional" class="tag">Opcjonalny</span>
+              </div>
               <h3 class="course-title">{{ course.courseTitle }}</h3>
               <p class="course-desc">{{ course.courseShortDescription }}</p>
               <div class="course-meta">
                 <span>{{ course.instructorName }}</span>
-                <span class="dot">·</span>
                 <span>{{ course.courseLanguage }}</span>
-                <span class="dot">·</span>
-                <span class="course-price">{{ course.coursePrice === 0 ? 'Darmowy' : `${course.coursePrice.toFixed(2).replace(/\.00$/, '')} zł` }}</span>
               </div>
             </div>
-            <router-link
-              class="course-cta"
-              :to="{ name: 'CourseDetails', params: { id: course.courseId } }"
-            >
-              Szczegóły
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg>
-            </router-link>
+            <div class="course-side">
+              <span class="course-price">{{ course.coursePrice === 0 ? 'Darmowy' : `${course.coursePrice.toFixed(2).replace(/\.00$/, '')} zł` }}</span>
+              <router-link
+                class="btn btn-ghost btn-pill course-cta"
+                :to="{ name: 'CourseDetails', params: { id: course.courseId } }"
+              >
+                Szczegóły
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg>
+              </router-link>
+            </div>
           </li>
         </ol>
       </div>
@@ -109,273 +120,271 @@ function levelLabel(level: CourseLevel): string {
 
 <style lang="scss" scoped>
 @use "@/assets/styles/abstracts/variables" as *;
+@use "@/assets/styles/abstracts/mixins" as *;
 
 .path-page {
-  padding-top: $header-height;
   min-height: 100vh;
 }
 
-.path-loading,
-.path-error {
+.path-loading {
   display: flex;
-  flex-direction: column;
   align-items: center;
-  justify-content: center;
-  gap: 16px;
-  padding: 120px 20px;
-  text-align: center;
-  color: $color-muted;
+  gap: 14px;
+  padding: 96px 0;
   min-height: 50vh;
-}
 
-.path-hero {
-  padding: 32px 0 40px;
-  border-bottom: 1px solid $color-hairline;
-}
-
-.back-link {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  font-size: 0.85rem;
-  color: $color-muted;
-  text-decoration: none;
-  margin-bottom: 24px;
-  transition: color 0.2s;
-
-  &:hover {
-    color: $color-gold;
+  p {
+    @include mono-label;
+    color: $color-faint;
   }
 }
 
-.path-meta {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  flex-wrap: wrap;
-  margin-bottom: 18px;
+.path-error {
+  padding: 96px 0;
+  min-height: 50vh;
+
+  h2 {
+    margin: 16px 0 12px;
+  }
+
+  p {
+    color: $color-muted;
+    margin-bottom: 24px;
+  }
 }
 
-.difficulty-badge,
-.hours-badge,
-.course-count-badge {
+.path-hero {
+  padding: 24px 0 0;
+}
+
+.back-link {
+  @include mono-label;
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  padding: 6px 14px;
-  font-size: 0.74rem;
-  font-weight: 600;
-  letter-spacing: 0.04em;
-  text-transform: uppercase;
-  border-radius: 999px;
+  font-size: 0.64rem;
+  color: $color-faint;
+  text-decoration: none;
+  margin-bottom: 36px;
+  transition: color 0.2s;
+
+  &:hover {
+    color: $color-accent;
+  }
 }
 
-.difficulty-badge {
-  background: rgba(245, 158, 11, 0.14);
-  border: 1px solid rgba(245, 158, 11, 0.3);
-  color: $color-gold;
+.path-hero-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 440px);
+  column-gap: 56px;
+  row-gap: 28px;
+  align-items: end;
+  padding-bottom: 36px;
+  border-bottom: 1px solid $color-hairline;
 
-  &[data-level="0"] { color: #4ade80; background: rgba(74, 222, 128, 0.12); border-color: rgba(74, 222, 128, 0.3); }
-  &[data-level="1"] { color: $color-gold; background: rgba(245, 158, 11, 0.14); border-color: rgba(245, 158, 11, 0.3); }
-  &[data-level="2"] { color: #f472b6; background: rgba(244, 114, 182, 0.12); border-color: rgba(244, 114, 182, 0.3); }
-}
-
-.hours-badge {
-  background: rgba(255, 255, 255, 0.04);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  color: $color-ink;
-}
-
-.course-count-badge {
-  background: rgba(139, 92, 246, 0.14);
-  border: 1px solid rgba(139, 92, 246, 0.3);
-  color: #c4b5fd;
+  @media (max-width: 900px) {
+    grid-template-columns: 1fr;
+  }
 }
 
 .path-title {
-  font-family: $font-display;
-  font-size: $font-size-xl;
-  font-weight: 600;
-  letter-spacing: -0.02em;
-  margin-bottom: 14px;
-  background: $color-grad-text;
-  -webkit-background-clip: text;
-  background-clip: text;
-  -webkit-text-fill-color: transparent;
+  font-size: $font-size-2xl;
+  margin: 18px 0 16px;
 }
 
 .path-short {
-  font-size: 1.05rem;
+  max-width: 34ch;
+  font-family: $font-display;
+  font-size: 1.3rem;
+  font-weight: 400;
+  line-height: 1.3;
+  color: $color-muted;
+}
+
+.path-meta {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  margin: 0 0 20px;
+  border-top: 1px solid $color-hairline;
+  border-bottom: 1px solid $color-hairline;
+}
+
+.meta-item {
+  padding: 12px 14px 14px;
+  min-width: 0;
+
+  &:first-child {
+    padding-left: 0;
+  }
+
+  & + & {
+    border-left: 1px solid $color-hairline;
+  }
+
+  dt {
+    @include mono-label;
+    font-size: 0.6rem;
+    color: $color-faint;
+    margin-bottom: 8px;
+  }
+
+  dd {
+    margin: 0;
+    font-family: $font-mono;
+    font-size: 0.82rem;
+    color: $color-muted;
+    white-space: nowrap;
+  }
+}
+
+.meta-num {
+  font-family: $font-display;
+  font-weight: 600;
+  font-size: 1.7rem;
+  line-height: 1;
   color: $color-ink;
-  margin-bottom: 12px;
-  font-weight: 500;
+}
+
+.difficulty {
+  &[data-level="0"] { color: $color-success; }
+  &[data-level="1"] { color: $color-accent; }
+  &[data-level="2"] { color: $color-coral; }
 }
 
 .path-desc {
   color: $color-muted;
-  font-size: 0.98rem;
-  max-width: 760px;
-  line-height: 1.6;
+  font-size: 0.95rem;
+  line-height: 1.65;
 }
 
 .path-body {
-  padding-top: 40px;
-  padding-bottom: 80px;
+  padding-top: 56px;
+  padding-bottom: 96px;
+}
+
+.plan-head {
+  margin-bottom: 28px;
 }
 
 .section-title {
-  font-family: $font-display;
-  font-size: 1.4rem;
-  font-weight: 600;
-  margin-bottom: 20px;
-  color: $color-ink;
+  font-size: clamp(2rem, 3.2vw, 2.6rem);
+  margin-top: 14px;
 }
 
 .path-courses {
   list-style: none;
   padding: 0;
   margin: 0;
-  display: flex;
-  flex-direction: column;
-  gap: 16px;
-  counter-reset: step;
+  border-top: 1px solid $color-ink;
 }
 
 .path-course {
-  --lg-r: 18px;
-  --lg-blur: 0px;
   display: grid;
-  grid-template-columns: auto 80px 1fr auto;
-  align-items: center;
-  gap: 20px;
-  padding: 18px 22px;
-  transition: transform 0.2s, box-shadow 0.2s, border-color 0.2s;
-
-  &:hover {
-    transform: translateX(4px);
-    border-color: rgba(245, 158, 11, 0.3);
-    box-shadow:
-      0 18px 44px rgba(3, 6, 24, 0.5),
-      0 4px 12px rgba(3, 6, 24, 0.3),
-      inset 0 1px 1px rgba(255, 255, 255, 0.18);
-  }
+  grid-template-columns: 96px minmax(0, 1fr) auto;
+  align-items: start;
+  gap: 24px;
+  padding: 26px 0;
+  border-bottom: 1px solid $color-hairline;
 
   @media (max-width: 720px) {
-    grid-template-columns: auto 1fr;
-    gap: 14px;
+    grid-template-columns: 56px minmax(0, 1fr);
+    gap: 16px;
 
-    .course-thumb { display: none; }
-    .course-cta { grid-column: 1 / -1; justify-self: stretch; text-align: center; }
+    .course-side {
+      grid-column: 2;
+      align-items: flex-start;
+    }
   }
-}
-
-.course-step {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 6px;
 }
 
 .step-number {
-  width: 38px;
-  height: 38px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  border-radius: 50%;
   font-family: $font-display;
-  font-weight: 700;
-  font-size: 1rem;
-  color: $color-ink;
-  background:
-    linear-gradient(135deg, rgba(245, 158, 11, 0.35), rgba(236, 72, 153, 0.25));
-  box-shadow: inset 1.5px 1.5px 2px -1px rgba(255, 255, 255, 0.4), inset 0 0 0 1px rgba(245, 158, 11, 0.4);
-}
+  font-size: 3rem;
+  font-weight: 600;
+  line-height: 0.85;
+  color: $color-accent;
 
-.step-optional {
-  font-size: 0.7rem;
-  color: $color-faint;
-  text-transform: uppercase;
-  letter-spacing: 0.06em;
-}
-
-.course-thumb {
-  width: 80px;
-  height: 80px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  border-radius: 14px;
-  background: linear-gradient(135deg, rgba(34, 211, 238, 0.25), rgba(139, 92, 246, 0.18));
-  font-family: $font-display;
-  font-weight: 700;
-  font-size: 0.85rem;
-  letter-spacing: 0.08em;
-  color: $color-ink;
-  box-shadow: inset 1.5px 1.5px 2px -1px rgba(255, 255, 255, 0.35);
-
-  &[data-level="0"] { background: linear-gradient(135deg, rgba(74, 222, 128, 0.3), rgba(34, 211, 238, 0.18)); }
-  &[data-level="1"] { background: linear-gradient(135deg, rgba(245, 158, 11, 0.3), rgba(245, 158, 11, 0.18)); }
-  &[data-level="2"] { background: linear-gradient(135deg, rgba(244, 114, 182, 0.3), rgba(244, 63, 94, 0.18)); }
+  @media (max-width: 720px) {
+    font-size: 2.4rem;
+  }
 }
 
 .course-info {
   min-width: 0;
 }
 
+.course-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-bottom: 12px;
+}
+
+.level-tag {
+  &[data-level="0"] { color: $color-success; }
+  &[data-level="1"] { color: $color-accent; }
+  &[data-level="2"] { color: $color-coral; }
+}
+
 .course-title {
   font-family: $font-display;
-  font-size: 1.05rem;
-  font-weight: 600;
-  margin-bottom: 4px;
+  font-size: 1.35rem;
+  font-weight: 500;
+  line-height: 1.12;
+  margin-bottom: 8px;
   color: $color-ink;
 }
 
 .course-desc {
-  font-size: 0.85rem;
+  max-width: 68ch;
+  font-size: 0.9rem;
   color: $color-muted;
-  line-height: 1.45;
-  margin-bottom: 6px;
+  line-height: 1.55;
+  margin-bottom: 12px;
 }
 
 .course-meta {
   display: flex;
-  align-items: center;
-  gap: 8px;
   flex-wrap: wrap;
-  font-size: 0.78rem;
+  gap: 10px;
+  font-family: $font-mono;
+  font-size: 0.7rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
   color: $color-faint;
 
-  .dot { color: $color-faint; opacity: 0.5; }
-  .course-price { color: $color-gold; font-weight: 600; }
-}
-
-.course-cta {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  padding: 8px 16px;
-  border-radius: 999px;
-  background: rgba(255, 255, 255, 0.06);
-  color: $color-ink;
-  text-decoration: none;
-  font-size: 0.85rem;
-  font-weight: 600;
-  box-shadow: inset 0 1px 1px rgba(255, 255, 255, 0.2), inset 0 0 0 1px rgba(255, 255, 255, 0.08);
-  transition: background 0.2s, transform 0.2s;
-
-  &:hover {
-    background: rgba(245, 158, 11, 0.18);
-    color: $color-gold;
-    transform: translateX(2px);
+  span + span::before {
+    content: "/";
+    margin-right: 10px;
+    color: $color-hairline;
   }
 }
 
+.course-side {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 14px;
+}
+
+.course-price {
+  font-family: $font-display;
+  font-weight: 600;
+  font-size: 1.7rem;
+  line-height: 1;
+  white-space: nowrap;
+}
+
+.course-cta {
+  padding: 9px 16px;
+  font-size: 0.84rem;
+}
+
 .spinner {
-  width: 40px;
-  height: 40px;
-  border: 3px solid rgba(255, 255, 255, 0.1);
-  border-top-color: $color-gold;
+  width: 22px;
+  height: 22px;
+  border: 2px solid rgba($color-ink, 0.1);
+  border-top-color: $color-accent;
   border-radius: 50%;
   animation: spin 0.8s linear infinite;
 }
@@ -383,20 +392,4 @@ function levelLabel(level: CourseLevel): string {
 @keyframes spin {
   to { transform: rotate(360deg); }
 }
-.path-course {
-  --lg-blur: 12px;
-}
-
-.difficulty-badge,
-.hours-badge,
-.course-count-badge,
-.course-cta {
-  -webkit-backdrop-filter: blur(12px) saturate(170%);
-  backdrop-filter: blur(12px) saturate(170%);
-}
-
-.course-cta {
-  background: rgba(255, 255, 255, 0.07);
-}
-
 </style>

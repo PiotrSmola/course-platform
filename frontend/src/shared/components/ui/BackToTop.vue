@@ -39,28 +39,35 @@ onBeforeUnmount(() => {
 @use "@/assets/styles/abstracts/variables" as *;
 
 .back-to-top {
+  --lg-r: 999px;
+  --lg-blur: 6px;
+  --lg-tint: rgba(13, 15, 19, 0.4);
   position: fixed;
   right: 24px;
   bottom: 24px;
   z-index: 90;
   display: grid;
-  width: 46px;
-  height: 46px;
+  width: 44px;
+  height: 44px;
   place-items: center;
   border: 0;
+  background: none;
   color: $color-ink;
   cursor: pointer;
-  box-shadow: 0 12px 28px rgba(3, 6, 24, 0.34);
-  transition: transform 160ms ease, opacity 160ms ease, box-shadow 160ms ease;
+  transition: transform 0.45s $ease-jelly;
 
   &:hover {
+    --lg-glow: 0.2;
     transform: translateY(-3px);
-    box-shadow: 0 16px 32px rgba(3, 6, 24, 0.42);
+  }
+
+  &:active {
+    transform: scale(0.95);
   }
 
   svg {
-    width: 20px;
-    height: 20px;
+    width: 18px;
+    height: 18px;
   }
 
   @media (max-width: 560px) {

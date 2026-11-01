@@ -2,24 +2,22 @@
   <div class="contact-page">
     <section class="contact-hero">
       <div class="container">
-        <span class="eyebrow">Kontakt</span>
-        <h1>Jak możemy pomóc?</h1>
-        <p>Opisz swój problem lub pytanie. Wiadomość trafi bezpośrednio do zespołu wsparcia CoursePlatform.</p>
+        <header class="section-head contact-head">
+          <span class="eyebrow">Kontakt</span>
+          <h1>Jak możemy <em>pomóc?</em></h1>
+          <p>Opisz swój problem lub pytanie. Wiadomość trafi bezpośrednio do zespołu wsparcia CoursePlatform.</p>
+        </header>
       </div>
     </section>
 
     <section class="contact-content">
       <div class="container contact-grid">
-        <aside class="contact-info glass-card">
+        <aside class="contact-info">
           <span class="contact-info__eyebrow">Pomoc na każdym etapie</span>
           <h2>Najpierw sprawdź szybkie odpowiedzi</h2>
           <p>W FAQ opisujemy zasady triala, płatności, kodów rabatowych, prezentów i dostępu All-access.</p>
           <router-link class="btn btn-ghost" :to="{ name: 'Faq' }">Przejdź do FAQ</router-link>
           <div class="contact-info__note">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true">
-              <circle cx="12" cy="12" r="9" />
-              <path d="M12 8v4l2.5 2" />
-            </svg>
             <span>Odpowiadamy na zgłoszenia tak szybko, jak to możliwe.</span>
           </div>
         </aside>
@@ -84,63 +82,45 @@ const onSubmit = handleSubmit(async (values) => {
 
 <style lang="scss" scoped>
 @use "@/assets/styles/abstracts/variables" as *;
+@use "@/assets/styles/abstracts/mixins" as *;
 
 .contact-hero {
-  padding: 44px 0 38px;
-  text-align: center;
-  border-bottom: 1px solid $color-hairline;
-
-  .eyebrow {
-    margin-bottom: 18px;
-  }
+  padding: 32px 0 0;
 
   h1 {
-    margin-bottom: 14px;
-    font-family: $font-display;
-    font-size: $font-size-xl;
-    letter-spacing: -0.03em;
-  }
-
-  p {
-    max-width: 660px;
-    margin: 0 auto;
-    color: $color-muted;
-    line-height: 1.65;
+    font-size: clamp(2.4rem, 4.6vw, 3.8rem);
+    margin-top: 18px;
   }
 }
 
+.contact-head {
+  margin-bottom: 40px;
+}
+
 .contact-content {
-  padding: 54px 0 96px;
+  padding: 0 0 96px;
 }
 
 .contact-grid {
   display: grid;
-  grid-template-columns: minmax(260px, 0.7fr) minmax(0, 1.3fr);
-  gap: 24px;
+  grid-template-columns: minmax(240px, 0.7fr) minmax(0, 1.3fr);
+  gap: 48px;
   align-items: start;
 
   @media (max-width: 840px) {
     grid-template-columns: 1fr;
-  }
-}
-
-.contact-info,
-.contact-form {
-  --lg-r: 24px;
-  --lg-blur: 2px;
-  padding: 30px;
-
-  @media (max-width: 560px) {
-    padding: 24px 20px;
+    gap: 32px;
   }
 }
 
 .contact-info {
+  padding-top: 4px;
+
   h2 {
-    margin: 13px 0 12px;
-    font-family: $font-display;
-    font-size: 1.35rem;
-    line-height: 1.25;
+    margin: 14px 0 12px;
+    font-size: 1.6rem;
+    font-weight: 600;
+    line-height: 1.2;
   }
 
   > p {
@@ -154,36 +134,34 @@ const onSubmit = handleSubmit(async (values) => {
 }
 
 .contact-info__eyebrow {
-  color: $color-gold;
-  font-size: 0.76rem;
-  font-weight: 700;
-  letter-spacing: 0.1em;
-  text-transform: uppercase;
+  @include mono-label;
+  color: $color-accent;
 }
 
 .contact-info__note {
-  display: flex;
-  gap: 10px;
-  align-items: flex-start;
   margin-top: 36px;
-  padding-top: 20px;
-  border-top: 1px solid rgba(255, 255, 255, 0.1);
+  padding-top: 16px;
+  border-top: 1px solid $color-hairline;
+  font-family: $font-mono;
+  font-size: 0.74rem;
+  line-height: 1.6;
   color: $color-faint;
-  font-size: 0.87rem;
-  line-height: 1.5;
-
-  svg {
-    width: 20px;
-    height: 20px;
-    flex-shrink: 0;
-    color: $color-gold;
-  }
 }
 
 .contact-form {
+  --lg-blur: 10px;
   display: flex;
   flex-direction: column;
   gap: 20px;
+  padding: 30px;
+
+  &:hover {
+    transform: none;
+  }
+
+  @media (max-width: 560px) {
+    padding: 24px 20px;
+  }
 }
 
 .form-row {
@@ -203,9 +181,9 @@ const onSubmit = handleSubmit(async (values) => {
   gap: 8px;
 
   label {
-    color: $color-muted;
-    font-size: 0.88rem;
-    font-weight: 600;
+    @include mono-label;
+    font-size: 0.62rem;
+    color: $color-faint;
   }
 
   input,
@@ -213,21 +191,22 @@ const onSubmit = handleSubmit(async (values) => {
     width: 100%;
     min-width: 0;
     border: 0;
-    border-radius: 14px;
+    border-radius: $radius-md;
     outline: 0;
-    background: rgba(255, 255, 255, 0.05);
-    box-shadow: inset 0 1px 1px rgba(255, 255, 255, 0.28), inset 0 0 0 1px rgba(255, 255, 255, 0.1);
+    background: rgba(13, 15, 19, 0.45);
+    box-shadow: inset 0 0 0 1px $color-hairline;
     color: $color-ink;
     font: inherit;
-    transition: background 160ms ease, box-shadow 160ms ease;
+    transition: box-shadow 160ms ease;
 
     &::placeholder {
       color: $color-faint;
     }
 
     &:focus {
-      background: rgba(255, 255, 255, 0.08);
-      box-shadow: inset 0 1px 1px rgba(255, 255, 255, 0.35), inset 0 0 0 1px rgba(34, 211, 238, 0.56), 0 0 0 4px rgba(34, 211, 238, 0.14);
+      box-shadow:
+        inset 0 0 0 1px $color-hairline,
+        0 0 0 2px rgba($color-accent, 0.6);
     }
   }
 
@@ -245,7 +224,7 @@ const onSubmit = handleSubmit(async (values) => {
 }
 
 .error {
-  color: #fca5a5;
+  color: $color-danger;
   font-size: 0.8rem;
   font-weight: 500;
 }

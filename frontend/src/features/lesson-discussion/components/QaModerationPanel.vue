@@ -18,7 +18,7 @@
     <div v-else-if="!items.length" class="state">Brak pytań do moderacji.</div>
 
     <ul v-else class="questions">
-      <li v-for="question in items" :key="question.id" class="question glass-card">
+      <li v-for="question in items" :key="question.id" class="question">
         <div class="question-meta">
           <span class="course">{{ question.courseTitle }}</span>
           <span class="separator">·</span>
@@ -37,7 +37,7 @@
         <div class="question-actions">
           <button
             type="button"
-            class="btn btn-ghost danger"
+            class="btn btn-sm danger"
             :disabled="removeQuestion.isPending.value"
             @click="onDeleteQuestion(question)"
           >
@@ -80,7 +80,7 @@
             @input="onReplyInput(question.id, ($event.target as HTMLTextAreaElement).value)"
           />
           <button
-            class="btn btn-primary"
+            class="btn btn-primary btn-sm"
             type="submit"
             :disabled="replyToQuestion.isPending.value || !(replyDrafts[question.id] ?? '').trim()"
           >
@@ -192,48 +192,59 @@ function onDeleteAnswer(question: ModerationQuestionDto, answerId: string) {
 </script>
 
 <style lang="scss" scoped>
-@use "@/assets/styles/abstracts/variables" as *;
-
 .qa-moderation {
   display: flex;
   flex-direction: column;
-  gap: 20px;
+  gap: 8px;
 }
 
 .filters {
   display: flex;
   flex-wrap: wrap;
-  gap: 16px;
+  gap: 12px 20px;
   align-items: center;
+  padding-bottom: 18px;
+  border-bottom: 1px solid $color-hairline;
 }
 
 .filter-select {
-  min-width: 220px;
-  padding: 10px 14px;
-  border-radius: 14px;
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  background: rgba(255, 255, 255, 0.04);
+  min-width: 240px;
+  max-width: 100%;
+  height: 42px;
+  padding: 0 14px;
+  border: none;
+  border-radius: $radius-md;
+  background: rgba(13, 15, 19, 0.45);
+  box-shadow: inset 0 0 0 1px $color-hairline;
   color: $color-ink;
   font: inherit;
+  font-size: 0.9rem;
+
+  &:focus {
+    outline: none;
+    box-shadow: inset 0 0 0 1px $color-hairline, 0 0 0 2px rgba($color-accent, 0.6);
+  }
 }
 
 .checkbox {
+  @include mono-label;
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 10px;
+  font-size: 0.64rem;
   color: $color-muted;
-  font-size: 0.9rem;
   cursor: pointer;
 
   input {
-    accent-color: $color-gold;
+    accent-color: $color-accent;
   }
 }
 
 .state {
+  @include mono-label;
   text-align: center;
-  padding: 32px;
-  color: $color-muted;
+  padding: 40px 16px;
+  color: $color-faint;
 }
 
 .questions {
@@ -242,64 +253,73 @@ function onDeleteAnswer(question: ModerationQuestionDto, answerId: string) {
   padding: 0;
   display: flex;
   flex-direction: column;
-  gap: 16px;
 }
 
 .question {
-  padding: 20px;
+  padding: 22px 0;
   display: flex;
   flex-direction: column;
   gap: 12px;
+  border-bottom: 1px solid $color-hairline;
+
+  &:last-child {
+    border-bottom: none;
+  }
 }
 
 .question-meta {
-  font-size: 0.85rem;
-  color: $color-muted;
+  @include mono-label;
+  font-size: 0.62rem;
+  color: $color-faint;
 
   .course {
-    font-weight: 600;
-    color: $color-ink;
+    color: $color-accent;
   }
 
   .separator {
-    margin: 0 6px;
+    margin: 0 8px;
+    color: $color-hairline;
   }
 }
 
 .post-header {
   display: flex;
   flex-wrap: wrap;
-  gap: 8px;
+  gap: 10px;
   align-items: center;
 
+  strong {
+    font-weight: 600;
+  }
+
   time {
-    color: $color-muted;
-    font-size: 0.82rem;
+    font-family: $font-mono;
+    font-size: 0.7rem;
+    color: $color-faint;
   }
 }
 
 .post-body {
   margin: 0;
+  max-width: 76ch;
   white-space: pre-wrap;
-  line-height: 1.5;
+  line-height: 1.55;
+  color: $color-muted;
 }
 
 .badge {
-  font-size: 0.75rem;
-  font-weight: 700;
-  color: $color-gold;
-  background: rgba(245, 158, 11, 0.12);
-  padding: 4px 8px;
-  border-radius: 999px;
+  @include tag;
+  color: $color-accent;
+  box-shadow: inset 0 0 0 1px rgba($color-accent, 0.35);
 
   &.badge-warning {
-    color: #fbbf24;
-    background: rgba(251, 191, 36, 0.12);
+    color: $color-coral;
+    box-shadow: inset 0 0 0 1px rgba($color-coral, 0.4);
   }
 
   &.badge-ok {
-    color: #4ade80;
-    background: rgba(74, 222, 128, 0.12);
+    color: $color-success;
+    box-shadow: inset 0 0 0 1px rgba($color-success, 0.35);
   }
 }
 
@@ -315,20 +335,20 @@ function onDeleteAnswer(question: ModerationQuestionDto, answerId: string) {
 }
 
 .answers-label {
+  @include mono-label;
   margin: 0;
-  font-size: 0.85rem;
-  font-weight: 600;
-  color: $color-muted;
+  font-size: 0.62rem;
+  color: $color-faint;
 }
 
 .answers {
   list-style: none;
-  margin: 0;
-  padding: 0 0 0 12px;
-  border-left: 2px solid rgba(255, 255, 255, 0.08);
+  margin: 0 0 0 4px;
+  padding: 0 0 0 16px;
+  border-left: 1px solid $color-hairline;
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: 14px;
 }
 
 .answer {
@@ -338,9 +358,10 @@ function onDeleteAnswer(question: ModerationQuestionDto, answerId: string) {
 }
 
 .preview-note {
+  @include mono-label;
   margin: 0;
-  font-size: 0.82rem;
-  color: $color-muted;
+  font-size: 0.62rem;
+  color: $color-faint;
 }
 
 .reply-form {
@@ -351,51 +372,73 @@ function onDeleteAnswer(question: ModerationQuestionDto, answerId: string) {
   textarea {
     width: 100%;
     resize: vertical;
-    border-radius: 16px;
-    border: 1px solid rgba(255, 255, 255, 0.1);
-    background: rgba(255, 255, 255, 0.04);
+    border: none;
+    border-radius: $radius-md;
+    background: rgba(13, 15, 19, 0.45);
+    box-shadow: inset 0 0 0 1px $color-hairline;
     color: $color-ink;
     padding: 12px 14px;
     font: inherit;
-  }
-}
+    font-size: 0.92rem;
 
-.btn-link {
-  align-self: flex-start;
-  background: none;
-  border: none;
-  color: $color-muted;
-  cursor: pointer;
-  padding: 0;
-  font-size: 0.85rem;
+    &::placeholder {
+      color: $color-faint;
+    }
 
-  &:hover {
-    color: $color-ink;
-  }
-
-  &.danger {
-    color: #f87171;
-
-    &:hover {
-      color: #fca5a5;
+    &:focus {
+      outline: none;
+      box-shadow: inset 0 0 0 1px $color-hairline, 0 0 0 2px rgba($color-accent, 0.6);
     }
   }
 }
 
-.danger {
-  color: #f87171;
+.btn-link {
+  @include mono-label;
+  align-self: flex-start;
+  background: none;
+  border: none;
+  color: $color-faint;
+  cursor: pointer;
+  padding: 0;
+  font-size: 0.62rem;
+
+  &:hover,
+  &.danger:hover {
+    color: $color-danger;
+  }
+}
+
+.btn.danger {
+  --lg-tint: #{rgba($color-danger, 0.22)};
+
+  &:hover {
+    --lg-tint: #{rgba($color-danger, 0.32)};
+  }
 }
 
 .pagination {
   display: flex;
   align-items: center;
-  justify-content: center;
+  justify-content: space-between;
   gap: 16px;
-  color: $color-muted;
+  padding-top: 16px;
+  border-top: 1px solid $color-hairline;
+
+  span {
+    font-family: $font-mono;
+    font-size: 0.76rem;
+    color: $color-muted;
+  }
 }
 
 .btn {
   width: fit-content;
-  padding: 10px 18px;
+  padding: 9px 18px;
+  font-size: 0.84rem;
+}
+
+.btn-sm {
+  padding: 7px 14px;
+  font-size: 0.8rem;
 }
 </style>

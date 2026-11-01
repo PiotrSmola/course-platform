@@ -2,20 +2,20 @@
   <div class="newsletter-page">
     <section class="newsletter-card glass-card">
       <div v-if="state === 'loading'" class="newsletter-state">
-        <span class="spinner" aria-hidden="true" />
+        <span class="state-tag loading">Newsletter <b><span class="spinner" aria-hidden="true" /></b></span>
         <h1>Potwierdzamy Twój adres e-mail</h1>
         <p>To potrwa tylko chwilę.</p>
       </div>
 
       <div v-else-if="state === 'success'" class="newsletter-state">
-        <span class="state-icon success" aria-hidden="true">✓</span>
+        <span class="state-tag success">Newsletter <b>✓ Gotowe</b></span>
         <h1>Twój zapis jest potwierdzony</h1>
         <p>Od teraz będziemy wysyłać Ci informacje o nowych kursach i promocjach.</p>
         <router-link class="btn btn-primary" :to="{ name: 'Home' }">Wróć na stronę główną</router-link>
       </div>
 
       <div v-else class="newsletter-state">
-        <span class="state-icon error" aria-hidden="true">!</span>
+        <span class="state-tag error">Newsletter <b>Błąd</b></span>
         <h1>Nie udało się potwierdzić zapisu</h1>
         <p>{{ errorMessage }}</p>
         <router-link class="btn btn-ghost" :to="{ name: 'Home' }">Wróć na stronę główną</router-link>
@@ -58,6 +58,7 @@ onMounted(async () => {
 
 <style lang="scss" scoped>
 @use "@/assets/styles/abstracts/variables" as *;
+@use "@/assets/styles/abstracts/mixins" as *;
 
 .newsletter-page {
   display: grid;
@@ -67,27 +68,28 @@ onMounted(async () => {
 }
 
 .newsletter-card {
-  --lg-r: 28px;
-  --lg-blur: 2px;
-  width: min(520px, 100%);
-  padding: 44px 36px;
-  text-align: center;
+  --lg-blur: 10px;
+  width: min(540px, 100%);
+  padding: 30px 32px 32px;
+
+  &:hover {
+    transform: none;
+  }
 
   @media (max-width: 560px) {
-    padding: 36px 24px;
+    padding: 26px 22px;
   }
 }
 
 .newsletter-state {
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   flex-direction: column;
 
   h1 {
-    margin: 18px 0 10px;
-    font-family: $font-display;
-    font-size: 1.55rem;
-    letter-spacing: -0.025em;
+    margin: 22px 0 10px;
+    font-size: clamp(1.7rem, 4vw, 2.1rem);
+    font-weight: 600;
   }
 
   p {
@@ -95,40 +97,66 @@ onMounted(async () => {
     line-height: 1.6;
   }
 
-  .btn {
+  > .btn {
     margin-top: 28px;
   }
 }
 
-.spinner,
-.state-icon {
-  display: grid;
-  width: 46px;
-  height: 46px;
-  place-items: center;
-  border-radius: 50%;
+.state-tag {
+  @include tag;
+  align-self: stretch;
+  justify-content: space-between;
+  padding: 0 0 14px;
+  background: none;
+  box-shadow: none;
+  border-bottom: 1px solid $color-hairline;
+  border-radius: 0;
+  font-size: 0.66rem;
+  color: $color-faint;
+
+  b {
+    font-weight: 500;
+  }
+
+  &.success b {
+    color: $color-success;
+  }
+
+  &.warning b {
+    color: $color-accent;
+  }
+
+  &.error b {
+    color: $color-danger;
+  }
+
+  &.loading b {
+    color: $color-accent;
+  }
 }
 
 .spinner {
-  border: 3px solid rgba(255, 255, 255, 0.12);
-  border-top-color: $color-gold;
+  display: inline-block;
+  width: 12px;
+  height: 12px;
+  border: 2px solid rgba($color-ink, 0.12);
+  border-top-color: $color-accent;
+  border-radius: 50%;
   animation: newsletter-spin 0.8s linear infinite;
 }
 
-.state-icon {
-  font-size: 1.45rem;
-  font-weight: 800;
+.newsletter-actions {
+  display: flex;
+  gap: 10px;
+  margin-top: 28px;
 
-  &.success {
-    color: #bbf7d0;
-    background: rgba(34, 197, 94, 0.16);
-    box-shadow: inset 0 0 0 1px rgba(34, 197, 94, 0.38);
-  }
+  @media (max-width: 460px) {
+    width: 100%;
+    flex-direction: column;
 
-  &.error {
-    color: #fecaca;
-    background: rgba(239, 68, 68, 0.14);
-    box-shadow: inset 0 0 0 1px rgba(239, 68, 68, 0.36);
+    .btn {
+      width: 100%;
+    }
   }
 }
 
