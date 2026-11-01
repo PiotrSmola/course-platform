@@ -274,6 +274,12 @@ html {
   &:hover {
     --lg-tint: #{rgba($color-accent, 0.96)};
   }
+
+  &:disabled,
+  &[aria-disabled="true"] {
+    --lg-tint: #{rgba($color-accent, 0.32)};
+    color: rgba($color-on-accent, 0.55);
+  }
 }
 
 .btn-ghost {

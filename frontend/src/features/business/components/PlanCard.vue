@@ -128,6 +128,10 @@ $paper-line: rgba(21, 23, 27, 0.16);
   line-height: 1.55;
   min-height: 60px;
   margin-bottom: 18px;
+
+  .is-paper & {
+    color: rgba($paper-ink, 0.72);
+  }
 }
 
 .plan-price {
