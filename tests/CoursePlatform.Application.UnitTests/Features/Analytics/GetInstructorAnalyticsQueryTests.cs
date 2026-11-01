@@ -92,4 +92,51 @@ public class GetInstructorAnalyticsQueryTests
         courseStats.DropOff[1].CompletedCount.Should().Be(1);
         courseStats.DropOff[1].DropOffPercent.Should().Be(50);
     }
+
+    [Fact]
+    public async Task Handle_LessonCompletedOutOfOrder_CountsLearnerAsReached()
+    {
+        var instructorId = Guid.NewGuid();
+        var student = Guid.NewGuid();
+
+        _context.Users.AddRange(
+            new ApplicationUser { Id = instructorId, UserName = "i", Email = "i@t.com", FirstName = "I", LastName = "N" },
+            new ApplicationUser { Id = student, UserName = "a", Email = "a@t.com", FirstName = "A", LastName = "A" });
+
+        var course = new Course
+        {
+            Title = "C",
+            Description = "D",
+            ShortDescription = "S",
+            Price = 0,
+            Level = CourseLevel.Beginner,
+            Status = CourseStatus.Published,
+            Language = "pl",
+            InstructorId = instructorId
+        };
+        _context.Courses.Add(course);
+
+        var module = new Module { Title = "M", Order = 1, CourseId = course.Id, Course = course };
+        _context.Modules.Add(module);
+
+        var lesson1 = new Lesson { Title = "L1", Order = 1, Duration = 5, ModuleId = module.Id, Module = module, VideoObjectKey = "" };
+        var lesson2 = new Lesson { Title = "L2", Order = 2, Duration = 5, ModuleId = module.Id, Module = module, VideoObjectKey = "" };
+        _context.Lessons.AddRange(lesson1, lesson2);
+
+        _context.Enrollments.Add(new Enrollment { UserId = student, CourseId = course.Id, EnrolledAt = DateTime.UtcNow });
+        _context.LessonProgresses.Add(
+            new LessonProgress { UserId = student, LessonId = lesson2.Id, IsCompleted = true, CompletedAt = DateTime.UtcNow });
+
+        await _context.SaveChangesAsync();
+        _currentUser.Setup(x => x.UserId).Returns(instructorId);
+
+        var result = await new GetInstructorAnalyticsQueryHandler(_context, _currentUser.Object)
+            .Handle(new GetInstructorAnalyticsQuery(), CancellationToken.None);
+
+        var dropOff = result.Courses.Should().ContainSingle().Subject.DropOff;
+        dropOff[1].ReachedCount.Should().Be(1);
+        dropOff[1].CompletedCount.Should().Be(1);
+        dropOff[1].DropOffPercent.Should().Be(0);
+        dropOff.Should().OnlyContain(d => d.DropOffPercent >= 0 && d.CompletedCount <= d.ReachedCount);
+    }
 }

@@ -166,6 +166,11 @@ public class GetInstructorAnalyticsQueryHandler : IRequestHandler<GetInstructorA
             for (var i = 0; i < lessons.Count; i++)
             {
                 var (lesson, module) = lessons[i];
+                var completedUsers = completedByLesson.TryGetValue(lesson.Id, out var doneUsers)
+                    ? doneUsers.Where(learnerUserIds.Contains).ToHashSet()
+                    : new HashSet<Guid>();
+                var completedCount = completedUsers.Count;
+
                 int reachedCount;
                 if (i == 0)
                 {
@@ -174,14 +179,12 @@ public class GetInstructorAnalyticsQueryHandler : IRequestHandler<GetInstructorA
                 else
                 {
                     var previousId = lessons[i - 1].Lesson.Id;
-                    reachedCount = completedByLesson.TryGetValue(previousId, out var prevUsers)
-                        ? prevUsers.Count(u => learnerUserIds.Contains(u))
-                        : 0;
+                    var reachedUsers = completedByLesson.TryGetValue(previousId, out var prevUsers)
+                        ? prevUsers.Where(learnerUserIds.Contains).ToHashSet()
+                        : new HashSet<Guid>();
+                    reachedUsers.UnionWith(completedUsers);
+                    reachedCount = reachedUsers.Count;
                 }
-
-                var completedCount = completedByLesson.TryGetValue(lesson.Id, out var doneUsers)
-                    ? doneUsers.Count(u => learnerUserIds.Contains(u))
-                    : 0;
 
                 var dropOffPercent = reachedCount > 0
                     ? Math.Round((reachedCount - completedCount) * 100.0 / reachedCount, 2)
