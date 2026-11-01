@@ -9,6 +9,19 @@ Online course platform — ASP.NET Core 9 (Clean Architecture) + Vue 3 + TypeScr
 - **Frontend:** Vue 3 Composition API, Pinia (auth), TanStack Vue Query (server state), VeeValidate + Zod, SCSS (7-1)
 - **Infra:** Docker Compose — API, Vue, Postgres, MinIO, Redis, Elasticsearch, MailHog, Aspire Dashboard (OTEL), optional Stripe CLI
 
+## Tech stack
+
+| Area | Technologies |
+| ---- | ------------ |
+| Backend | .NET 9, ASP.NET Core Web API, MediatR (CQRS), FluentValidation, EF Core 9 + Npgsql, ASP.NET Core Identity, JWT bearer + refresh tokens, SignalR, Serilog, Swashbuckle (Swagger) |
+| Data and storage | PostgreSQL 16, Redis 7 (HybridCache), Elasticsearch 8.19 (Polish stemming via `analysis-stempel`), MinIO (S3 API through AWSSDK.S3, presigned URLs) |
+| Integrations | Stripe (Checkout, Subscriptions, webhooks, Customer Portal), MailKit (SMTP), QuestPDF (certificates), HtmlSanitizer |
+| Observability | OpenTelemetry (traces, metrics, logs over OTLP), .NET Aspire Dashboard, health checks for PostgreSQL and Redis |
+| Frontend | Vue 3 (Composition API, `<script setup>`), TypeScript, Vite, Vue Router, Pinia, TanStack Vue Query, Axios, VeeValidate + Zod, VueUse, `@microsoft/signalr`, vue3-toastify |
+| Styling | SCSS (7-1 architecture), custom Liquid Glass effect (SVG displacement lens on `backdrop-filter`), Bricolage Grotesque / Instrument Sans / JetBrains Mono |
+| Testing | xUnit, Moq, FluentAssertions, NetArchTest (architecture rules), Testcontainers (PostgreSQL), WebApplicationFactory; Vitest + Vue Test Utils, Playwright (e2e smoke) |
+| Tooling | Docker Compose, MailHog, Stripe CLI, ESLint, vue-tsc |
+
 ## Prerequisites
 
 - Docker Desktop
