@@ -5,6 +5,9 @@ import { fileURLToPath, URL } from 'node:url'
 // https://vite.dev/config/
 export default defineConfig({
   plugins: [vue()],
+  server: {
+    watch: process.env.VITE_WATCH_POLLING === 'true' ? { usePolling: true, interval: 300 } : undefined
+  },
   resolve: {
     alias: {
       '@': fileURLToPath(new URL('./src', import.meta.url))
