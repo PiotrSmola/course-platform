@@ -290,7 +290,7 @@ function formatMatchedBy(matchedBy: string[]): string {
 }
 
 function toggleSearch() {
-  if (window.matchMedia('(max-width: 1120px)').matches) {
+  if (window.matchMedia('(max-width: 1240px)').matches) {
     mobileMenuOpen.value = false
     mobileSearchOpen.value = true
     return
@@ -439,11 +439,11 @@ onUnmounted(() => {
     --lg-glow: 0.08;
     width: min($container-max, 100% - 32px);
     margin-inline: auto;
-    height: 74px;
-    padding: 0 12px 0 32px;
+    height: 78px;
+    padding: 0 18px 0 38px;
     display: flex;
     align-items: center;
-    gap: 12px;
+    gap: 16px;
     transition: box-shadow 0.35s;
   }
 
@@ -537,7 +537,7 @@ onUnmounted(() => {
 .nav-actions {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 10px;
 }
 
 .avatar-btn {
@@ -929,8 +929,8 @@ onUnmounted(() => {
 
 @media (max-width: 1320px) {
   .site-header .header-inner {
-    padding-left: 22px;
-    gap: 8px;
+    padding: 0 16px 0 30px;
+    gap: 10px;
   }
 
   .main-nav a,
@@ -944,15 +944,15 @@ onUnmounted(() => {
   }
 }
 
-@media (max-width: 1120px) {
+@media (max-width: 1240px) {
   .site-header {
     top: 10px;
   }
 
   .site-header .header-inner {
     width: min($container-max, 100% - 24px);
-    height: 64px;
-    padding: 0 10px 0 22px;
+    height: 66px;
+    padding: 0 14px 0 26px;
     gap: 8px;
   }
 

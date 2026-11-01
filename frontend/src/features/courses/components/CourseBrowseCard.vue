@@ -1,5 +1,5 @@
 <template>
-  <article class="course-card glass-card">
+  <article class="course-card glass-card" :class="{ 'is-featured': featured }">
     <div class="course-thumb-wrap">
       <CourseThumbnail
         class="course-thumb"
@@ -17,6 +17,7 @@
       </p>
       <h3 class="course-title">{{ course.title }}</h3>
       <p class="course-instructor">{{ course.instructorName }}</p>
+      <p v-if="featured && course.shortDescription" class="course-desc">{{ course.shortDescription }}</p>
       <div class="course-tags" v-if="course.categoryNames.length || course.technologyNames.length">
         <span v-for="cat in course.categoryNames" :key="cat" class="tag">{{ cat }}</span>
         <span v-for="tech in course.technologyNames" :key="tech" class="tag tech">{{ tech }}</span>
@@ -49,6 +50,7 @@ import CourseThumbnail from '@/shared/components/media/CourseThumbnail.vue'
 
 interface Props {
   course: CourseListDto
+  featured?: boolean
 }
 
 const props = defineProps<Props>()
@@ -194,5 +196,47 @@ const levelLabel = computed(() => {
 .course-btn {
   padding: 10px 18px;
   font-size: 0.86rem;
+}
+
+.course-desc {
+  margin: -4px 0 16px;
+  color: $color-muted;
+  font-size: 0.95rem;
+  line-height: 1.6;
+}
+
+.course-card.is-featured {
+  --lg-r: 30px 30px 30px 6px;
+
+  @media (min-width: 640px) {
+    grid-column: span 2;
+    display: grid;
+    grid-template-columns: minmax(0, 1.05fr) minmax(0, 1fr);
+
+    .course-thumb-wrap {
+      margin: 14px 0 14px 14px;
+    }
+
+    .course-thumb {
+      height: 100%;
+      aspect-ratio: auto;
+      min-height: 280px;
+      border-radius: 20px 20px 20px 4px;
+    }
+
+    .course-body {
+      padding: 28px 30px 26px;
+    }
+
+    .course-title {
+      font-size: 1.6rem;
+      line-height: 1.15;
+      -webkit-line-clamp: 3;
+    }
+
+    .course-price {
+      font-size: 1.9rem;
+    }
+  }
 }
 </style>

@@ -147,14 +147,19 @@
         </p>
       </div>
       <div class="featured-grid">
-        <CourseBrowseCard v-for="course in featuredCourses" :key="course.id" :course="course" />
+        <CourseBrowseCard
+          v-for="(course, index) in featuredCourses"
+          :key="course.id"
+          :course="course"
+          :featured="index === 0"
+        />
       </div>
     </div>
   </section>
 
   <section class="cta-section" id="start-learning">
     <div class="container">
-      <div class="cta-card glass-card">
+      <div class="cta-card paper-card">
         <div class="cta-content">
           <span class="eyebrow">Na start</span>
           <h2>Pierwszy kurs <em>przejdziesz za darmo.</em></h2>
@@ -208,8 +213,8 @@ const paths = computed(() => pathsData.value?.items ?? [])
 
 const featuredCourses = computed(() => {
   const courses = featuredData.value ?? []
-  if (courses.length >= 8) return courses.slice(0, 8)
-  return courses.length >= 4 ? courses.slice(0, 4) : []
+  if (courses.length >= 7) return courses.slice(0, 7)
+  return courses.length >= 3 ? courses.slice(0, 3) : []
 })
 
 const stageCourses = computed(() => (featuredData.value ?? []).slice(0, 3))
@@ -629,8 +634,7 @@ function coursesLabel(count: number): string {
 }
 
 .cta-card {
-  --lg-r: 32px 32px 32px 8px;
-  --lg-blur: 4px;
+  transform: rotate(-0.6deg);
   display: grid;
   grid-template-columns: minmax(0, 1fr) auto;
   align-items: end;
@@ -640,10 +644,6 @@ function coursesLabel(count: number): string {
   @media (max-width: 760px) {
     grid-template-columns: 1fr;
     padding: 32px 24px;
-  }
-
-  &:hover {
-    transform: none;
   }
 }
 
@@ -655,7 +655,6 @@ function coursesLabel(count: number): string {
 
   p {
     max-width: 520px;
-    color: $color-muted;
   }
 }
 

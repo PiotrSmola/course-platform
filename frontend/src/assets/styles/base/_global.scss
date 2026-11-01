@@ -117,6 +117,99 @@ html {
       0 26px 50px -18px rgba(0, 0, 0, 0.6),
       0 4px 10px rgba(0, 0, 0, 0.25);
   }
+
+  &.is-static:hover {
+    transform: none;
+  }
+}
+
+.glass-panel {
+  @include liquid-glass;
+  --lg-r: 32px;
+  --lg-blur: 6px;
+  --lg-tint: rgba(13, 15, 19, 0.32);
+}
+
+.paper-card {
+  position: relative;
+  border-radius: 6px;
+  color: #15171b;
+  background:
+    linear-gradient(rgba(21, 23, 27, 0.06) 1px, transparent 1px) 0 0 / 100% 28px,
+    #efeadd;
+  box-shadow:
+    0 30px 60px -24px rgba(0, 0, 0, 0.7),
+    0 2px 6px rgba(0, 0, 0, 0.3);
+
+  .eyebrow,
+  .tag {
+    color: #15171b;
+  }
+
+  .tag {
+    background: transparent;
+    box-shadow: inset 0 0 0 1px rgba(21, 23, 27, 0.25);
+  }
+
+  p,
+  li {
+    color: rgba(21, 23, 27, 0.72);
+  }
+
+  em {
+    color: #15171b;
+    background: linear-gradient(transparent 58%, rgba($color-accent, 0.9) 58%, rgba($color-accent, 0.9) 92%, transparent 92%);
+  }
+}
+
+.outline-card {
+  position: relative;
+  border-radius: 2px;
+  border: 1px dashed rgba($color-ink, 0.22);
+  background: transparent;
+  transition: border-color 0.3s, background 0.3s;
+
+  &:hover {
+    border-color: rgba($color-accent, 0.6);
+    background: rgba($color-ink, 0.03);
+  }
+}
+
+.ticket-card {
+  position: relative;
+  border-radius: 4px 4px 20px 4px;
+  color: $color-on-accent;
+  background: $color-accent;
+  box-shadow: 0 20px 40px -18px rgba($color-accent, 0.55);
+
+  .eyebrow,
+  .tag {
+    color: $color-on-accent;
+  }
+
+  .tag {
+    background: transparent;
+    box-shadow: inset 0 0 0 1px rgba(17, 20, 10, 0.3);
+  }
+
+  p,
+  li {
+    color: rgba(17, 20, 10, 0.75);
+  }
+}
+
+.paper-card,
+.ticket-card {
+  .btn-ghost {
+    --lg-tint: rgba(17, 20, 10, 0.06);
+    color: #15171b;
+  }
+
+  .btn-primary {
+    --lg-tint: rgba(17, 20, 10, 0.92);
+    color: $color-ink;
+    box-shadow: 0 10px 24px -12px rgba(0, 0, 0, 0.6);
+  }
 }
 
 .btn {
