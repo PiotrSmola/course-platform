@@ -37,7 +37,7 @@ services:
       start_period: 30s
 
   minio:
-    image: minio/minio:latest
+    image: pgsty/minio:latest
     container_name: cp_minio
     command: server /data --console-address ":9001"
     environment:
@@ -52,7 +52,7 @@ services:
       - miniodata:/data
 
   minio_init:
-    image: minio/mc:latest
+    image: pgsty/mc:latest
     container_name: cp_minio_init
     depends_on:
       - minio
